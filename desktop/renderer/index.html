@@ -117,10 +117,27 @@
   .status.err { color: #e58a8a; }
   .status.muted { color: var(--muted); }
 
+  .section-label { color: var(--muted); font-size: .72rem; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; margin: 26px 0 10px; }
   .search-bar { display: flex; gap: 10px; margin: 4px 0 20px; }
   .search-bar input { flex: 1; padding: 13px 16px; border-radius: 11px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: 1rem; outline: none; }
   .search-bar input:focus { border-color: #666; box-shadow: 0 0 0 3px rgba(255,255,255,.08); }
   .search-bar input:disabled { opacity: .5; }
+
+  #tableSections { display: flex; flex-direction: column; gap: 10px; }
+  .tsec { border: 1px solid var(--border); border-radius: 12px; background: var(--panel); overflow: hidden; }
+  .tsec-head { display: flex; align-items: center; gap: 10px; padding: 13px 16px; cursor: pointer; user-select: none; }
+  .tsec-head .tname { font-weight: 800; flex: 1; }
+  .tsec-head .tcols { color: var(--muted); font-size: .74rem; }
+  .tsec-head .chev { transition: transform .2s ease; color: var(--muted); }
+  .tsec.open .tsec-head .chev { transform: rotate(90deg); }
+  .tsec-body { display: none; padding: 0 16px 16px; }
+  .tsec.open .tsec-body { display: block; }
+  .tsec-search { display: flex; gap: 8px; margin-bottom: 10px; }
+  .tsec-search input { flex: 1; padding: 10px 13px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); font-size: .9rem; outline: none; }
+  .tsec-search input:focus { border-color: #666; box-shadow: 0 0 0 3px rgba(255,255,255,.07); }
+  .tsec-search button { padding: 10px 18px; border-radius: 9px; border: none; background: var(--text); color: #000; font-weight: 800; font-size: .85rem; cursor: pointer; }
+  .tsec-search button:disabled { opacity: .5; cursor: not-allowed; }
+  .tsec-result { font-size: .82rem; color: var(--muted); }
 
   .tbl-card { border: 1px solid var(--border); border-radius: 12px; background: var(--panel); margin-bottom: 14px; overflow: hidden; animation: pageIn .25s ease; }
   .tbl-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
@@ -247,14 +264,21 @@
         </div>
       </div>
 
+      <div class="section-label">Search everything</div>
       <div class="search-bar">
-        <input type="text" id="term" placeholder="search a username or term…" autocomplete="off" spellcheck="false" disabled>
-        <button class="btn" id="searchBtn" disabled>Search</button>
+        <input type="text" id="term" placeholder="search a username or term across every table…" autocomplete="off" spellcheck="false" disabled>
+        <button class="btn" id="searchBtn" disabled>Search all</button>
       </div>
 
       <div id="dbSummary"></div>
       <div id="dbResults"></div>
       <div id="dbError"></div>
+
+      <div id="perTableWrap" class="hidden">
+        <div class="section-label">Search by table</div>
+        <p class="sub" style="margin-bottom:14px">A separate search box, generated automatically for each table in this database.</p>
+        <div id="tableSections"></div>
+      </div>
     </section>
   </main>
 </div>
@@ -372,7 +396,7 @@
       if (!cfg.database) { connStatus.className = "status err"; connStatus.textContent = "Database name is required."; return; }
     }
     const res = await window.api.connect(cfg);
-    if (res.ok) setConnected(true, res.label);
+    if (res.ok) { setConnected(true, res.label); buildTableSections(); }
     else { connStatus.className = "status err"; connStatus.textContent = "Failed: " + res.error; }
   });
 
@@ -380,6 +404,7 @@
     await window.api.disconnect();
     setConnected(false);
     $("dbResults").innerHTML = ""; $("dbSummary").textContent = "";
+    $("tableSections").innerHTML = ""; $("perTableWrap").classList.add("hidden");
   });
 
   function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
@@ -388,6 +413,69 @@
     const s = esc(val); const t = esc(term);
     try { return s.replace(new RegExp("(" + t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi"), "<mark>$1</mark>"); }
     catch (_) { return s; }
+  }
+
+  function renderMiniTable(res) {
+    if (!res.rows.length) return '<p>No matches in this table.</p>';
+    const cols = Object.keys(res.rows[0]);
+    let html = `<p>${res.count}${res.count >= 12 ? "+" : ""} match(es).</p><div class="tbl-scroll"><table><thead><tr>`;
+    html += cols.map((c) => `<th>${esc(c)}</th>`).join("") + "</tr></thead><tbody>";
+    for (const row of res.rows) {
+      html += "<tr>" + cols.map((c) => `<td title="${esc(row[c] ?? "")}">${hl(row[c], res.term)}</td>`).join("") + "</tr>";
+    }
+    return html + "</tbody></table></div>";
+  }
+
+  /* ---------- auto-generated per-table search sections ---------- */
+  async function buildTableSections() {
+    const wrap = $("perTableWrap"), container = $("tableSections");
+    container.innerHTML = "";
+    const res = await window.api.listTables();
+    if (!res.ok || !res.tables.length) { wrap.classList.add("hidden"); return; }
+    wrap.classList.remove("hidden");
+
+    for (const t of res.tables) {
+      const sec = document.createElement("div");
+      sec.className = "tsec";
+      sec.innerHTML =
+        '<div class="tsec-head">' +
+          '<span class="chev">▶</span>' +
+          '<span class="tname">' + esc(t.table) + '</span>' +
+          '<span class="tcols">' + t.columns.length + ' text column(s)</span>' +
+        '</div>' +
+        '<div class="tsec-body">' +
+          '<div class="tsec-search">' +
+            '<input type="text" placeholder="search in ' + esc(t.table) + '…" autocomplete="off" spellcheck="false">' +
+            '<button type="button">Search</button>' +
+          '</div>' +
+          '<div class="tsec-result"></div>' +
+        '</div>';
+
+      const head = sec.querySelector(".tsec-head");
+      const input = sec.querySelector("input");
+      const btn = sec.querySelector("button");
+      const resultEl = sec.querySelector(".tsec-result");
+
+      head.addEventListener("click", () => sec.classList.toggle("open"));
+      attachSounds(head);
+      attachSounds(btn);
+
+      async function runTableSearch() {
+        const term = input.value.trim();
+        if (!term) return;
+        sec.classList.add("open");
+        btn.disabled = true; btn.textContent = "…";
+        const r = await window.api.searchTable(t.table, term);
+        btn.disabled = false; btn.textContent = "Search";
+        resultEl.innerHTML = r.ok
+          ? renderMiniTable(r)
+          : '<p style="color:#e58a8a">' + esc(r.error) + '</p>';
+      }
+      btn.addEventListener("click", runTableSearch);
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") runTableSearch(); });
+
+      container.appendChild(sec);
+    }
   }
 
   async function runSearch() {
