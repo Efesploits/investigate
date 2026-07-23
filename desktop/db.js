@@ -151,7 +151,7 @@ async function searchTable(table, term) {
   const entry = schema.find((t) => t.table === table);
   if (!entry) throw new Error("Unknown table: " + table);
 
-  const rows = await queryTable(entry.table, entry.columns, like);
+  const rows = await queryTable(entry.table, entry.columns, like, q);
   return { ok: true, table, term: q, columns: entry.columns, count: rows.length, rows: rows.slice(0, SHOW_ROWS) };
 }
 
@@ -170,7 +170,7 @@ async function search(term) {
     if (!columns.length) continue;
     tablesScanned++;
     try {
-      const rows = await queryTable(table, columns, like);
+      const rows = await queryTable(table, columns, like, q);
       if (rows.length) {
         matches.push({ table, columns, count: rows.length, rows: rows.slice(0, SHOW_ROWS) });
       }
@@ -180,8 +180,35 @@ async function search(term) {
   return { ok: true, term: q, tablesScanned, matched: matches.length, matches };
 }
 
-async function queryTable(table, columns, like) {
+// builds a boolean-mode fulltext query term: each word required (+) and
+// prefix-matched (*), e.g. "m3 alice" -> "+m3* +alice*"
+function booleanFtTerm(term) {
+  const words = term
+    .split(/\s+/)
+    .map((w) => w.replace(/[+\-><()~*:@"]/g, ""))
+    .filter(Boolean);
+  if (!words.length) return null;
+  return words.map((w) => "+" + w + "*").join(" ");
+}
+
+const ER_FT_MATCHING_KEY_NOT_FOUND = 1191;
+
+async function queryTable(table, columns, like, term) {
   if (state.type === "mysql") {
+    const ftTerm = term ? booleanFtTerm(term) : null;
+    if (ftTerm) {
+      try {
+        const matchCols = columns.map((c) => "`" + c.replace(/`/g, "``") + "`").join(",");
+        const sql =
+          "SELECT * FROM `" + table.replace(/`/g, "``") + "` WHERE MATCH(" + matchCols +
+          ") AGAINST (? IN BOOLEAN MODE) LIMIT " + ROWS_PER_TABLE;
+        const [rows] = await state.mysql.query(sql, [ftTerm]);
+        return rows.map(normalizeRow);
+      } catch (err) {
+        // no FULLTEXT index covering exactly these columns -> fall back to LIKE below
+        if (!err || err.errno !== ER_FT_MATCHING_KEY_NOT_FOUND) throw err;
+      }
+    }
     const cols = columns.map((c) => "`" + c.replace(/`/g, "``") + "` LIKE ?").join(" OR ");
     const sql = "SELECT * FROM `" + table.replace(/`/g, "``") + "` WHERE " + cols + " LIMIT " + ROWS_PER_TABLE;
     const [rows] = await state.mysql.query(sql, columns.map(() => like));
