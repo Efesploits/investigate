@@ -237,4 +237,186 @@ function normalizeRow(row) {
   return o;
 }
 
-module.exports = { connect, disconnect, isConnected, search, listTables, searchTable };
+// ================= .sql dump import =================
+// Streams a mysqldump/phpMyAdmin .sql export, translates the MySQL-specific
+// bits (ENGINE=, KEY defs, AUTO_INCREMENT, backslash string escapes, ...)
+// into SQLite-compatible statements, and loads them into an in-memory sql.js
+// database. Once done, it becomes the active connection — every existing
+// search/listTables/searchTable code path works on it unchanged.
+//
+// Note: sql.js is WASM SQLite, capped at roughly a few GB of heap. Multi-GB
+// dumps (several GB+) will not fully fit; import is best-effort and stops
+// gracefully rather than crashing when a statement can't be applied.
+
+function cleanCreateTable(stmt) {
+  let s = stmt;
+  // drop table-level options that trail the closing paren (ENGINE=, CHARSET=, ...).
+  // the "=" is mandatory here so this can't accidentally match column-level
+  // modifiers like `COLLATE utf8mb4_unicode_ci` or bare `AUTO_INCREMENT`,
+  // which never carry an "=" the way the trailing table options do.
+  s = s.replace(/\)\s*(ENGINE|DEFAULT CHARSET|CHARSET|COLLATE|AUTO_INCREMENT|ROW_FORMAT|COMMENT)\s*=[^;]*$/i, ")");
+
+  // drop index/constraint-only lines inside the column list (SQLite doesn't
+  // take inline KEY defs); PRIMARY KEY (...) is kept, SQLite understands it.
+  const kept = s.split("\n").filter((line) => {
+    const t = line.trim();
+    return !/^(UNIQUE\s+KEY|KEY|FULLTEXT\s+KEY|SPATIAL\s+KEY|CONSTRAINT\b|FOREIGN\s+KEY)\b/i.test(t);
+  });
+  s = kept.join("\n");
+
+  // fix a dangling trailing comma left before the closing paren
+  s = s.replace(/,(\s*)\)/g, "$1)");
+
+  // column-level MySQL-only tokens that SQLite doesn't need/understand
+  s = s.replace(/\bAUTO_INCREMENT\b/gi, "");
+  s = s.replace(/\bUNSIGNED\b/gi, "");
+  s = s.replace(/\bZEROFILL\b/gi, "");
+  s = s.replace(/\bCHARACTER SET\s+\w+/gi, "");
+  s = s.replace(/\bCOLLATE\s+\w+/gi, "");
+  s = s.replace(/COMMENT\s+'(?:[^'\\]|\\.)*'/gi, "");
+  s = s.replace(/\bENUM\s*\([^)]*\)/gi, "TEXT");
+  s = s.replace(/\bSET\s*\([^)]*\)/gi, "TEXT");
+
+  return s;
+}
+
+// Converts MySQL backslash-escaped string literals to SQLite's doubled-quote
+// escaping so the statement parses; other backslash escapes are left as
+// literal 2-char sequences (harmless for text search, avoids a full decode table).
+function cleanInsert(stmt) {
+  let s = stmt.replace(/\b_(?:utf8mb4|utf8mb3|utf8|binary|latin1|ascii|ucs2|utf16|utf32)'/gi, "'");
+  let out = "";
+  let inStr = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) {
+      if (c === "\\" && i + 1 < s.length) {
+        const next = s[i + 1];
+        if (next === "'") { out += "''"; i++; continue; }
+        if (next === "\\") { out += "\\"; i++; continue; }
+        out += c;
+        continue;
+      }
+      if (c === "'") {
+        if (s[i + 1] === "'") { out += "''"; i++; continue; }
+        inStr = false;
+        out += c;
+        continue;
+      }
+      out += c;
+    } else {
+      if (c === "'") inStr = true;
+      out += c;
+    }
+  }
+  return out;
+}
+
+function countTuples(insertStmt) {
+  const m = insertStmt.match(/\),\s*\(/g);
+  return (m ? m.length : 0) + 1;
+}
+
+// finds the first top-level (outside a '...' string) ';' in text, starting
+// from the given quote state; returns { idx, inSingle } where inSingle is
+// the state after scanning up to idx (or to the end, if none found)
+function scanForTerminator(text, inSingleStart) {
+  let inSingle = inSingleStart;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inSingle) {
+      if (c === "\\") { i++; continue; }
+      if (c === "'") inSingle = false;
+      continue;
+    }
+    if (c === "'") { inSingle = true; continue; }
+    if (c === ";") return { idx: i, inSingle: false };
+  }
+  return { idx: -1, inSingle };
+}
+
+async function importSqlFile(filePath, onProgress) {
+  await disconnect();
+  const initSqlJs = require("sql.js");
+  const wasmPath = path.join(path.dirname(require.resolve("sql.js")), "sql-wasm.wasm");
+  const SQL = await initSqlJs({ wasmBinary: fs.readFileSync(wasmPath) });
+  const db = new SQL.Database();
+
+  const totalBytes = fs.statSync(filePath).size;
+  const readline = require("readline");
+  const rl = readline.createInterface({
+    input: fs.createReadStream(filePath, { encoding: "utf8" }),
+    crlfDelay: Infinity,
+  });
+
+  let acc = "";
+  let inSingle = false;
+  let statements = 0, rowsInserted = 0, bytesRead = 0;
+  const tablesCreated = new Set();
+  let pendingCommit = 0;
+  const COMMIT_EVERY = 200;
+
+  db.exec("BEGIN;");
+
+  function handleStatement(raw) {
+    const s = raw.trim();
+    if (!s) return;
+    statements++;
+    if (/^CREATE TABLE/i.test(s)) {
+      try {
+        db.run(cleanCreateTable(s));
+        const m = s.match(/^CREATE TABLE\s+(?:IF NOT EXISTS\s+)?[`"]?([^`"\s(]+)/i);
+        if (m) tablesCreated.add(m[1]);
+      } catch (_) { /* skip a table we couldn't translate */ }
+    } else if (/^INSERT INTO/i.test(s)) {
+      try {
+        db.run(cleanInsert(s));
+        rowsInserted += countTuples(s);
+        pendingCommit++;
+        if (pendingCommit >= COMMIT_EVERY) {
+          db.exec("COMMIT;");
+          db.exec("BEGIN;");
+          pendingCommit = 0;
+        }
+      } catch (_) { /* skip rows we couldn't parse/insert (e.g. heap limit hit) */ }
+    }
+    // everything else (SET, LOCK/UNLOCK TABLES, DROP TABLE, ALTER TABLE, comments) is skipped on purpose
+  }
+
+  let lastEmit = Date.now();
+  for await (const line of rl) {
+    bytesRead += Buffer.byteLength(line, "utf8") + 1;
+
+    if (!inSingle) {
+      const t = line.trimStart();
+      if (t === "" || t.startsWith("--") || t.startsWith("/*")) continue;
+    }
+
+    acc += (acc ? "\n" : "") + line;
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { idx, inSingle: nextState } = scanForTerminator(acc, inSingle);
+      if (idx === -1) { inSingle = nextState; break; }
+      handleStatement(acc.slice(0, idx));
+      acc = acc.slice(idx + 1);
+      inSingle = false;
+    }
+
+    if (Date.now() - lastEmit > 400) {
+      onProgress && onProgress({ statements, tables: tablesCreated.size, rows: rowsInserted, bytesRead, totalBytes });
+      lastEmit = Date.now();
+    }
+  }
+  if (acc.trim()) handleStatement(acc);
+
+  try { db.exec("COMMIT;"); } catch (_) { /* nothing pending */ }
+
+  onProgress && onProgress({ statements, tables: tablesCreated.size, rows: rowsInserted, bytesRead, totalBytes, done: true });
+
+  const label = `Imported · ${path.basename(filePath)} (${tablesCreated.size} table(s), ~${rowsInserted.toLocaleString()} row(s))`;
+  state = { type: "sqlite", sqlite: db, SQL, label };
+  return { ok: true, label, tables: tablesCreated.size, rows: rowsInserted, statements };
+}
+
+module.exports = { connect, disconnect, isConnected, search, listTables, searchTable, importSqlFile };
