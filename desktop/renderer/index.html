@@ -63,6 +63,7 @@
   }
   .enter-btn:hover { transform: translateY(-2px); background: var(--text); color: #000; box-shadow: 0 0 26px rgba(255,255,255,.25); }
   @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); } 50% { box-shadow: 0 0 22px 1px rgba(255,255,255,.18); } }
+  .intro-credit { position: absolute; bottom: clamp(20px, 6vh, 48px); margin: 0; color: var(--muted); font-size: .72rem; letter-spacing: 1px; opacity: 0; animation: fadeUp .8s ease 5.1s forwards; }
 
   /* ---------- APP ---------- */
   #app { display: none; min-height: 100vh; }
@@ -78,6 +79,7 @@
   .nav-item:hover { background: var(--panel2); }
   .nav-item.active { background: var(--panel2); border-color: #3a3a3a; color: #fff; }
   .nav-item.active svg { opacity: 1; }
+  .footer-credit { margin-top: auto; padding: 14px 10px 4px; border-top: 1px solid var(--border); color: var(--muted); font-size: .68rem; letter-spacing: .3px; line-height: 1.5; }
   .content { flex: 1; padding: 40px clamp(20px,5vw,54px); max-width: 940px; }
   .page { display: none; animation: pageIn .35s ease; }
   .page.show { display: block; }
@@ -139,6 +141,52 @@
   .tsec-search button:disabled { opacity: .5; cursor: not-allowed; }
   .tsec-result { font-size: .82rem; color: var(--muted); }
 
+  /* ---------- OSINT investigate page ---------- */
+  #osintForm { display: flex; gap: 10px; margin: 4px 0 22px; }
+  #osintForm input[type=text] {
+    flex: 1; padding: 13px 16px; border-radius: 11px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--text); font-size: 1rem; outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  #osintForm input[type=text]:focus { border-color: #666; box-shadow: 0 0 0 3px rgba(255,255,255,.08); }
+  button.scan {
+    padding: 13px 26px; border-radius: 11px; border: none; background: var(--text);
+    color: #000; font-size: 1rem; font-weight: 800; cursor: pointer;
+  }
+  button.scan:disabled { opacity: .55; cursor: not-allowed; }
+  .osint-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--panel); margin-bottom: 9px; animation: pageIn .25s ease;
+  }
+  .osint-row .name { font-weight: 700; min-width: 120px; }
+  .osint-row .url { color: var(--muted); font-size: .82rem; word-break: break-all; }
+  .osint-row a { color: #cfcfcf; text-decoration: none; }
+  .osint-row a:hover { text-decoration: underline; }
+  .osint-badge {
+    font-size: .74rem; font-weight: 800; letter-spacing: .5px; padding: 5px 12px;
+    border-radius: 999px; white-space: nowrap;
+  }
+  .osint-badge.ok  { background: #f2f2f2; color: #000; }
+  .osint-badge.no  { background: transparent; color: #7c7c7c; border: 1px solid #333; }
+  .osint-badge.unk { background: #1c1c1c; color: #b4b4b4; border: 1px dashed #444; }
+  .osint-reason { color: var(--muted); font-size: .74rem; margin-top: 3px; }
+  #osintSummary { margin-top: 18px; color: var(--muted); font-size: .9rem; }
+  #osintError { color: #d0d0d0; margin-top: 12px; font-size: .9rem; }
+
+  .scan-loader { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 30px 0 36px; }
+  .scan-loader.hidden { display: none; }
+  .scan-eye-svg { width: 84px; height: auto; filter: drop-shadow(0 0 18px rgba(255,255,255,0.10)); }
+  .scan-iris { transform-box: fill-box; transform-origin: center; animation: scanLook 2.1s ease-in-out infinite; }
+  @keyframes scanLook {
+    0%, 8%    { transform: translate(0, 0); }
+    30%       { transform: translate(-24px, 3px); }
+    50%       { transform: translate(0, 0); }
+    72%       { transform: translate(24px, 3px); }
+    92%,100%  { transform: translate(0, 0); }
+  }
+  .scan-loader-text { margin: 0; color: var(--muted); font-size: .82rem; letter-spacing: 1px; }
+
   .tbl-card { border: 1px solid var(--border); border-radius: 12px; background: var(--panel); margin-bottom: 14px; overflow: hidden; animation: pageIn .25s ease; }
   .tbl-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
   .tbl-head .tname { font-weight: 800; }
@@ -176,6 +224,7 @@
   <h1 class="intro-title">m3's investigation tool</h1>
   <p class="intro-sub">osint · sql database client</p>
   <button class="enter-btn" id="enterBtn">ENTER</button>
+  <p class="intro-credit">m3fxn — theres always a clue, find it.</p>
 </div>
 
 <!-- APP -->
@@ -196,10 +245,15 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
       Home
     </div>
+    <div class="nav-item" data-page="investigate">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      Investigate
+    </div>
     <div class="nav-item" data-page="database">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
       Database
     </div>
+    <div class="footer-credit">m3fxn — theres always a clue, find it.</div>
   </aside>
 
   <main class="content">
@@ -223,7 +277,42 @@
         <div class="card"><h3>Full-text sweep</h3><p>Scans text columns across all tables — no SQL to write.</p></div>
         <div class="card"><h3>Fully offline</h3><p>No servers, no uploads. It talks straight to your database.</p></div>
       </div>
-      <button class="btn" id="goDatabase" style="margin-top:22px">Open database client →</button>
+      <div style="display:flex; gap:10px; margin-top:22px; flex-wrap:wrap">
+        <button class="btn" id="goInvestigate">Start investigating →</button>
+        <button class="btn ghost" id="goDatabase">Open database client →</button>
+      </div>
+    </section>
+
+    <!-- INVESTIGATE -->
+    <section class="page" id="page-investigate">
+      <h1>Username Investigation</h1>
+      <p class="sub">Scan a username across platforms to see where an account exists. Runs locally using this app's own browser engine — no server round-trip, so it's faster than the website. Results marked <b>UNKNOWN</b> mean the site showed a login wall or bot protection, so it couldn't actually be verified.</p>
+
+      <form id="osintForm">
+        <input type="text" id="osintHandle" placeholder="username" autocomplete="off" spellcheck="false" required />
+        <button type="submit" class="scan" id="osintSubmitBtn">Scan</button>
+      </form>
+
+      <div class="scan-loader hidden" id="scanLoader">
+        <svg class="scan-eye-svg" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs><clipPath id="scanLensClip"><circle cx="150" cy="140" r="100"/></clipPath></defs>
+          <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+          <g clip-path="url(#scanLensClip)">
+            <circle cx="150" cy="140" r="100" fill="#000000"/>
+            <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="#f4f4f4"/>
+            <g class="scan-iris">
+              <circle cx="146" cy="156" r="46" fill="#000000"/>
+              <circle cx="126" cy="138" r="6.5" fill="#f4f4f4"/>
+            </g>
+          </g>
+          <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
+        </svg>
+        <p class="scan-loader-text">Scanning platforms…</p>
+      </div>
+
+      <div id="osintResults"></div>
+      <div id="osintSummary"></div>
+      <div id="osintError"></div>
     </section>
 
     <!-- DATABASE -->
@@ -367,6 +456,101 @@
   }
   navItems.forEach((n) => n.addEventListener("click", () => showPage(n.dataset.page)));
   document.getElementById("goDatabase").addEventListener("click", () => showPage("database"));
+  document.getElementById("goInvestigate").addEventListener("click", () => {
+    showPage("investigate");
+    document.getElementById("osintHandle").focus();
+  });
+
+  /* ---------- OSINT investigate (runs locally via this app's own Chromium) ---------- */
+  const osintForm = document.getElementById("osintForm");
+  const osintHandleEl = document.getElementById("osintHandle");
+  const osintSubmitBtn = document.getElementById("osintSubmitBtn");
+  const osintResultsEl = document.getElementById("osintResults");
+  const osintSummaryEl = document.getElementById("osintSummary");
+  const osintErrorEl = document.getElementById("osintError");
+
+  const OSINT_REASON_LABELS = {
+    login_wall: "login wall — couldn't verify",
+    blocked: "bot protection / blocked — couldn't verify",
+    empty_page: "page didn't load — couldn't verify",
+    error: "an error occurred",
+    unreliable_check: "detection isn't reliable on this platform",
+    http_404: "HTTP 404",
+    http_410: "HTTP 410",
+  };
+
+  function osintBadgeFor(result) {
+    if (result.exists === true) return { cls: "ok", text: "FOUND" };
+    if (result.exists === false) return { cls: "no", text: "NOT FOUND" };
+    return { cls: "unk", text: "UNKNOWN" };
+  }
+
+  function renderOsintRow(result) {
+    const row = document.createElement("div");
+    row.className = "osint-row";
+
+    const left = document.createElement("div");
+    const nameEl = document.createElement("div");
+    nameEl.className = "name";
+    nameEl.textContent = result.name;
+
+    const urlEl = document.createElement("div");
+    urlEl.className = "url";
+    const a = document.createElement("a");
+    a.href = result.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = result.url;
+    urlEl.appendChild(a);
+
+    left.appendChild(nameEl);
+    left.appendChild(urlEl);
+
+    if (result.reason && OSINT_REASON_LABELS[result.reason]) {
+      const reasonEl = document.createElement("div");
+      reasonEl.className = "osint-reason";
+      reasonEl.textContent = OSINT_REASON_LABELS[result.reason];
+      left.appendChild(reasonEl);
+    }
+
+    const badgeInfo = osintBadgeFor(result);
+    const badge = document.createElement("span");
+    badge.className = "osint-badge " + badgeInfo.cls;
+    badge.textContent = badgeInfo.text;
+
+    row.appendChild(left);
+    row.appendChild(badge);
+    osintResultsEl.appendChild(row);
+  }
+
+  window.api.onOsintResult((result) => renderOsintRow(result));
+
+  osintForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const handle = osintHandleEl.value.trim();
+    if (!handle) return;
+
+    osintResultsEl.innerHTML = "";
+    osintSummaryEl.textContent = "";
+    osintErrorEl.textContent = "";
+    osintSubmitBtn.disabled = true;
+    osintSubmitBtn.textContent = "Scanning...";
+    document.getElementById("scanLoader").classList.remove("hidden");
+
+    const res = await window.api.checkHandle(handle);
+
+    osintSubmitBtn.disabled = false;
+    osintSubmitBtn.textContent = "Scan";
+    document.getElementById("scanLoader").classList.add("hidden");
+
+    if (!res.ok) {
+      osintErrorEl.textContent = res.error || "Scan failed.";
+      return;
+    }
+    const found = res.results.filter((r) => r.exists === true).length;
+    const unknown = res.results.filter((r) => r.exists === null).length;
+    osintSummaryEl.textContent = `${found} account(s) found, ${unknown} platform(s) couldn't be verified.`;
+  });
 
   /* ---------- database ---------- */
   const $ = (id) => document.getElementById(id);
@@ -575,7 +759,7 @@
   termEl.addEventListener("keydown", (e) => { if (e.key === "Enter") runSearch(); });
 
   /* wire sounds */
-  document.querySelectorAll(".enter-btn, .nav-item, .btn").forEach(attachSounds);
+  document.querySelectorAll(".enter-btn, .nav-item, .btn, button.scan").forEach(attachSounds);
 </script>
 </body>
 </html>

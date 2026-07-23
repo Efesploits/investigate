@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const db = require("./db");
+const checker = require("./checker");
 
 let win;
 
@@ -107,6 +108,17 @@ ipcMain.handle("db:importSqlFile", async (event, filePath) => {
     return await db.importSqlFile(filePath, (progress) => {
       event.sender.send("db:importProgress", progress);
     });
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle("osint:check", async (event, handle) => {
+  try {
+    const results = await checker.checkHandle(handle, (result) => {
+      event.sender.send("osint:result", result);
+    });
+    return { ok: true, results };
   } catch (err) {
     return { ok: false, error: err.message };
   }

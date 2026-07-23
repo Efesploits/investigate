@@ -156,6 +156,17 @@
     50%     { box-shadow: 0 0 22px 1px rgba(255,255,255,0.18); }
   }
 
+  .intro-credit {
+    position: absolute;
+    bottom: clamp(24px, 6vh, 56px);
+    margin: 0;
+    color: var(--muted);
+    font-size: .74rem;
+    letter-spacing: 1px;
+    opacity: 0;
+    animation: fadeUp .8s ease 5.1s forwards;
+  }
+
   /* ---------- APP ---------- */
   #app { display: none; min-height: 100vh; }
   #app.show { display: flex; }
@@ -214,6 +225,8 @@
   }
   .nav-item.active svg { opacity: 1; }
 
+  .footer-credit { margin-top: auto; padding: 14px 10px 4px; border-top: 1px solid var(--border); color: var(--muted); font-size: .68rem; letter-spacing: .3px; line-height: 1.5; }
+
   .content { flex: 1; padding: 42px clamp(20px, 5vw, 60px); max-width: 900px; }
   .page { display: none; animation: pageIn .35s ease; }
   .page.show { display: block; }
@@ -258,6 +271,19 @@
   .cta:hover { opacity: .85; }
   a.cta { text-decoration: none; }
   .db-note { color: var(--muted); font-size: .78rem; margin: 12px 0 0; letter-spacing: .3px; }
+
+  .scan-loader { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 30px 0 36px; }
+  .scan-loader.hidden { display: none; }
+  .scan-eye-svg { width: 84px; height: auto; filter: drop-shadow(0 0 18px rgba(255,255,255,0.10)); }
+  .scan-iris { transform-box: fill-box; transform-origin: center; animation: scanLook 2.1s ease-in-out infinite; }
+  @keyframes scanLook {
+    0%, 8%    { transform: translate(0, 0); }
+    30%       { transform: translate(-24px, 3px); }
+    50%       { transform: translate(0, 0); }
+    72%       { transform: translate(24px, 3px); }
+    92%,100%  { transform: translate(0, 0); }
+  }
+  .scan-loader-text { margin: 0; color: var(--muted); font-size: .82rem; letter-spacing: 1px; }
 
   form { display: flex; gap: 10px; margin: 4px 0 22px; }
   input[type=text] {
@@ -323,6 +349,7 @@
     }
     .brand { border-bottom: none; margin: 0; padding: 6px 8px; }
     .nav-label { display: none; }
+    .footer-credit { margin: 0; border-top: none; padding: 6px 8px; width: 100%; order: 99; }
     .content { padding: 28px 18px; }
     form { flex-direction: column; }
   }
@@ -363,6 +390,7 @@
   <h1 class="intro-title">m3's investigation tool</h1>
   <p class="intro-sub">osint · username tracing</p>
   <button class="enter-btn" id="enterBtn">ENTER</button>
+  <p class="intro-credit">m3fxn — theres always a clue, find it.</p>
 </div>
 
 <!-- ===================== APP ===================== -->
@@ -396,6 +424,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
       Database
     </div>
+    <div class="footer-credit">m3fxn — theres always a clue, find it.</div>
   </aside>
 
   <main class="content">
@@ -432,11 +461,29 @@
     <section class="page" id="page-investigate">
       <h1>Username Investigation</h1>
       <p class="sub">Scan a username across platforms to see where an account exists. Results marked <b>UNKNOWN</b> mean the site showed a login wall or bot protection, so it couldn't actually be verified.</p>
+      <p class="db-note">*client is recommended for faster results*</p>
 
       <form id="form">
         <input type="text" id="handle" placeholder="username" autocomplete="off" spellcheck="false" required />
         <button type="submit" class="scan" id="submitBtn">Scan</button>
       </form>
+
+      <div class="scan-loader hidden" id="scanLoader">
+        <svg class="scan-eye-svg" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs><clipPath id="scanLensClip"><circle cx="150" cy="140" r="100"/></clipPath></defs>
+          <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+          <g clip-path="url(#scanLensClip)">
+            <circle cx="150" cy="140" r="100" fill="#000000"/>
+            <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="#f4f4f4"/>
+            <g class="scan-iris">
+              <circle cx="146" cy="156" r="46" fill="#000000"/>
+              <circle cx="126" cy="138" r="6.5" fill="#f4f4f4"/>
+            </g>
+          </g>
+          <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
+        </svg>
+        <p class="scan-loader-text">Scanning platforms…</p>
+      </div>
 
       <div id="results"></div>
       <div id="summary"></div>
@@ -618,6 +665,7 @@
   const resultsEl = document.getElementById("results");
   const summaryEl = document.getElementById("summary");
   const errorEl = document.getElementById("error");
+  const scanLoader = document.getElementById("scanLoader");
 
   const REASON_LABELS = {
     login_wall: "login wall — couldn't verify",
@@ -683,6 +731,7 @@
     errorEl.textContent = "";
     submitBtn.disabled = true;
     submitBtn.textContent = "Scanning...";
+    scanLoader.classList.remove("hidden");
 
     const results = [];
     const source = new EventSource("/api/check?handle=" + encodeURIComponent(handle));
@@ -700,6 +749,7 @@
       source.close();
       submitBtn.disabled = false;
       submitBtn.textContent = "Scan";
+      scanLoader.classList.add("hidden");
     });
 
     source.addEventListener("error", (e) => {
@@ -711,6 +761,7 @@
       source.close();
       submitBtn.disabled = false;
       submitBtn.textContent = "Scan";
+      scanLoader.classList.add("hidden");
     });
   });
 </script>
