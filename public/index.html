@@ -118,6 +118,18 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
+  .print-tag {
+    position: absolute;
+    top: clamp(40px, 12vh, 130px);
+    margin: 0;
+    color: var(--muted);
+    font-size: clamp(.9rem, 2.4vw, 1.15rem);
+    font-style: italic;
+    letter-spacing: 2px;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.5s forwards;
+  }
+
   .enter-btn {
     margin-top: 6px;
     padding: 13px 42px;
@@ -244,6 +256,8 @@
     transition: opacity .15s ease;
   }
   .cta:hover { opacity: .85; }
+  a.cta { text-decoration: none; }
+  .db-note { color: var(--muted); font-size: .78rem; margin: 12px 0 0; letter-spacing: .3px; }
 
   form { display: flex; gap: 10px; margin: 4px 0 22px; }
   input[type=text] {
@@ -318,6 +332,7 @@
 
 <!-- ===================== INTRO ===================== -->
 <div id="intro">
+  <p class="print-tag">everything leaves a print.</p>
   <div class="glass-wrap">
     <svg class="glass" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -377,6 +392,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
       Investigate
     </div>
+    <div class="nav-item" data-page="database">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+      Database
+    </div>
   </aside>
 
   <main class="content">
@@ -423,6 +442,31 @@
       <div id="summary"></div>
       <div id="error"></div>
     </section>
+
+    <!-- DATABASE -->
+    <section class="page" id="page-database">
+      <div class="home-hero">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#f4f4f4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:64px;height:64px;flex-shrink:0"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+        <div>
+          <h1>Connect your own database</h1>
+          <p class="sub">Connect your own database for more advanced investigations.</p>
+        </div>
+      </div>
+
+      <p class="sub">The desktop client lets you plug into your own SQL server (MySQL, PostgreSQL or a SQLite file) and search every table for a username or any term — no queries to write, no setup hassle. Your credentials and data never leave your machine.</p>
+
+      <div class="cards">
+        <div class="card"><h3>MySQL · PostgreSQL · SQLite</h3><p>Connect with a host/port/user or just point it at a .db file.</p></div>
+        <div class="card"><h3>Full-text sweep</h3><p>Scans text columns across all tables for your search term.</p></div>
+        <div class="card"><h3>Fully offline</h3><p>Runs locally as a standalone .exe — nothing is uploaded.</p></div>
+      </div>
+
+      <a class="cta download" id="downloadClient" href="/download/investigate-client.exe" download>
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
+        Download Client
+      </a>
+      <p class="db-note">Windows · standalone desktop app · connects to your local or remote SQL database</p>
+    </section>
   </main>
 </div>
 
@@ -438,7 +482,20 @@
     if (audioCtx.state === "suspended") audioCtx.resume();
     return audioCtx;
   }
-  function tone({ freq = 440, type = "sine", dur = 0.08, gain = 0.08, slideTo = null }) {
+  // cached noise buffer for the thud's "knock" texture
+  let noiseBuffer = null;
+  function getNoiseBuffer(ctx) {
+    if (noiseBuffer) return noiseBuffer;
+    const len = Math.floor(ctx.sampleRate * 0.25);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    noiseBuffer = buf;
+    return buf;
+  }
+
+  // low-body sine/triangle thump with a fast pitch drop — the "tok"
+  function thump({ freq = 130, dropTo = 46, type = "sine", dur = 0.16, gain = 0.28 }) {
     const ctx = getCtx();
     if (!ctx) return;
     const t = ctx.currentTime;
@@ -446,18 +503,44 @@
     const g = ctx.createGain();
     osc.type = type;
     osc.frequency.setValueAtTime(freq, t);
-    if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    osc.frequency.exponentialRampToValueAtTime(dropTo, t + dur);
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(gain, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(gain, t + 0.006);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     osc.connect(g).connect(ctx.destination);
     osc.start(t);
     osc.stop(t + dur + 0.02);
   }
-  // hover: quick sharp blip
-  const hoverSound = () => tone({ freq: 660, type: "triangle", dur: 0.05, gain: 0.05 });
-  // click: punchy, aggressive downward zap
-  const clickSound = () => tone({ freq: 340, type: "square", dur: 0.11, gain: 0.11, slideTo: 130 });
+
+  // filtered noise burst layered under the thump for a knock/tok texture
+  function knock({ dur = 0.05, gain = 0.22, tone = 900 }) {
+    const ctx = getCtx();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    const src = ctx.createBufferSource();
+    src.buffer = getNoiseBuffer(ctx);
+    const filt = ctx.createBiquadFilter();
+    filt.type = "lowpass";
+    filt.frequency.setValueAtTime(tone, t);
+    filt.frequency.exponentialRampToValueAtTime(tone * 0.3, t + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(filt).connect(g).connect(ctx.destination);
+    src.start(t);
+    src.stop(t + dur + 0.02);
+  }
+
+  // hover: soft, shallow tok
+  const hoverSound = () => {
+    thump({ freq: 150, dropTo: 80, type: "sine", dur: 0.09, gain: 0.14 });
+    knock({ dur: 0.03, gain: 0.08, tone: 1400 });
+  };
+  // click: deep, heavy tok
+  const clickSound = () => {
+    thump({ freq: 120, dropTo: 42, type: "triangle", dur: 0.18, gain: 0.34 });
+    knock({ dur: 0.06, gain: 0.24, tone: 1000 });
+  };
 
   function attachSounds(el) {
     el.addEventListener("mouseenter", hoverSound);
