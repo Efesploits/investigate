@@ -11,4 +11,6 @@ contextBridge.exposeInMainWorld("api", {
   pickSqlFile: () => ipcRenderer.invoke("db:pickSqlFile"),
   importSqlFile: (filePath) => ipcRenderer.invoke("db:importSqlFile", filePath),
   onImportProgress: (cb) => ipcRenderer.on("db:importProgress", (_e, data) => cb(data)),
+  checkHandle: (handle) => ipcRenderer.invoke("osint:check", handle),
+  onOsintResult: (cb) => ipcRenderer.on("osint:result", (_e, data) => cb(data)),
 });
