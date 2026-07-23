@@ -1,6 +1,7 @@
 "use strict";
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("path");
+const fs = require("fs");
 const db = require("./db");
 
 let win;
@@ -85,4 +86,28 @@ ipcMain.handle("db:pickSqlite", async () => {
   });
   if (res.canceled || !res.filePaths.length) return { ok: false };
   return { ok: true, path: res.filePaths[0] };
+});
+
+ipcMain.handle("db:pickSqlFile", async () => {
+  const res = await dialog.showOpenDialog(win, {
+    title: "Select a .sql dump file",
+    properties: ["openFile"],
+    filters: [
+      { name: "SQL dump", extensions: ["sql"] },
+      { name: "All files", extensions: ["*"] },
+    ],
+  });
+  if (res.canceled || !res.filePaths.length) return { ok: false };
+  const stat = fs.statSync(res.filePaths[0]);
+  return { ok: true, path: res.filePaths[0], size: stat.size };
+});
+
+ipcMain.handle("db:importSqlFile", async (event, filePath) => {
+  try {
+    return await db.importSqlFile(filePath, (progress) => {
+      event.sender.send("db:importProgress", progress);
+    });
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
 });

@@ -238,6 +238,7 @@
               <option value="sqlite">SQLite (file)</option>
               <option value="mysql">MySQL / MariaDB</option>
               <option value="postgres">PostgreSQL</option>
+              <option value="sqlfile">SQL dump (.sql file)</option>
             </select>
           </label>
         </div>
@@ -246,6 +247,15 @@
         <div id="sqliteFields" class="conn-row">
           <button class="btn ghost" id="pickBtn" type="button">Choose .db file…</button>
           <span class="file-name" id="sqlitePath">No file selected</span>
+        </div>
+
+        <!-- .sql dump fields -->
+        <div id="sqlFileFields" class="hidden">
+          <div class="conn-row">
+            <button class="btn ghost" id="pickSqlBtn" type="button">Choose .sql file…</button>
+            <span class="file-name" id="sqlFilePath">No file selected</span>
+          </div>
+          <p class="db-note" id="sqlFileWarning" style="margin-top:8px"></p>
         </div>
 
         <!-- server fields -->
@@ -261,6 +271,12 @@
           <button class="btn" id="connectBtn" type="button">Connect</button>
           <button class="btn ghost hidden" id="disconnectBtn" type="button">Disconnect</button>
           <span class="status muted" id="connStatus">Not connected.</span>
+        </div>
+        <div class="hidden" id="importProgressWrap" style="margin-top:12px">
+          <div style="height:8px;border-radius:999px;background:var(--bg2);overflow:hidden;border:1px solid var(--border)">
+            <div id="importBar" style="height:100%;width:0%;background:var(--text);transition:width .2s ease"></div>
+          </div>
+          <p class="db-note" id="importStatus" style="margin-top:8px"></p>
         </div>
       </div>
 
@@ -354,17 +370,28 @@
 
   /* ---------- database ---------- */
   const $ = (id) => document.getElementById(id);
-  const dbType = $("dbType"), sqliteFields = $("sqliteFields"), serverFields = $("serverFields");
+  const dbType = $("dbType"), sqliteFields = $("sqliteFields"), serverFields = $("serverFields"), sqlFileFields = $("sqlFileFields");
   const connStatus = $("connStatus"), connectBtn = $("connectBtn"), disconnectBtn = $("disconnectBtn");
   const termEl = $("term"), searchBtn = $("searchBtn");
+  const importWrap = $("importProgressWrap"), importBar = $("importBar"), importStatus = $("importStatus");
   let sqlitePath = "";
+  let sqlFilePath = "";
+
+  function fmtBytes(n) {
+    if (n >= 1e9) return (n / 1e9).toFixed(1) + " GB";
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + " MB";
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + " KB";
+    return n + " B";
+  }
 
   function refreshFields() {
     const t = dbType.value;
     sqliteFields.classList.toggle("hidden", t !== "sqlite");
-    serverFields.classList.toggle("hidden", t === "sqlite");
+    sqlFileFields.classList.toggle("hidden", t !== "sqlfile");
+    serverFields.classList.toggle("hidden", t === "sqlite" || t === "sqlfile");
     if (t === "mysql") $("port").placeholder = "3306";
     if (t === "postgres") $("port").placeholder = "5432";
+    connectBtn.textContent = t === "sqlfile" ? "Import & Connect" : "Connect";
   }
   dbType.addEventListener("change", refreshFields);
   refreshFields();
@@ -374,18 +401,56 @@
     if (res && res.ok) { sqlitePath = res.path; $("sqlitePath").textContent = res.path; }
   });
 
+  $("pickSqlBtn").addEventListener("click", async () => {
+    const res = await window.api.pickSqlFile();
+    if (res && res.ok) {
+      sqlFilePath = res.path;
+      $("sqlFilePath").textContent = res.path + " (" + fmtBytes(res.size) + ")";
+      const warn = $("sqlFileWarning");
+      if (res.size > 1.2e9) {
+        warn.textContent = "This file is large — the in-app database engine tops out at a few GB of memory, so a dump this size may only import partially. For very large dumps, connecting directly to MySQL (with a FULLTEXT index) is faster and more reliable.";
+      } else {
+        warn.textContent = "";
+      }
+    }
+  });
+
   function setConnected(on, label) {
     termEl.disabled = !on; searchBtn.disabled = !on;
     disconnectBtn.classList.toggle("hidden", !on);
     connectBtn.classList.toggle("hidden", on);
-    [dbType, $("pickBtn"), $("host"), $("port"), $("user"), $("password"), $("database")].forEach((el) => { if (el) el.disabled = on; });
+    [dbType, $("pickBtn"), $("pickSqlBtn"), $("host"), $("port"), $("user"), $("password"), $("database")].forEach((el) => { if (el) el.disabled = on; });
     if (on) { connStatus.className = "status ok"; connStatus.textContent = "Connected · " + label; }
     else { connStatus.className = "status muted"; connStatus.textContent = "Not connected."; }
+  }
+
+  window.api.onImportProgress((p) => {
+    importWrap.classList.remove("hidden");
+    const pct = p.totalBytes ? Math.min(100, Math.round((p.bytesRead / p.totalBytes) * 100)) : 0;
+    importBar.style.width = pct + "%";
+    importStatus.textContent =
+      (p.done ? "Import finished — " : "Importing… ") +
+      p.tables + " table(s), ~" + p.rows.toLocaleString() + " row(s), " +
+      fmtBytes(p.bytesRead) + " / " + fmtBytes(p.totalBytes) + " (" + pct + "%)";
+  });
+
+  async function importSelectedSqlFile() {
+    if (!sqlFilePath) { connStatus.className = "status err"; connStatus.textContent = "Choose a .sql file first."; return; }
+    connStatus.className = "status muted"; connStatus.textContent = "Importing…";
+    importWrap.classList.remove("hidden"); importBar.style.width = "0%"; importStatus.textContent = "Starting import…";
+    connectBtn.disabled = true;
+    const res = await window.api.importSqlFile(sqlFilePath);
+    connectBtn.disabled = false;
+    if (res.ok) { setConnected(true, res.label); buildTableSections(); }
+    else { connStatus.className = "status err"; connStatus.textContent = "Import failed: " + res.error; }
   }
 
   connectBtn.addEventListener("click", async () => {
     $("dbError").textContent = ""; connStatus.className = "status muted"; connStatus.textContent = "Connecting…";
     const t = dbType.value;
+
+    if (t === "sqlfile") { await importSelectedSqlFile(); return; }
+
     const cfg = { type: t };
     if (t === "sqlite") {
       if (!sqlitePath) { connStatus.className = "status err"; connStatus.textContent = "Choose a .db file first."; return; }
@@ -405,6 +470,7 @@
     setConnected(false);
     $("dbResults").innerHTML = ""; $("dbSummary").textContent = "";
     $("tableSections").innerHTML = ""; $("perTableWrap").classList.add("hidden");
+    importWrap.classList.add("hidden");
   });
 
   function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
