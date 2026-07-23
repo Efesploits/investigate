@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>m3's investigation tool</title>
+<style>
+  :root {
+    --bg: #000000; --bg2: #0a0a0a; --panel: #101010; --panel2: #161616;
+    --border: #262626; --text: #f4f4f4; --muted: #888888; --accent: #ffffff;
+    --ok: #f2f2f2;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
+    background: var(--bg); color: var(--text); overflow: hidden;
+    user-select: none;
+  }
+  body.entered { overflow: auto; }
+
+  /* ---------- INTRO ---------- */
+  #intro {
+    position: fixed; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 26px; z-index: 50;
+    background: radial-gradient(760px 620px at 50% 34%, #141414 0%, #000 72%);
+    transition: opacity .7s ease, transform .7s ease;
+  }
+  #intro.leaving { opacity: 0; transform: scale(1.08); pointer-events: none; }
+  .glass-wrap {
+    width: min(300px, 60vw);
+    filter: drop-shadow(0 0 34px rgba(255,255,255,.10));
+    animation: glassIn 1s cubic-bezier(.2,.8,.2,1) both, float 6s ease-in-out 1s infinite;
+  }
+  .glass { width: 100%; height: auto; display: block; }
+  @keyframes glassIn { 0% { opacity: 0; transform: scale(.55) rotate(-12deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+  @keyframes float { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-12px) rotate(1.5deg); } }
+  .eye-inner {
+    transform-box: fill-box; transform-origin: center; transform: scaleY(0); opacity: 0;
+    animation: eyeOpen .55s cubic-bezier(.3,1.15,.35,1) .9s forwards, blink 4s cubic-bezier(.6,0,.4,1) 3.6s infinite;
+  }
+  @keyframes eyeOpen { 0% { transform: scaleY(0); opacity: 0; } 1% { transform: scaleY(0); opacity: 1; } 60% { transform: scaleY(1.18); opacity: 1; } 100% { transform: scaleY(1); opacity: 1; } }
+  @keyframes blink { 0%,88%,100% { transform: scaleY(1); } 92% { transform: scaleY(.08); } 95% { transform: scaleY(1); } }
+  .iris { transform-box: fill-box; transform-origin: center; animation: look 3s cubic-bezier(.45,.05,.35,1) 1.5s both; }
+  .iris.track { transition: transform .45s cubic-bezier(.22,.61,.36,1); }
+  @keyframes look {
+    0%,8% { transform: translate(0,0); }
+    20%,30% { transform: translate(-26px,4px); }
+    44%,56% { transform: translate(28px,2px); }
+    70%,80% { transform: translate(-14px,8px); }
+    92%,100% { transform: translate(0,0); }
+  }
+  .intro-title { font-size: clamp(1.4rem,4.5vw,2.2rem); font-weight: 800; margin: 0; text-align: center; color: var(--text); opacity: 0; animation: fadeUp .8s ease 3.7s forwards; }
+  .intro-sub { color: var(--muted); font-size: .8rem; letter-spacing: 3px; text-transform: uppercase; opacity: 0; margin: -14px 0 0; animation: fadeUp .8s ease 4s forwards; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .print-tag { position: absolute; top: clamp(30px,10vh,100px); margin: 0; color: var(--muted); font-size: clamp(.85rem,2.2vw,1.05rem); font-style: italic; letter-spacing: 2px; opacity: 0; animation: fadeUp 1s ease .5s forwards; }
+  .enter-btn {
+    margin-top: 6px; padding: 12px 40px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.55); background: transparent; color: var(--text);
+    font-size: 1rem; font-weight: 700; letter-spacing: 4px; cursor: pointer; opacity: 0;
+    animation: fadeUp .7s ease 4.6s forwards, pulse 2.4s ease-in-out 5.3s infinite;
+    transition: transform .15s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
+  }
+  .enter-btn:hover { transform: translateY(-2px); background: var(--text); color: #000; box-shadow: 0 0 26px rgba(255,255,255,.25); }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); } 50% { box-shadow: 0 0 22px 1px rgba(255,255,255,.18); } }
+
+  /* ---------- APP ---------- */
+  #app { display: none; min-height: 100vh; }
+  #app.show { display: flex; }
+  .sidebar { width: 240px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); padding: 20px 14px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 0; height: 100vh; }
+  .brand { display: flex; align-items: center; gap: 11px; padding: 6px 8px 18px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+  .brand svg { width: 34px; height: 34px; flex-shrink: 0; }
+  .brand .bt { font-weight: 800; font-size: .95rem; line-height: 1.15; }
+  .brand .bs { color: var(--muted); font-size: .66rem; letter-spacing: 1.5px; text-transform: uppercase; }
+  .nav-label { color: var(--muted); font-size: .66rem; letter-spacing: 2px; text-transform: uppercase; padding: 8px 10px 4px; }
+  .nav-item { display: flex; align-items: center; gap: 11px; padding: 11px 12px; border-radius: 10px; color: var(--text); font-size: .93rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: background .15s ease, border-color .15s ease; }
+  .nav-item svg { width: 18px; height: 18px; opacity: .75; }
+  .nav-item:hover { background: var(--panel2); }
+  .nav-item.active { background: var(--panel2); border-color: #3a3a3a; color: #fff; }
+  .nav-item.active svg { opacity: 1; }
+  .content { flex: 1; padding: 40px clamp(20px,5vw,54px); max-width: 940px; }
+  .page { display: none; animation: pageIn .35s ease; }
+  .page.show { display: block; }
+  @keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  h1 { font-size: 1.6rem; margin: 0 0 6px; }
+  p.sub { color: var(--muted); margin: 0 0 24px; font-size: .9rem; line-height: 1.55; max-width: 640px; }
+  .home-hero { display: flex; align-items: center; gap: 20px; padding: 24px; border: 1px solid var(--border); border-radius: 16px; background: var(--panel); margin-bottom: 24px; }
+  .home-hero svg { width: 66px; height: 66px; flex-shrink: 0; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 14px; }
+  .card { padding: 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
+  .card h3 { margin: 0 0 6px; font-size: 1rem; }
+  .card p { margin: 0; color: var(--muted); font-size: .84rem; line-height: 1.5; }
+
+  /* connection form */
+  .conn { border: 1px solid var(--border); border-radius: 14px; background: var(--panel); padding: 20px; margin-bottom: 20px; }
+  .conn .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 12px; }
+  label.fld { display: flex; flex-direction: column; gap: 6px; font-size: .74rem; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; }
+  input, select { font-family: inherit; }
+  .conn input, .conn select {
+    padding: 11px 13px; border-radius: 9px; border: 1px solid var(--border);
+    background: var(--bg2); color: var(--text); font-size: .92rem; outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .conn input:focus, .conn select:focus { border-color: #666; box-shadow: 0 0 0 3px rgba(255,255,255,.07); }
+  .conn-row { display: flex; align-items: center; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  .file-pick { display: flex; gap: 10px; align-items: center; }
+  .file-name { color: var(--muted); font-size: .84rem; word-break: break-all; }
+  .btn {
+    padding: 11px 22px; border-radius: 10px; border: none; background: var(--text); color: #000;
+    font-weight: 800; font-size: .92rem; cursor: pointer; transition: opacity .15s ease;
+  }
+  .btn:hover { opacity: .85; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); font-weight: 600; }
+  .status { font-size: .86rem; }
+  .status.ok { color: #8fe0a0; }
+  .status.err { color: #e58a8a; }
+  .status.muted { color: var(--muted); }
+
+  .search-bar { display: flex; gap: 10px; margin: 4px 0 20px; }
+  .search-bar input { flex: 1; padding: 13px 16px; border-radius: 11px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: 1rem; outline: none; }
+  .search-bar input:focus { border-color: #666; box-shadow: 0 0 0 3px rgba(255,255,255,.08); }
+  .search-bar input:disabled { opacity: .5; }
+
+  .tbl-card { border: 1px solid var(--border); border-radius: 12px; background: var(--panel); margin-bottom: 14px; overflow: hidden; animation: pageIn .25s ease; }
+  .tbl-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .tbl-head .tname { font-weight: 800; }
+  .tbl-head .tcount { font-size: .74rem; font-weight: 800; padding: 4px 10px; border-radius: 999px; background: var(--ok); color: #000; }
+  .tbl-scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .82rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #1c1c1c; white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+  th { color: var(--muted); font-weight: 700; text-transform: uppercase; font-size: .68rem; letter-spacing: .5px; }
+  td { color: #dcdcdc; user-select: text; }
+  mark { background: #f2f2f2; color: #000; border-radius: 3px; padding: 0 2px; }
+  #dbSummary { margin: 6px 0 16px; color: var(--muted); font-size: .88rem; }
+  #dbError { color: #e58a8a; font-size: .9rem; margin-top: 10px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="intro">
+  <p class="print-tag">everything leaves a print.</p>
+  <div class="glass-wrap">
+    <svg class="glass" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
+      <defs><clipPath id="lensClip"><circle cx="150" cy="140" r="100"/></clipPath></defs>
+      <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+      <g clip-path="url(#lensClip)">
+        <circle cx="150" cy="140" r="100" fill="#000"/>
+        <g class="eye-inner">
+          <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="#f4f4f4"/>
+          <g class="iris"><circle cx="146" cy="156" r="46" fill="#000"/><circle cx="126" cy="138" r="6.5" fill="#f4f4f4"/></g>
+        </g>
+      </g>
+      <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
+    </svg>
+  </div>
+  <h1 class="intro-title">m3's investigation tool</h1>
+  <p class="intro-sub">osint · sql database client</p>
+  <button class="enter-btn" id="enterBtn">ENTER</button>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+        <circle cx="150" cy="140" r="100" fill="#000"/>
+        <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="#f4f4f4"/>
+        <circle cx="146" cy="156" r="46" fill="#000"/><circle cx="126" cy="138" r="6" fill="#f4f4f4"/>
+        <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
+      </svg>
+      <div><div class="bt">m3's tool</div><div class="bs">db client</div></div>
+    </div>
+    <div class="nav-label">Menu</div>
+    <div class="nav-item active" data-page="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      Home
+    </div>
+    <div class="nav-item" data-page="database">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+      Database
+    </div>
+  </aside>
+
+  <main class="content">
+    <!-- HOME -->
+    <section class="page show" id="page-home">
+      <div class="home-hero">
+        <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+          <circle cx="150" cy="140" r="100" fill="#000"/>
+          <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="#f4f4f4"/>
+          <circle cx="146" cy="156" r="46" fill="#000"/><circle cx="126" cy="138" r="6" fill="#f4f4f4"/>
+          <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
+        </svg>
+        <div>
+          <h1>m3's investigation tool — desktop</h1>
+          <p class="sub">Connect your own database and sweep every table for a username or any term. Everything runs locally; your credentials never leave this machine.</p>
+        </div>
+      </div>
+      <div class="cards">
+        <div class="card"><h3>MySQL · PostgreSQL · SQLite</h3><p>Connect with host / port / user, or just open a local .db file.</p></div>
+        <div class="card"><h3>Full-text sweep</h3><p>Scans text columns across all tables — no SQL to write.</p></div>
+        <div class="card"><h3>Fully offline</h3><p>No servers, no uploads. It talks straight to your database.</p></div>
+      </div>
+      <button class="btn" id="goDatabase" style="margin-top:22px">Open database client →</button>
+    </section>
+
+    <!-- DATABASE -->
+    <section class="page" id="page-database">
+      <h1>Connect your own database</h1>
+      <p class="sub">Pick your engine, connect, then search. Text columns across every table are scanned for your term.</p>
+
+      <div class="conn">
+        <div class="grid">
+          <label class="fld">Engine
+            <select id="dbType">
+              <option value="sqlite">SQLite (file)</option>
+              <option value="mysql">MySQL / MariaDB</option>
+              <option value="postgres">PostgreSQL</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- sqlite fields -->
+        <div id="sqliteFields" class="conn-row">
+          <button class="btn ghost" id="pickBtn" type="button">Choose .db file…</button>
+          <span class="file-name" id="sqlitePath">No file selected</span>
+        </div>
+
+        <!-- server fields -->
+        <div id="serverFields" class="grid hidden" style="margin-top:16px">
+          <label class="fld">Host <input type="text" id="host" value="127.0.0.1" spellcheck="false"></label>
+          <label class="fld">Port <input type="text" id="port" placeholder="3306 / 5432" spellcheck="false"></label>
+          <label class="fld">User <input type="text" id="user" spellcheck="false"></label>
+          <label class="fld">Password <input type="password" id="password"></label>
+          <label class="fld">Database <input type="text" id="database" spellcheck="false"></label>
+        </div>
+
+        <div class="conn-row">
+          <button class="btn" id="connectBtn" type="button">Connect</button>
+          <button class="btn ghost hidden" id="disconnectBtn" type="button">Disconnect</button>
+          <span class="status muted" id="connStatus">Not connected.</span>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" id="term" placeholder="search a username or term…" autocomplete="off" spellcheck="false" disabled>
+        <button class="btn" id="searchBtn" disabled>Search</button>
+      </div>
+
+      <div id="dbSummary"></div>
+      <div id="dbResults"></div>
+      <div id="dbError"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+  /* ---------- sounds (synthesized) ---------- */
+  let audioCtx = null, noiseBuffer = null;
+  function getCtx() {
+    if (!audioCtx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; audioCtx = new AC(); }
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+  function noiseBuf(ctx) {
+    if (noiseBuffer) return noiseBuffer;
+    const len = Math.floor(ctx.sampleRate * .25), b = ctx.createBuffer(1, len, ctx.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1; noiseBuffer = b; return b;
+  }
+  function thump({ freq = 130, dropTo = 46, type = "sine", dur = .16, gain = .28 }) {
+    const ctx = getCtx(); if (!ctx) return; const t = ctx.currentTime;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t); o.frequency.exponentialRampToValueAtTime(dropTo, t + dur);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + dur + .02);
+  }
+  function knock({ dur = .05, gain = .22, tone = 900 }) {
+    const ctx = getCtx(); if (!ctx) return; const t = ctx.currentTime;
+    const s = ctx.createBufferSource(); s.buffer = noiseBuf(ctx);
+    const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(tone, t); f.frequency.exponentialRampToValueAtTime(tone * .3, t + dur);
+    const g = ctx.createGain(); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    s.connect(f).connect(g).connect(ctx.destination); s.start(t); s.stop(t + dur + .02);
+  }
+  const hoverSound = () => { thump({ freq: 150, dropTo: 80, type: "sine", dur: .09, gain: .14 }); knock({ dur: .03, gain: .08, tone: 1400 }); };
+  const clickSound = () => { thump({ freq: 120, dropTo: 42, type: "triangle", dur: .18, gain: .34 }); knock({ dur: .06, gain: .24, tone: 1000 }); };
+  function attachSounds(el) { el.addEventListener("mouseenter", hoverSound); el.addEventListener("click", clickSound); }
+  window.addEventListener("pointerdown", () => getCtx(), { once: true });
+
+  /* ---------- eye follows mouse ---------- */
+  const irisEl = document.querySelector("#intro .iris"), glassSvg = document.querySelector("#intro .glass");
+  let tracking = false;
+  irisEl.addEventListener("animationend", (e) => {
+    if (e.animationName !== "look") return;
+    irisEl.style.animation = "none"; irisEl.classList.add("track"); tracking = true;
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (!tracking) return;
+    const r = glassSvg.getBoundingClientRect();
+    let dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
+    let dy = (e.clientY - (r.top + r.height * .44)) / (r.height / 2);
+    dx = Math.max(-1, Math.min(1, dx)); dy = Math.max(-1, Math.min(1, dy));
+    irisEl.style.transform = `translate(${dx * 22}px, ${dy * 15}px)`;
+  });
+
+  /* ---------- intro -> app ---------- */
+  const intro = document.getElementById("intro"), app = document.getElementById("app");
+  function enterApp() {
+    intro.classList.add("leaving"); document.body.classList.add("entered");
+    setTimeout(() => { intro.style.display = "none"; app.classList.add("show"); }, 700);
+  }
+  document.getElementById("enterBtn").addEventListener("click", enterApp);
+  document.addEventListener("keydown", (e) => {
+    if (!document.body.classList.contains("entered") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); enterApp(); }
+  });
+
+  /* ---------- nav ---------- */
+  const navItems = document.querySelectorAll(".nav-item");
+  function showPage(p) {
+    navItems.forEach((n) => n.classList.toggle("active", n.dataset.page === p));
+    document.querySelectorAll(".page").forEach((s) => s.classList.remove("show"));
+    document.getElementById("page-" + p).classList.add("show");
+  }
+  navItems.forEach((n) => n.addEventListener("click", () => showPage(n.dataset.page)));
+  document.getElementById("goDatabase").addEventListener("click", () => showPage("database"));
+
+  /* ---------- database ---------- */
+  const $ = (id) => document.getElementById(id);
+  const dbType = $("dbType"), sqliteFields = $("sqliteFields"), serverFields = $("serverFields");
+  const connStatus = $("connStatus"), connectBtn = $("connectBtn"), disconnectBtn = $("disconnectBtn");
+  const termEl = $("term"), searchBtn = $("searchBtn");
+  let sqlitePath = "";
+
+  function refreshFields() {
+    const t = dbType.value;
+    sqliteFields.classList.toggle("hidden", t !== "sqlite");
+    serverFields.classList.toggle("hidden", t === "sqlite");
+    if (t === "mysql") $("port").placeholder = "3306";
+    if (t === "postgres") $("port").placeholder = "5432";
+  }
+  dbType.addEventListener("change", refreshFields);
+  refreshFields();
+
+  $("pickBtn").addEventListener("click", async () => {
+    const res = await window.api.pickSqlite();
+    if (res && res.ok) { sqlitePath = res.path; $("sqlitePath").textContent = res.path; }
+  });
+
+  function setConnected(on, label) {
+    termEl.disabled = !on; searchBtn.disabled = !on;
+    disconnectBtn.classList.toggle("hidden", !on);
+    connectBtn.classList.toggle("hidden", on);
+    [dbType, $("pickBtn"), $("host"), $("port"), $("user"), $("password"), $("database")].forEach((el) => { if (el) el.disabled = on; });
+    if (on) { connStatus.className = "status ok"; connStatus.textContent = "Connected · " + label; }
+    else { connStatus.className = "status muted"; connStatus.textContent = "Not connected."; }
+  }
+
+  connectBtn.addEventListener("click", async () => {
+    $("dbError").textContent = ""; connStatus.className = "status muted"; connStatus.textContent = "Connecting…";
+    const t = dbType.value;
+    const cfg = { type: t };
+    if (t === "sqlite") {
+      if (!sqlitePath) { connStatus.className = "status err"; connStatus.textContent = "Choose a .db file first."; return; }
+      cfg.sqlitePath = sqlitePath;
+    } else {
+      cfg.host = $("host").value.trim(); cfg.port = $("port").value.trim();
+      cfg.user = $("user").value.trim(); cfg.password = $("password").value; cfg.database = $("database").value.trim();
+      if (!cfg.database) { connStatus.className = "status err"; connStatus.textContent = "Database name is required."; return; }
+    }
+    const res = await window.api.connect(cfg);
+    if (res.ok) setConnected(true, res.label);
+    else { connStatus.className = "status err"; connStatus.textContent = "Failed: " + res.error; }
+  });
+
+  disconnectBtn.addEventListener("click", async () => {
+    await window.api.disconnect();
+    setConnected(false);
+    $("dbResults").innerHTML = ""; $("dbSummary").textContent = "";
+  });
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+  function hl(val, term) {
+    if (val === null || val === undefined) return '<span style="color:#555">null</span>';
+    const s = esc(val); const t = esc(term);
+    try { return s.replace(new RegExp("(" + t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi"), "<mark>$1</mark>"); }
+    catch (_) { return s; }
+  }
+
+  async function runSearch() {
+    const term = termEl.value.trim();
+    $("dbError").textContent = ""; $("dbResults").innerHTML = ""; $("dbSummary").textContent = "";
+    if (!term) return;
+    searchBtn.disabled = true; searchBtn.textContent = "Searching…";
+    const res = await window.api.search(term);
+    searchBtn.disabled = false; searchBtn.textContent = "Search";
+    if (!res.ok) { $("dbError").textContent = res.error; return; }
+
+    $("dbSummary").textContent = `Scanned ${res.tablesScanned} table(s) · matches in ${res.matched} table(s) for "${res.term}".`;
+    if (!res.matches.length) { $("dbResults").innerHTML = '<div class="card"><p>No matches found.</p></div>'; return; }
+
+    const frag = document.createDocumentFragment();
+    for (const m of res.matches) {
+      const card = document.createElement("div"); card.className = "tbl-card";
+      const cols = Object.keys(m.rows[0] || {});
+      let html = `<div class="tbl-head"><span class="tname">${esc(m.table)}</span><span class="tcount">${m.count}${m.count >= 25 ? "+" : ""} row(s)</span></div><div class="tbl-scroll"><table><thead><tr>`;
+      html += cols.map((c) => `<th>${esc(c)}</th>`).join("") + "</tr></thead><tbody>";
+      for (const row of m.rows) {
+        html += "<tr>" + cols.map((c) => `<td title="${esc(row[c] ?? "")}">${hl(row[c], res.term)}</td>`).join("") + "</tr>";
+      }
+      html += "</tbody></table></div>";
+      card.innerHTML = html;
+      frag.appendChild(card);
+    }
+    $("dbResults").appendChild(frag);
+  }
+  searchBtn.addEventListener("click", runSearch);
+  termEl.addEventListener("keydown", (e) => { if (e.key === "Enter") runSearch(); });
+
+  /* wire sounds */
+  document.querySelectorAll(".enter-btn, .nav-item, .btn").forEach(attachSounds);
+</script>
+</body>
+</html>

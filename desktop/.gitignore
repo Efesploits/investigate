@@ -1,0 +1,7 @@
+node_modules/
+dist/
+install.log
+test-db.js
+
+build.log
+build2.log
