@@ -6,26 +6,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root {
-    --bg: #080a0f;
-    --bg2: #0d1017;
-    --panel: #12161f;
-    --panel2: #161b26;
-    --border: #232a38;
-    --text: #e8eef7;
-    --muted: #8b95a7;
-    --accent: #38e0d0;
-    --accent2: #4c8dff;
-    --ok: #37c26d;
-    --no: #e05c5c;
-    --unk: #d9b13a;
-    --glow: rgba(56,224,208,0.55);
+    --bg: #000000;
+    --bg2: #0a0a0a;
+    --panel: #101010;
+    --panel2: #161616;
+    --border: #262626;
+    --text: #f4f4f4;
+    --muted: #888888;
+    --accent: #ffffff;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
     margin: 0;
     font-family: -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
-    background: radial-gradient(1200px 800px at 70% -10%, #101827 0%, var(--bg) 60%);
+    background: var(--bg);
     color: var(--text);
     overflow: hidden;
   }
@@ -41,14 +36,14 @@
     justify-content: center;
     gap: 26px;
     z-index: 50;
-    background: radial-gradient(900px 700px at 50% 35%, #0e1523 0%, var(--bg) 70%);
+    background: radial-gradient(760px 620px at 50% 34%, #141414 0%, #000 72%);
     transition: opacity 0.7s ease, transform 0.7s ease;
   }
   #intro.leaving { opacity: 0; transform: scale(1.08); pointer-events: none; }
 
   .glass-wrap {
-    width: min(340px, 74vw);
-    filter: drop-shadow(0 0 40px rgba(56,224,208,0.18));
+    width: min(320px, 72vw);
+    filter: drop-shadow(0 0 34px rgba(255,255,255,0.10));
     animation: glassIn 1s cubic-bezier(.2,.8,.2,1) both,
                float 6s ease-in-out 1s infinite;
   }
@@ -87,30 +82,24 @@
   }
   @keyframes look {
     0%, 12%   { transform: translateX(0); }
-    26%, 38%  { transform: translateX(-30px); }   /* look left */
-    54%, 68%  { transform: translateX(30px); }    /* look right */
-    86%, 100% { transform: translateX(0); }       /* center */
+    26%, 38%  { transform: translateX(-28px); }
+    54%, 68%  { transform: translateX(28px); }
+    86%, 100% { transform: translateX(0); }
   }
-
-  .glare { opacity: .0; animation: glareIn 1s ease 1.2s forwards; }
-  @keyframes glareIn { to { opacity: .5; } }
 
   .intro-title {
     font-size: clamp(1.5rem, 4.5vw, 2.4rem);
     font-weight: 800;
     letter-spacing: .5px;
     margin: 0;
-    opacity: 0;
     text-align: center;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--text);
+    opacity: 0;
     animation: fadeUp .8s ease 3.7s forwards;
   }
   .intro-sub {
     color: var(--muted);
-    font-size: .85rem;
+    font-size: .82rem;
     letter-spacing: 3px;
     text-transform: uppercase;
     opacity: 0;
@@ -126,38 +115,36 @@
     margin-top: 6px;
     padding: 13px 42px;
     border-radius: 999px;
-    border: 1px solid rgba(56,224,208,0.5);
-    background: linear-gradient(180deg, rgba(56,224,208,0.14), rgba(56,224,208,0.04));
+    border: 1px solid rgba(255,255,255,0.55);
+    background: transparent;
     color: var(--text);
     font-size: 1rem;
     font-weight: 700;
     letter-spacing: 4px;
     cursor: pointer;
     opacity: 0;
-    animation: fadeUp .7s ease 4.6s forwards, pulse 2.2s ease-in-out 5.3s infinite;
-    transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+    animation: fadeUp .7s ease 4.6s forwards, pulse 2.4s ease-in-out 5.3s infinite;
+    transition: transform .15s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
   }
   .enter-btn:hover {
     transform: translateY(-2px);
-    background: linear-gradient(180deg, rgba(56,224,208,0.24), rgba(56,224,208,0.08));
-    box-shadow: 0 0 30px rgba(56,224,208,0.35);
+    background: var(--text);
+    color: #000;
+    box-shadow: 0 0 26px rgba(255,255,255,0.25);
   }
   @keyframes pulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(56,224,208,0.0); }
-    50%     { box-shadow: 0 0 26px 2px rgba(56,224,208,0.3); }
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.0); }
+    50%     { box-shadow: 0 0 22px 1px rgba(255,255,255,0.18); }
   }
 
   /* ---------- APP ---------- */
-  #app {
-    display: none;
-    min-height: 100vh;
-  }
+  #app { display: none; min-height: 100vh; }
   #app.show { display: flex; }
 
   .sidebar {
     width: 250px;
     flex-shrink: 0;
-    background: linear-gradient(180deg, var(--panel), var(--bg2));
+    background: var(--bg2);
     border-right: 1px solid var(--border);
     padding: 22px 16px;
     display: flex;
@@ -199,20 +186,16 @@
     border: 1px solid transparent;
     transition: background .15s ease, border-color .15s ease;
   }
-  .nav-item svg { width: 18px; height: 18px; opacity: .8; }
+  .nav-item svg { width: 18px; height: 18px; opacity: .75; }
   .nav-item:hover { background: var(--panel2); }
   .nav-item.active {
-    background: linear-gradient(90deg, rgba(56,224,208,0.14), rgba(76,141,255,0.06));
-    border-color: rgba(56,224,208,0.35);
+    background: var(--panel2);
+    border-color: #3a3a3a;
     color: #fff;
   }
-  .nav-item.active svg { opacity: 1; color: var(--accent); }
+  .nav-item.active svg { opacity: 1; }
 
-  .content {
-    flex: 1;
-    padding: 42px clamp(20px, 5vw, 60px);
-    max-width: 900px;
-  }
+  .content { flex: 1; padding: 42px clamp(20px, 5vw, 60px); max-width: 900px; }
   .page { display: none; animation: pageIn .35s ease; }
   .page.show { display: block; }
   @keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -228,20 +211,15 @@
     padding: 26px;
     border: 1px solid var(--border);
     border-radius: 16px;
-    background: linear-gradient(135deg, var(--panel), var(--bg2));
+    background: var(--panel);
     margin-bottom: 26px;
   }
-  .home-hero svg { width: 74px; height: 74px; flex-shrink: 0; }
+  .home-hero svg { width: 72px; height: 72px; flex-shrink: 0; }
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
-  .card {
-    padding: 18px;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: var(--panel);
-  }
+  .card { padding: 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
   .card h3 { margin: 0 0 6px; font-size: 1rem; }
   .card p { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
-  .card .big { font-size: 1.5rem; color: var(--accent); font-weight: 800; }
+  .card .big { font-size: 1.5rem; color: var(--text); font-weight: 800; }
 
   .cta {
     display: inline-flex;
@@ -251,13 +229,14 @@
     padding: 12px 22px;
     border-radius: 10px;
     border: none;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    color: #04121a;
+    background: var(--text);
+    color: #000;
     font-weight: 800;
     font-size: .95rem;
     cursor: pointer;
+    transition: opacity .15s ease;
   }
-  .cta:hover { filter: brightness(1.08); }
+  .cta:hover { opacity: .85; }
 
   form { display: flex; gap: 10px; margin: 4px 0 22px; }
   input[type=text] {
@@ -271,18 +250,18 @@
     outline: none;
     transition: border-color .15s ease, box-shadow .15s ease;
   }
-  input[type=text]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(56,224,208,0.15); }
+  input[type=text]:focus { border-color: #666; box-shadow: 0 0 0 3px rgba(255,255,255,0.08); }
   button.scan {
     padding: 13px 26px;
     border-radius: 11px;
     border: none;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    color: #04121a;
+    background: var(--text);
+    color: #000;
     font-size: 1rem;
     font-weight: 800;
     cursor: pointer;
   }
-  button.scan:disabled { opacity: .6; cursor: not-allowed; }
+  button.scan:disabled { opacity: .55; cursor: not-allowed; }
 
   .row {
     display: flex;
@@ -298,7 +277,7 @@
   }
   .row .name { font-weight: 700; min-width: 120px; }
   .row .url { color: var(--muted); font-size: .82rem; word-break: break-all; }
-  .row a { color: var(--accent2); text-decoration: none; }
+  .row a { color: #cfcfcf; text-decoration: none; }
   .row a:hover { text-decoration: underline; }
   .badge {
     font-size: .74rem;
@@ -308,19 +287,18 @@
     border-radius: 999px;
     white-space: nowrap;
   }
-  .badge.ok  { background: rgba(55,194,109,0.16); color: var(--ok); }
-  .badge.no  { background: rgba(224,92,92,0.16); color: var(--no); }
-  .badge.unk { background: rgba(217,177,58,0.16); color: var(--unk); }
+  .badge.ok  { background: #f2f2f2; color: #000; }
+  .badge.no  { background: transparent; color: #7c7c7c; border: 1px solid #333; }
+  .badge.unk { background: #1c1c1c; color: #b4b4b4; border: 1px dashed #444; }
   .reason { color: var(--muted); font-size: .74rem; margin-top: 3px; }
   #summary { margin-top: 18px; color: var(--muted); font-size: .9rem; }
-  #error { color: var(--no); margin-top: 12px; font-size: .9rem; }
+  #error { color: #d0d0d0; margin-top: 12px; font-size: .9rem; }
 
   @media (max-width: 720px) {
     #app.show { flex-direction: column; }
     .sidebar {
       width: 100%; height: auto; position: static;
-      flex-direction: row; align-items: center; flex-wrap: wrap;
-      padding: 12px;
+      flex-direction: row; align-items: center; flex-wrap: wrap; padding: 12px;
     }
     .brand { border-bottom: none; margin: 0; padding: 6px 8px; }
     .nav-label { display: none; }
@@ -336,50 +314,27 @@
   <div class="glass-wrap">
     <svg class="glass" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <radialGradient id="lensGlass" cx="42%" cy="38%" r="70%">
-          <stop offset="0%" stop-color="#1a2740"/>
-          <stop offset="70%" stop-color="#0c1220"/>
-          <stop offset="100%" stop-color="#070b13"/>
-        </radialGradient>
-        <linearGradient id="rimGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#5cf0e0"/>
-          <stop offset="55%" stop-color="#2aa9c9"/>
-          <stop offset="100%" stop-color="#4c8dff"/>
-        </linearGradient>
-        <radialGradient id="irisGrad" cx="40%" cy="35%" r="75%">
-          <stop offset="0%" stop-color="#7ff5ea"/>
-          <stop offset="55%" stop-color="#2ec7de"/>
-          <stop offset="100%" stop-color="#1c6fb0"/>
-        </radialGradient>
-        <clipPath id="lensClip"><circle cx="150" cy="140" r="104"/></clipPath>
+        <clipPath id="lensClip"><circle cx="150" cy="140" r="100"/></clipPath>
       </defs>
 
       <!-- handle -->
-      <line x1="223" y1="213" x2="286" y2="276" stroke="#2f3a4f" stroke-width="26" stroke-linecap="round"/>
-      <line x1="223" y1="213" x2="286" y2="276" stroke="url(#rimGrad)" stroke-width="12" stroke-linecap="round" opacity=".85"/>
+      <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
 
       <!-- lens interior + eye -->
       <g clip-path="url(#lensClip)">
-        <circle cx="150" cy="140" r="104" fill="url(#lensGlass)"/>
-
+        <circle cx="150" cy="140" r="100" fill="#000000"/>
         <g class="eye-inner">
-          <ellipse cx="150" cy="140" rx="74" ry="46" fill="#eaf2ff"/>
-          <ellipse cx="150" cy="140" rx="74" ry="46" fill="none" stroke="#c3d4ee" stroke-width="1.5"/>
+          <ellipse cx="150" cy="140" rx="72" ry="44" fill="#f4f4f4"/>
           <g class="iris">
-            <circle cx="150" cy="140" r="30" fill="url(#irisGrad)"/>
-            <circle cx="150" cy="140" r="30" fill="none" stroke="#0b2b3a" stroke-width="1.5" opacity=".5"/>
-            <circle cx="150" cy="140" r="14" fill="#060a10"/>
-            <circle cx="141" cy="130" r="5.5" fill="#ffffff" opacity=".95"/>
-            <circle cx="158" cy="148" r="2.5" fill="#ffffff" opacity=".6"/>
+            <circle cx="150" cy="140" r="26" fill="#000000"/>
+            <circle cx="150" cy="140" r="12" fill="#000000"/>
+            <circle cx="141" cy="131" r="5" fill="#f4f4f4"/>
           </g>
         </g>
-
-        <!-- glass glare -->
-        <path class="glare" d="M70 74 Q150 40 232 96 Q150 78 82 128 Z" fill="#ffffff"/>
       </g>
 
       <!-- rim -->
-      <circle cx="150" cy="140" r="104" fill="none" stroke="url(#rimGrad)" stroke-width="12"/>
+      <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
     </svg>
   </div>
 
@@ -393,14 +348,12 @@
   <aside class="sidebar">
     <div class="brand">
       <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <use href="#miniglass"/>
-        <line x1="223" y1="213" x2="286" y2="276" stroke="url(#rimGrad)" stroke-width="16" stroke-linecap="round"/>
-        <circle cx="150" cy="140" r="104" fill="#0c1220"/>
-        <ellipse cx="150" cy="140" rx="74" ry="44" fill="#eaf2ff"/>
-        <circle cx="150" cy="140" r="28" fill="url(#irisGrad)"/>
-        <circle cx="150" cy="140" r="13" fill="#060a10"/>
-        <circle cx="142" cy="131" r="5" fill="#fff"/>
-        <circle cx="150" cy="140" r="104" fill="none" stroke="url(#rimGrad)" stroke-width="12"/>
+        <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+        <circle cx="150" cy="140" r="100" fill="#000"/>
+        <ellipse cx="150" cy="140" rx="72" ry="42" fill="#f4f4f4"/>
+        <circle cx="150" cy="140" r="24" fill="#000"/>
+        <circle cx="142" cy="131" r="5" fill="#f4f4f4"/>
+        <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
       </svg>
       <div>
         <div class="bt">m3's tool</div>
@@ -424,13 +377,12 @@
     <section class="page show" id="page-home">
       <div class="home-hero">
         <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <line x1="223" y1="213" x2="286" y2="276" stroke="url(#rimGrad)" stroke-width="16" stroke-linecap="round"/>
-          <circle cx="150" cy="140" r="104" fill="#0c1220"/>
-          <ellipse cx="150" cy="140" rx="74" ry="44" fill="#eaf2ff"/>
-          <circle cx="150" cy="140" r="28" fill="url(#irisGrad)"/>
-          <circle cx="150" cy="140" r="13" fill="#060a10"/>
-          <circle cx="142" cy="131" r="5" fill="#fff"/>
-          <circle cx="150" cy="140" r="104" fill="none" stroke="url(#rimGrad)" stroke-width="12"/>
+          <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+          <circle cx="150" cy="140" r="100" fill="#000"/>
+          <ellipse cx="150" cy="140" rx="72" ry="42" fill="#f4f4f4"/>
+          <circle cx="150" cy="140" r="24" fill="#000"/>
+          <circle cx="142" cy="131" r="5" fill="#f4f4f4"/>
+          <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
         </svg>
         <div>
           <h1>Welcome to m3's investigation tool</h1>
@@ -466,22 +418,6 @@
     </section>
   </main>
 </div>
-
-<!-- shared SVG defs for app icons -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <linearGradient id="rimGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#5cf0e0"/>
-      <stop offset="55%" stop-color="#2aa9c9"/>
-      <stop offset="100%" stop-color="#4c8dff"/>
-    </linearGradient>
-    <radialGradient id="irisGrad" cx="40%" cy="35%" r="75%">
-      <stop offset="0%" stop-color="#7ff5ea"/>
-      <stop offset="55%" stop-color="#2ec7de"/>
-      <stop offset="100%" stop-color="#1c6fb0"/>
-    </radialGradient>
-  </defs>
-</svg>
 
 <script>
   /* ---------- intro -> app ---------- */
