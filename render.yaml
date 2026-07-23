@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: iz-surucu-app
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
+        value: "false"

@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<title>İz Sürücü</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #2a2e37;
+    --text: #e8eaed;
+    --muted: #9aa0aa;
+    --accent: #5b8cff;
+    --ok: #37c26d;
+    --no: #e05c5c;
+    --unk: #c9a227;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f6f8;
+      --panel: #ffffff;
+      --border: #dde1e6;
+      --text: #1b1f24;
+      --muted: #5b6270;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+  main { width: 100%; max-width: 720px; }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  p.sub { color: var(--muted); margin-top: 0; font-size: 0.9rem; }
+  form { display: flex; gap: 8px; margin: 20px 0; }
+  input[type=text] {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 1rem;
+  }
+  button {
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel);
+    margin-bottom: 8px;
+  }
+  .row .name { font-weight: 600; min-width: 120px; }
+  .row .url { color: var(--muted); font-size: 0.85rem; word-break: break-all; }
+  .row a { color: var(--accent); }
+  .badge {
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .badge.ok { background: rgba(55,194,109,0.15); color: var(--ok); }
+  .badge.no { background: rgba(224,92,92,0.15); color: var(--no); }
+  .badge.unk { background: rgba(201,162,39,0.15); color: var(--unk); }
+  .reason { color: var(--muted); font-size: 0.75rem; margin-top: 2px; }
+  #summary { margin-top: 16px; color: var(--muted); font-size: 0.9rem; }
+  #error { color: var(--no); margin-top: 12px; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>İz Sürücü</h1>
+  <p class="sub">Bir kullanıcı adının hangi platformlarda hesabı olduğunu tarar. "Bilinmiyor" işaretli sonuçlar, sitenin giriş duvarı veya bot koruması gösterdiği ve gerçekte kontrol edilemediği anlamına gelir.</p>
+
+  <form id="form">
+    <input type="text" id="handle" placeholder="kullanici_adi" autocomplete="off" required />
+    <button type="submit" id="submitBtn">Tara</button>
+  </form>
+
+  <div id="results"></div>
+  <div id="summary"></div>
+  <div id="error"></div>
+</main>
+
+<script>
+  const form = document.getElementById("form");
+  const handleInput = document.getElementById("handle");
+  const submitBtn = document.getElementById("submitBtn");
+  const resultsEl = document.getElementById("results");
+  const summaryEl = document.getElementById("summary");
+  const errorEl = document.getElementById("error");
+
+  const REASON_LABELS = {
+    login_wall: "giriş duvarı — kontrol edilemedi",
+    blocked: "bot koruması/engelleme — kontrol edilemedi",
+    empty_page: "sayfa yüklenemedi — kontrol edilemedi",
+    error: "hata oluştu",
+    unreliable_check: "bu platformda tespit güvenilir değildir",
+  };
+  REASON_LABELS.http_404 = "HTTP 404";
+  REASON_LABELS.http_410 = "HTTP 410";
+
+  function badgeFor(result) {
+    if (result.exists === true) return { cls: "ok", text: "VAR" };
+    if (result.exists === false) return { cls: "no", text: "YOK" };
+    return { cls: "unk", text: "BİLİNMİYOR" };
+  }
+
+  function renderRow(result) {
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const left = document.createElement("div");
+    const nameEl = document.createElement("div");
+    nameEl.className = "name";
+    nameEl.textContent = result.name;
+
+    const urlEl = document.createElement("div");
+    urlEl.className = "url";
+    const a = document.createElement("a");
+    a.href = result.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = result.url;
+    urlEl.appendChild(a);
+
+    left.appendChild(nameEl);
+    left.appendChild(urlEl);
+
+    if (result.reason && REASON_LABELS[result.reason]) {
+      const reasonEl = document.createElement("div");
+      reasonEl.className = "reason";
+      reasonEl.textContent = REASON_LABELS[result.reason];
+      left.appendChild(reasonEl);
+    }
+
+    const badgeInfo = badgeFor(result);
+    const badge = document.createElement("span");
+    badge.className = "badge " + badgeInfo.cls;
+    badge.textContent = badgeInfo.text;
+
+    row.appendChild(left);
+    row.appendChild(badge);
+    resultsEl.appendChild(row);
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const handle = handleInput.value.trim();
+    if (!handle) return;
+
+    resultsEl.innerHTML = "";
+    summaryEl.textContent = "";
+    errorEl.textContent = "";
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Taranıyor...";
+
+    const results = [];
+    const source = new EventSource("/api/check?handle=" + encodeURIComponent(handle));
+
+    source.addEventListener("result", (e) => {
+      const result = JSON.parse(e.data);
+      results.push(result);
+      renderRow(result);
+    });
+
+    source.addEventListener("done", () => {
+      const found = results.filter((r) => r.exists === true).length;
+      const unknown = results.filter((r) => r.exists === null).length;
+      summaryEl.textContent = `${found} hesap bulundu, ${unknown} platform kontrol edilemedi.`;
+      source.close();
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Tara";
+    });
+
+    source.addEventListener("error", (e) => {
+      let message = "Bağlantı hatası.";
+      try {
+        if (e.data) message = JSON.parse(e.data).message || message;
+      } catch (_) {}
+      errorEl.textContent = message;
+      source.close();
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Tara";
+    });
+  });
+</script>
+</body>
+</html>

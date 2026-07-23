@@ -1,0 +1,17 @@
+{
+  "name": "iz-surucu-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kullanıcı adının farklı platformlarda var olup olmadığını tarayan yerel web uygulaması",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "puppeteer": "^22.10.0"
+  },
+  "allowScripts": {
+    "puppeteer@22.15.0": true
+  }
+}
