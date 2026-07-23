@@ -1,109 +1,524 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>İz Sürücü</title>
+<title>m3's investigation tool</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root {
-    color-scheme: light dark;
-    --bg: #0f1115;
-    --panel: #171a21;
-    --border: #2a2e37;
-    --text: #e8eaed;
-    --muted: #9aa0aa;
-    --accent: #5b8cff;
+    --bg: #080a0f;
+    --bg2: #0d1017;
+    --panel: #12161f;
+    --panel2: #161b26;
+    --border: #232a38;
+    --text: #e8eef7;
+    --muted: #8b95a7;
+    --accent: #38e0d0;
+    --accent2: #4c8dff;
     --ok: #37c26d;
     --no: #e05c5c;
-    --unk: #c9a227;
-  }
-  @media (prefers-color-scheme: light) {
-    :root {
-      --bg: #f5f6f8;
-      --panel: #ffffff;
-      --border: #dde1e6;
-      --text: #1b1f24;
-      --muted: #5b6270;
-    }
+    --unk: #d9b13a;
+    --glow: rgba(56,224,208,0.55);
   }
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
     margin: 0;
-    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
+    font-family: -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
+    background: radial-gradient(1200px 800px at 70% -10%, #101827 0%, var(--bg) 60%);
     color: var(--text);
-    display: flex;
-    justify-content: center;
-    padding: 40px 16px;
+    overflow: hidden;
   }
-  main { width: 100%; max-width: 720px; }
-  h1 { font-size: 1.4rem; margin-bottom: 4px; }
-  p.sub { color: var(--muted); margin-top: 0; font-size: 0.9rem; }
-  form { display: flex; gap: 8px; margin: 20px 0; }
+  body.entered { overflow: auto; }
+
+  /* ---------- INTRO ---------- */
+  #intro {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 26px;
+    z-index: 50;
+    background: radial-gradient(900px 700px at 50% 35%, #0e1523 0%, var(--bg) 70%);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  #intro.leaving { opacity: 0; transform: scale(1.08); pointer-events: none; }
+
+  .glass-wrap {
+    width: min(340px, 74vw);
+    filter: drop-shadow(0 0 40px rgba(56,224,208,0.18));
+    animation: glassIn 1s cubic-bezier(.2,.8,.2,1) both,
+               float 6s ease-in-out 1s infinite;
+  }
+  .glass { width: 100%; height: auto; display: block; }
+
+  @keyframes glassIn {
+    0%   { opacity: 0; transform: scale(.55) rotate(-12deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0) rotate(0); }
+    50%     { transform: translateY(-12px) rotate(1.5deg); }
+  }
+
+  .eye-inner {
+    transform-box: fill-box;
+    transform-origin: center;
+    transform: scaleY(.04);
+    animation: eyeOpen .75s cubic-bezier(.2,.9,.25,1) 0.95s forwards,
+               blink 5.5s ease-in-out 4.2s infinite;
+  }
+  @keyframes eyeOpen {
+    0%   { transform: scaleY(.04); }
+    65%  { transform: scaleY(1.12); }
+    100% { transform: scaleY(1); }
+  }
+  @keyframes blink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95%           { transform: scaleY(.06); }
+  }
+
+  .iris {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: look 3.4s ease-in-out 1.7s both;
+  }
+  @keyframes look {
+    0%, 12%   { transform: translateX(0); }
+    26%, 38%  { transform: translateX(-30px); }   /* look left */
+    54%, 68%  { transform: translateX(30px); }    /* look right */
+    86%, 100% { transform: translateX(0); }       /* center */
+  }
+
+  .glare { opacity: .0; animation: glareIn 1s ease 1.2s forwards; }
+  @keyframes glareIn { to { opacity: .5; } }
+
+  .intro-title {
+    font-size: clamp(1.5rem, 4.5vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: .5px;
+    margin: 0;
+    opacity: 0;
+    text-align: center;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: fadeUp .8s ease 3.7s forwards;
+  }
+  .intro-sub {
+    color: var(--muted);
+    font-size: .85rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0;
+    margin: -14px 0 0;
+    animation: fadeUp .8s ease 4.0s forwards;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .enter-btn {
+    margin-top: 6px;
+    padding: 13px 42px;
+    border-radius: 999px;
+    border: 1px solid rgba(56,224,208,0.5);
+    background: linear-gradient(180deg, rgba(56,224,208,0.14), rgba(56,224,208,0.04));
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    cursor: pointer;
+    opacity: 0;
+    animation: fadeUp .7s ease 4.6s forwards, pulse 2.2s ease-in-out 5.3s infinite;
+    transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .enter-btn:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(180deg, rgba(56,224,208,0.24), rgba(56,224,208,0.08));
+    box-shadow: 0 0 30px rgba(56,224,208,0.35);
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(56,224,208,0.0); }
+    50%     { box-shadow: 0 0 26px 2px rgba(56,224,208,0.3); }
+  }
+
+  /* ---------- APP ---------- */
+  #app {
+    display: none;
+    min-height: 100vh;
+  }
+  #app.show { display: flex; }
+
+  .sidebar {
+    width: 250px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, var(--panel), var(--bg2));
+    border-right: 1px solid var(--border);
+    padding: 22px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 6px 8px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .brand svg { width: 34px; height: 34px; flex-shrink: 0; }
+  .brand .bt { font-weight: 800; font-size: .98rem; line-height: 1.15; }
+  .brand .bs { color: var(--muted); font-size: .68rem; letter-spacing: 1.5px; text-transform: uppercase; }
+
+  .nav-label {
+    color: var(--muted);
+    font-size: .68rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 8px 10px 4px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 12px;
+    border-radius: 10px;
+    color: var(--text);
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .nav-item svg { width: 18px; height: 18px; opacity: .8; }
+  .nav-item:hover { background: var(--panel2); }
+  .nav-item.active {
+    background: linear-gradient(90deg, rgba(56,224,208,0.14), rgba(76,141,255,0.06));
+    border-color: rgba(56,224,208,0.35);
+    color: #fff;
+  }
+  .nav-item.active svg { opacity: 1; color: var(--accent); }
+
+  .content {
+    flex: 1;
+    padding: 42px clamp(20px, 5vw, 60px);
+    max-width: 900px;
+  }
+  .page { display: none; animation: pageIn .35s ease; }
+  .page.show { display: block; }
+  @keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  h1 { font-size: 1.7rem; margin: 0 0 6px; }
+  h2 { font-size: 1.3rem; margin: 0 0 6px; }
+  p.sub { color: var(--muted); margin: 0 0 24px; font-size: .92rem; line-height: 1.55; max-width: 640px; }
+
+  .home-hero {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 26px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--panel), var(--bg2));
+    margin-bottom: 26px;
+  }
+  .home-hero svg { width: 74px; height: 74px; flex-shrink: 0; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  .card {
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--panel);
+  }
+  .card h3 { margin: 0 0 6px; font-size: 1rem; }
+  .card p { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
+  .card .big { font-size: 1.5rem; color: var(--accent); font-weight: 800; }
+
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 22px;
+    padding: 12px 22px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: #04121a;
+    font-weight: 800;
+    font-size: .95rem;
+    cursor: pointer;
+  }
+  .cta:hover { filter: brightness(1.08); }
+
+  form { display: flex; gap: 10px; margin: 4px 0 22px; }
   input[type=text] {
     flex: 1;
-    padding: 10px 14px;
-    border-radius: 8px;
+    padding: 13px 16px;
+    border-radius: 11px;
     border: 1px solid var(--border);
     background: var(--panel);
     color: var(--text);
     font-size: 1rem;
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
   }
-  button {
-    padding: 10px 18px;
-    border-radius: 8px;
+  input[type=text]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(56,224,208,0.15); }
+  button.scan {
+    padding: 13px 26px;
+    border-radius: 11px;
     border: none;
-    background: var(--accent);
-    color: white;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: #04121a;
     font-size: 1rem;
+    font-weight: 800;
     cursor: pointer;
   }
-  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  button.scan:disabled { opacity: .6; cursor: not-allowed; }
+
   .row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 12px 14px;
+    padding: 14px 16px;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 12px;
     background: var(--panel);
-    margin-bottom: 8px;
+    margin-bottom: 9px;
+    animation: pageIn .25s ease;
   }
-  .row .name { font-weight: 600; min-width: 120px; }
-  .row .url { color: var(--muted); font-size: 0.85rem; word-break: break-all; }
-  .row a { color: var(--accent); }
+  .row .name { font-weight: 700; min-width: 120px; }
+  .row .url { color: var(--muted); font-size: .82rem; word-break: break-all; }
+  .row a { color: var(--accent2); text-decoration: none; }
+  .row a:hover { text-decoration: underline; }
   .badge {
-    font-size: 0.78rem;
-    font-weight: 700;
-    padding: 3px 10px;
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .5px;
+    padding: 5px 12px;
     border-radius: 999px;
     white-space: nowrap;
   }
-  .badge.ok { background: rgba(55,194,109,0.15); color: var(--ok); }
-  .badge.no { background: rgba(224,92,92,0.15); color: var(--no); }
-  .badge.unk { background: rgba(201,162,39,0.15); color: var(--unk); }
-  .reason { color: var(--muted); font-size: 0.75rem; margin-top: 2px; }
-  #summary { margin-top: 16px; color: var(--muted); font-size: 0.9rem; }
-  #error { color: var(--no); margin-top: 12px; font-size: 0.9rem; }
+  .badge.ok  { background: rgba(55,194,109,0.16); color: var(--ok); }
+  .badge.no  { background: rgba(224,92,92,0.16); color: var(--no); }
+  .badge.unk { background: rgba(217,177,58,0.16); color: var(--unk); }
+  .reason { color: var(--muted); font-size: .74rem; margin-top: 3px; }
+  #summary { margin-top: 18px; color: var(--muted); font-size: .9rem; }
+  #error { color: var(--no); margin-top: 12px; font-size: .9rem; }
+
+  @media (max-width: 720px) {
+    #app.show { flex-direction: column; }
+    .sidebar {
+      width: 100%; height: auto; position: static;
+      flex-direction: row; align-items: center; flex-wrap: wrap;
+      padding: 12px;
+    }
+    .brand { border-bottom: none; margin: 0; padding: 6px 8px; }
+    .nav-label { display: none; }
+    .content { padding: 28px 18px; }
+    form { flex-direction: column; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>İz Sürücü</h1>
-  <p class="sub">Bir kullanıcı adının hangi platformlarda hesabı olduğunu tarar. "Bilinmiyor" işaretli sonuçlar, sitenin giriş duvarı veya bot koruması gösterdiği ve gerçekte kontrol edilemediği anlamına gelir.</p>
 
-  <form id="form">
-    <input type="text" id="handle" placeholder="kullanici_adi" autocomplete="off" required />
-    <button type="submit" id="submitBtn">Tara</button>
-  </form>
+<!-- ===================== INTRO ===================== -->
+<div id="intro">
+  <div class="glass-wrap">
+    <svg class="glass" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="lensGlass" cx="42%" cy="38%" r="70%">
+          <stop offset="0%" stop-color="#1a2740"/>
+          <stop offset="70%" stop-color="#0c1220"/>
+          <stop offset="100%" stop-color="#070b13"/>
+        </radialGradient>
+        <linearGradient id="rimGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#5cf0e0"/>
+          <stop offset="55%" stop-color="#2aa9c9"/>
+          <stop offset="100%" stop-color="#4c8dff"/>
+        </linearGradient>
+        <radialGradient id="irisGrad" cx="40%" cy="35%" r="75%">
+          <stop offset="0%" stop-color="#7ff5ea"/>
+          <stop offset="55%" stop-color="#2ec7de"/>
+          <stop offset="100%" stop-color="#1c6fb0"/>
+        </radialGradient>
+        <clipPath id="lensClip"><circle cx="150" cy="140" r="104"/></clipPath>
+      </defs>
 
-  <div id="results"></div>
-  <div id="summary"></div>
-  <div id="error"></div>
-</main>
+      <!-- handle -->
+      <line x1="223" y1="213" x2="286" y2="276" stroke="#2f3a4f" stroke-width="26" stroke-linecap="round"/>
+      <line x1="223" y1="213" x2="286" y2="276" stroke="url(#rimGrad)" stroke-width="12" stroke-linecap="round" opacity=".85"/>
+
+      <!-- lens interior + eye -->
+      <g clip-path="url(#lensClip)">
+        <circle cx="150" cy="140" r="104" fill="url(#lensGlass)"/>
+
+        <g class="eye-inner">
+          <ellipse cx="150" cy="140" rx="74" ry="46" fill="#eaf2ff"/>
+          <ellipse cx="150" cy="140" rx="74" ry="46" fill="none" stroke="#c3d4ee" stroke-width="1.5"/>
+          <g class="iris">
+            <circle cx="150" cy="140" r="30" fill="url(#irisGrad)"/>
+            <circle cx="150" cy="140" r="30" fill="none" stroke="#0b2b3a" stroke-width="1.5" opacity=".5"/>
+            <circle cx="150" cy="140" r="14" fill="#060a10"/>
+            <circle cx="141" cy="130" r="5.5" fill="#ffffff" opacity=".95"/>
+            <circle cx="158" cy="148" r="2.5" fill="#ffffff" opacity=".6"/>
+          </g>
+        </g>
+
+        <!-- glass glare -->
+        <path class="glare" d="M70 74 Q150 40 232 96 Q150 78 82 128 Z" fill="#ffffff"/>
+      </g>
+
+      <!-- rim -->
+      <circle cx="150" cy="140" r="104" fill="none" stroke="url(#rimGrad)" stroke-width="12"/>
+    </svg>
+  </div>
+
+  <h1 class="intro-title">m3's investigation tool</h1>
+  <p class="intro-sub">osint · username tracing</p>
+  <button class="enter-btn" id="enterBtn">ENTER</button>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <use href="#miniglass"/>
+        <line x1="223" y1="213" x2="286" y2="276" stroke="url(#rimGrad)" stroke-width="16" stroke-linecap="round"/>
+        <circle cx="150" cy="140" r="104" fill="#0c1220"/>
+        <ellipse cx="150" cy="140" rx="74" ry="44" fill="#eaf2ff"/>
+        <circle cx="150" cy="140" r="28" fill="url(#irisGrad)"/>
+        <circle cx="150" cy="140" r="13" fill="#060a10"/>
+        <circle cx="142" cy="131" r="5" fill="#fff"/>
+        <circle cx="150" cy="140" r="104" fill="none" stroke="url(#rimGrad)" stroke-width="12"/>
+      </svg>
+      <div>
+        <div class="bt">m3's tool</div>
+        <div class="bs">investigation</div>
+      </div>
+    </div>
+
+    <div class="nav-label">Menu</div>
+    <div class="nav-item active" data-page="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      Home
+    </div>
+    <div class="nav-item" data-page="investigate">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      Investigate
+    </div>
+  </aside>
+
+  <main class="content">
+    <!-- HOME -->
+    <section class="page show" id="page-home">
+      <div class="home-hero">
+        <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <line x1="223" y1="213" x2="286" y2="276" stroke="url(#rimGrad)" stroke-width="16" stroke-linecap="round"/>
+          <circle cx="150" cy="140" r="104" fill="#0c1220"/>
+          <ellipse cx="150" cy="140" rx="74" ry="44" fill="#eaf2ff"/>
+          <circle cx="150" cy="140" r="28" fill="url(#irisGrad)"/>
+          <circle cx="150" cy="140" r="13" fill="#060a10"/>
+          <circle cx="142" cy="131" r="5" fill="#fff"/>
+          <circle cx="150" cy="140" r="104" fill="none" stroke="url(#rimGrad)" stroke-width="12"/>
+        </svg>
+        <div>
+          <h1>Welcome to m3's investigation tool</h1>
+          <p class="sub">A lightweight OSINT utility that traces a username across social platforms and reports where an account exists — all from a single search.</p>
+        </div>
+      </div>
+
+      <div class="cards">
+        <div class="card"><div class="big">10+</div><p>Platforms scanned per username, from Instagram to Linktree.</p></div>
+        <div class="card"><h3>Real checks</h3><p>Pages are actually loaded in a headless browser — not guessed.</p></div>
+        <div class="card"><h3>Honest results</h3><p>Login walls and bot protection are flagged as UNKNOWN, never faked.</p></div>
+      </div>
+
+      <button class="cta" id="goInvestigate">
+        Start investigating
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </section>
+
+    <!-- INVESTIGATE -->
+    <section class="page" id="page-investigate">
+      <h1>Username Investigation</h1>
+      <p class="sub">Scan a username across platforms to see where an account exists. Results marked <b>UNKNOWN</b> mean the site showed a login wall or bot protection, so it couldn't actually be verified.</p>
+
+      <form id="form">
+        <input type="text" id="handle" placeholder="username" autocomplete="off" spellcheck="false" required />
+        <button type="submit" class="scan" id="submitBtn">Scan</button>
+      </form>
+
+      <div id="results"></div>
+      <div id="summary"></div>
+      <div id="error"></div>
+    </section>
+  </main>
+</div>
+
+<!-- shared SVG defs for app icons -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="rimGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5cf0e0"/>
+      <stop offset="55%" stop-color="#2aa9c9"/>
+      <stop offset="100%" stop-color="#4c8dff"/>
+    </linearGradient>
+    <radialGradient id="irisGrad" cx="40%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#7ff5ea"/>
+      <stop offset="55%" stop-color="#2ec7de"/>
+      <stop offset="100%" stop-color="#1c6fb0"/>
+    </radialGradient>
+  </defs>
+</svg>
 
 <script>
+  /* ---------- intro -> app ---------- */
+  const intro = document.getElementById("intro");
+  const enterBtn = document.getElementById("enterBtn");
+  const app = document.getElementById("app");
+
+  function enterApp() {
+    intro.classList.add("leaving");
+    document.body.classList.add("entered");
+    setTimeout(() => {
+      intro.style.display = "none";
+      app.classList.add("show");
+    }, 700);
+  }
+  enterBtn.addEventListener("click", enterApp);
+  document.addEventListener("keydown", (e) => {
+    if (!document.body.classList.contains("entered") && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      enterApp();
+    }
+  });
+
+  /* ---------- sidebar navigation ---------- */
+  const navItems = document.querySelectorAll(".nav-item");
+  function showPage(page) {
+    navItems.forEach((n) => n.classList.toggle("active", n.dataset.page === page));
+    document.querySelectorAll(".page").forEach((p) => p.classList.remove("show"));
+    document.getElementById("page-" + page).classList.add("show");
+  }
+  navItems.forEach((n) => n.addEventListener("click", () => showPage(n.dataset.page)));
+  document.getElementById("goInvestigate").addEventListener("click", () => {
+    showPage("investigate");
+    document.getElementById("handle").focus();
+  });
+
+  /* ---------- scanner ---------- */
   const form = document.getElementById("form");
   const handleInput = document.getElementById("handle");
   const submitBtn = document.getElementById("submitBtn");
@@ -112,19 +527,19 @@
   const errorEl = document.getElementById("error");
 
   const REASON_LABELS = {
-    login_wall: "giriş duvarı — kontrol edilemedi",
-    blocked: "bot koruması/engelleme — kontrol edilemedi",
-    empty_page: "sayfa yüklenemedi — kontrol edilemedi",
-    error: "hata oluştu",
-    unreliable_check: "bu platformda tespit güvenilir değildir",
+    login_wall: "login wall — couldn't verify",
+    blocked: "bot protection / blocked — couldn't verify",
+    empty_page: "page didn't load — couldn't verify",
+    error: "an error occurred",
+    unreliable_check: "detection isn't reliable on this platform",
+    http_404: "HTTP 404",
+    http_410: "HTTP 410",
   };
-  REASON_LABELS.http_404 = "HTTP 404";
-  REASON_LABELS.http_410 = "HTTP 410";
 
   function badgeFor(result) {
-    if (result.exists === true) return { cls: "ok", text: "VAR" };
-    if (result.exists === false) return { cls: "no", text: "YOK" };
-    return { cls: "unk", text: "BİLİNMİYOR" };
+    if (result.exists === true) return { cls: "ok", text: "FOUND" };
+    if (result.exists === false) return { cls: "no", text: "NOT FOUND" };
+    return { cls: "unk", text: "UNKNOWN" };
   }
 
   function renderRow(result) {
@@ -174,7 +589,7 @@
     summaryEl.textContent = "";
     errorEl.textContent = "";
     submitBtn.disabled = true;
-    submitBtn.textContent = "Taranıyor...";
+    submitBtn.textContent = "Scanning...";
 
     const results = [];
     const source = new EventSource("/api/check?handle=" + encodeURIComponent(handle));
@@ -188,21 +603,21 @@
     source.addEventListener("done", () => {
       const found = results.filter((r) => r.exists === true).length;
       const unknown = results.filter((r) => r.exists === null).length;
-      summaryEl.textContent = `${found} hesap bulundu, ${unknown} platform kontrol edilemedi.`;
+      summaryEl.textContent = `${found} account(s) found, ${unknown} platform(s) couldn't be verified.`;
       source.close();
       submitBtn.disabled = false;
-      submitBtn.textContent = "Tara";
+      submitBtn.textContent = "Scan";
     });
 
     source.addEventListener("error", (e) => {
-      let message = "Bağlantı hatası.";
+      let message = "Connection error.";
       try {
         if (e.data) message = JSON.parse(e.data).message || message;
       } catch (_) {}
       errorEl.textContent = message;
       source.close();
       submitBtn.disabled = false;
-      submitBtn.textContent = "Tara";
+      submitBtn.textContent = "Scan";
     });
   });
 </script>
