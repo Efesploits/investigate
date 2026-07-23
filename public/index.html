@@ -61,30 +61,46 @@
   .eye-inner {
     transform-box: fill-box;
     transform-origin: center;
-    transform: scaleY(.04);
-    animation: eyeOpen .75s cubic-bezier(.2,.9,.25,1) 0.95s forwards,
-               blink 5.5s ease-in-out 4.2s infinite;
+    transform: scaleY(.26);
+    animation: eyeOpen .6s cubic-bezier(.3,1.15,.35,1) 0.9s forwards,
+               blink 4s cubic-bezier(.6,0,.4,1) 3.6s infinite;
   }
   @keyframes eyeOpen {
-    0%   { transform: scaleY(.04); }
-    65%  { transform: scaleY(1.12); }
+    0%   { transform: scaleY(.26); }
+    55%  { transform: scaleY(1.16); }
     100% { transform: scaleY(1); }
   }
   @keyframes blink {
-    0%, 92%, 100% { transform: scaleY(1); }
-    95%           { transform: scaleY(.06); }
+    0%, 88%, 100% { transform: scaleY(1); }
+    92%           { transform: scaleY(.1); }
+    95%           { transform: scaleY(1); }
   }
 
   .iris {
     transform-box: fill-box;
     transform-origin: center;
-    animation: look 3.4s ease-in-out 1.7s both;
+    animation: look 2.8s cubic-bezier(.85,0,.15,1) 1.45s both;
   }
   @keyframes look {
-    0%, 12%   { transform: translateX(0); }
-    26%, 38%  { transform: translateX(-28px); }
-    54%, 68%  { transform: translateX(28px); }
-    86%, 100% { transform: translateX(0); }
+    0%, 7%    { transform: translateX(0); }
+    15%, 24%  { transform: translateX(-34px); }   /* snap left */
+    32%, 43%  { transform: translateX(36px); }    /* snap right */
+    50%       { transform: translateX(-22px); }
+    59%       { transform: translateX(28px); }
+    68%       { transform: translateX(-12px); }
+    78%, 100% { transform: translateX(0); }
+  }
+
+  /* aggressive brow drop */
+  .brow {
+    transform-box: fill-box;
+    transform-origin: center;
+    transform: translateY(-6px);
+    animation: browDrop .5s cubic-bezier(.4,1.4,.5,1) 1.35s forwards;
+  }
+  @keyframes browDrop {
+    0%   { transform: translateY(-6px); }
+    100% { transform: translateY(0); }
   }
 
   .intro-title {
@@ -324,13 +340,14 @@
       <g clip-path="url(#lensClip)">
         <circle cx="150" cy="140" r="100" fill="#000000"/>
         <g class="eye-inner">
-          <ellipse cx="150" cy="140" rx="72" ry="44" fill="#f4f4f4"/>
+          <ellipse cx="150" cy="140" rx="74" ry="46" fill="#f4f4f4"/>
           <g class="iris">
-            <circle cx="150" cy="140" r="26" fill="#000000"/>
-            <circle cx="150" cy="140" r="12" fill="#000000"/>
-            <circle cx="141" cy="131" r="5" fill="#f4f4f4"/>
+            <circle cx="150" cy="140" r="27" fill="#000000"/>
+            <circle cx="143" cy="130" r="5" fill="#f4f4f4"/>
           </g>
         </g>
+        <!-- angry brow: black wedge slanting down, carves a sharp glare into the eye -->
+        <polygon class="brow" points="62,50 238,128 238,40 62,40" fill="#000000"/>
       </g>
 
       <!-- rim -->
@@ -350,9 +367,10 @@
       <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
         <circle cx="150" cy="140" r="100" fill="#000"/>
-        <ellipse cx="150" cy="140" rx="72" ry="42" fill="#f4f4f4"/>
-        <circle cx="150" cy="140" r="24" fill="#000"/>
-        <circle cx="142" cy="131" r="5" fill="#f4f4f4"/>
+        <ellipse cx="150" cy="140" rx="74" ry="44" fill="#f4f4f4"/>
+        <circle cx="150" cy="140" r="25" fill="#000"/>
+        <circle cx="143" cy="130" r="5" fill="#f4f4f4"/>
+        <polygon points="62,50 238,128 238,40 62,40" fill="#000"/>
         <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
       </svg>
       <div>
@@ -420,6 +438,45 @@
 </div>
 
 <script>
+  /* ---------- sounds (synthesized, no external files) ---------- */
+  let audioCtx = null;
+  function getCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+  function tone({ freq = 440, type = "sine", dur = 0.08, gain = 0.08, slideTo = null }) {
+    const ctx = getCtx();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+  // hover: quick sharp blip
+  const hoverSound = () => tone({ freq: 660, type: "triangle", dur: 0.05, gain: 0.05 });
+  // click: punchy, aggressive downward zap
+  const clickSound = () => tone({ freq: 340, type: "square", dur: 0.11, gain: 0.11, slideTo: 130 });
+
+  function attachSounds(el) {
+    el.addEventListener("mouseenter", hoverSound);
+    el.addEventListener("click", clickSound);
+  }
+  // resume audio on the very first interaction so later hovers can play
+  window.addEventListener("pointerdown", () => getCtx(), { once: true });
+
   /* ---------- intro -> app ---------- */
   const intro = document.getElementById("intro");
   const enterBtn = document.getElementById("enterBtn");
@@ -453,6 +510,9 @@
     showPage("investigate");
     document.getElementById("handle").focus();
   });
+
+  /* wire hover + click sounds onto every interactive control */
+  document.querySelectorAll(".enter-btn, .nav-item, .cta, button.scan").forEach(attachSounds);
 
   /* ---------- scanner ---------- */
   const form = document.getElementById("form");
