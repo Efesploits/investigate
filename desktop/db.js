@@ -133,6 +133,28 @@ function groupCols(rows, textSet) {
   return [...map.entries()].map(([table, columns]) => ({ table, columns }));
 }
 
+// ---- table list, for auto-generated per-table search sections ----
+async function listTables() {
+  if (!state) throw new Error("Not connected to a database.");
+  const schema = (await getTextColumns()).slice(0, MAX_TABLES);
+  return { ok: true, tables: schema.filter((t) => t.columns.length) };
+}
+
+// ---- search a single table ----
+async function searchTable(table, term) {
+  if (!state) throw new Error("Not connected to a database.");
+  const q = String(term || "").trim();
+  if (!q) throw new Error("Enter a search term.");
+  const like = "%" + q + "%";
+
+  const schema = await getTextColumns();
+  const entry = schema.find((t) => t.table === table);
+  if (!entry) throw new Error("Unknown table: " + table);
+
+  const rows = await queryTable(entry.table, entry.columns, like);
+  return { ok: true, table, term: q, columns: entry.columns, count: rows.length, rows: rows.slice(0, SHOW_ROWS) };
+}
+
 // ---- search ----
 async function search(term) {
   if (!state) throw new Error("Not connected to a database.");
@@ -188,4 +210,4 @@ function normalizeRow(row) {
   return o;
 }
 
-module.exports = { connect, disconnect, isConnected, search };
+module.exports = { connect, disconnect, isConnected, search, listTables, searchTable };

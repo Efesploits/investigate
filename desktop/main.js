@@ -58,6 +58,22 @@ ipcMain.handle("db:search", async (_e, term) => {
   }
 });
 
+ipcMain.handle("db:listTables", async () => {
+  try {
+    return await db.listTables();
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle("db:searchTable", async (_e, { table, term }) => {
+  try {
+    return await db.searchTable(table, term);
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
 ipcMain.handle("db:pickSqlite", async () => {
   const res = await dialog.showOpenDialog(win, {
     title: "Select a SQLite database file",
