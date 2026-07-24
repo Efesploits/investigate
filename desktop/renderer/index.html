@@ -3,11 +3,26 @@
 <head>
 <meta charset="utf-8" />
 <title>m3's investigation tool</title>
+<script>
+  // apply the saved theme before first paint, so there's no flash of the wrong theme
+  (function () {
+    try {
+      var raw = localStorage.getItem("m3-settings");
+      var s = raw ? JSON.parse(raw) : null;
+      if (s && s.blackWhite === false) document.documentElement.classList.add("color-theme");
+    } catch (_) {}
+  })();
+</script>
 <style>
   :root {
     --bg: #000000; --bg2: #0a0a0a; --panel: #101010; --panel2: #161616;
-    --border: #262626; --text: #f4f4f4; --muted: #888888; --accent: #ffffff;
-    --ok: #f2f2f2;
+    --border: #262626; --text: #f4f4f4; --muted: #888888; --accent: #f4f4f4;
+    --accent-rgb: 244 244 244; --intro-bg-inner: #141414; --intro-bg-outer: #000;
+  }
+  html.color-theme {
+    --bg: #080a0f; --bg2: #0d1017; --panel: #12161f; --panel2: #161b26;
+    --border: #232a38; --text: #e8eef7; --muted: #8b95a7; --accent: #38e0d0;
+    --accent-rgb: 56 224 208; --intro-bg-inner: #101a2b; --intro-bg-outer: #05070d;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
@@ -23,13 +38,13 @@
   #intro {
     position: fixed; inset: 0; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 26px; z-index: 50;
-    background: radial-gradient(760px 620px at 50% 34%, #141414 0%, #000 72%);
+    background: radial-gradient(760px 620px at 50% 34%, var(--intro-bg-inner) 0%, var(--intro-bg-outer) 72%);
     transition: opacity .7s ease, transform .7s ease;
   }
   #intro.leaving { opacity: 0; transform: scale(1.08); pointer-events: none; }
   .glass-wrap {
     width: min(300px, 60vw);
-    filter: drop-shadow(0 0 34px rgba(255,255,255,.10));
+    filter: drop-shadow(0 0 34px rgb(var(--accent-rgb) / .10));
     animation: glassIn 1s cubic-bezier(.2,.8,.2,1) both, float 6s ease-in-out 1s infinite;
   }
   .glass { width: 100%; height: auto; display: block; }
@@ -56,13 +71,13 @@
   .print-tag { position: absolute; top: clamp(30px,10vh,100px); margin: 0; color: var(--muted); font-size: clamp(.85rem,2.2vw,1.05rem); font-style: italic; letter-spacing: 2px; opacity: 0; animation: fadeUp 1s ease .5s forwards; }
   .enter-btn {
     margin-top: 6px; padding: 12px 40px; border-radius: 999px;
-    border: 1px solid rgba(255,255,255,.55); background: transparent; color: var(--text);
+    border: 1px solid rgb(var(--accent-rgb) / .55); background: transparent; color: var(--text);
     font-size: 1rem; font-weight: 700; letter-spacing: 4px; cursor: pointer; opacity: 0;
     animation: fadeUp .7s ease 4.6s forwards, pulse 2.4s ease-in-out 5.3s infinite;
     transition: transform .15s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
   }
-  .enter-btn:hover { transform: translateY(-2px); background: var(--text); color: #000; box-shadow: 0 0 26px rgba(255,255,255,.25); }
-  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); } 50% { box-shadow: 0 0 22px 1px rgba(255,255,255,.18); } }
+  .enter-btn:hover { transform: translateY(-2px); background: var(--accent); color: #000; box-shadow: 0 0 26px rgb(var(--accent-rgb) / .25); }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0); } 50% { box-shadow: 0 0 22px 1px rgb(var(--accent-rgb) / .18); } }
   .intro-credit { position: absolute; bottom: clamp(20px, 6vh, 48px); margin: 0; color: var(--muted); font-size: .72rem; letter-spacing: 1px; opacity: 0; animation: fadeUp .8s ease 5.1s forwards; }
 
   /* ---------- APP ---------- */
@@ -77,7 +92,7 @@
   .nav-item { display: flex; align-items: center; gap: 11px; padding: 11px 12px; border-radius: 10px; color: var(--text); font-size: .93rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: background .15s ease, border-color .15s ease; }
   .nav-item svg { width: 18px; height: 18px; opacity: .75; }
   .nav-item:hover { background: var(--panel2); }
-  .nav-item.active { background: var(--panel2); border-color: #3a3a3a; color: #fff; }
+  .nav-item.active { background: var(--panel2); border-color: #3a3a3a; color: var(--text); }
   .nav-item.active svg { opacity: 1; }
   .footer-credit { margin-top: auto; padding: 14px 10px 4px; border-top: 1px solid var(--border); color: var(--muted); font-size: .68rem; letter-spacing: .3px; line-height: 1.5; }
   .content { flex: 1; padding: 40px clamp(20px,5vw,54px); max-width: 940px; }
@@ -93,6 +108,26 @@
   .card h3 { margin: 0 0 6px; font-size: 1rem; }
   .card p { margin: 0; color: var(--muted); font-size: .84rem; line-height: 1.5; }
 
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    padding: 18px 20px; border: 1px solid var(--border); border-radius: 14px;
+    background: var(--panel); margin-bottom: 12px;
+  }
+  .settings-label { font-weight: 700; font-size: .95rem; }
+  .settings-desc { color: var(--muted); font-size: .82rem; margin-top: 3px; }
+  .switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+  .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .switch .track {
+    position: absolute; inset: 0; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 999px; cursor: pointer; transition: background .2s ease, border-color .2s ease;
+  }
+  .switch .knob {
+    position: absolute; top: 2px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--muted); transition: transform .2s ease, background .2s ease;
+  }
+  .switch input:checked + .track { background: rgb(var(--accent-rgb) / .22); border-color: rgb(var(--accent-rgb) / .6); }
+  .switch input:checked + .track .knob { transform: translateX(20px); background: var(--accent); }
+
   /* connection form */
   .conn { border: 1px solid var(--border); border-radius: 14px; background: var(--panel); padding: 20px; margin-bottom: 20px; }
   .conn .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 12px; }
@@ -103,12 +138,12 @@
     background: var(--bg2); color: var(--text); font-size: .92rem; outline: none;
     transition: border-color .15s ease, box-shadow .15s ease;
   }
-  .conn input:focus, .conn select:focus { border-color: #666; box-shadow: 0 0 0 3px rgba(255,255,255,.07); }
+  .conn input:focus, .conn select:focus { border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .07); }
   .conn-row { display: flex; align-items: center; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
   .file-pick { display: flex; gap: 10px; align-items: center; }
   .file-name { color: var(--muted); font-size: .84rem; word-break: break-all; }
   .btn {
-    padding: 11px 22px; border-radius: 10px; border: none; background: var(--text); color: #000;
+    padding: 11px 22px; border-radius: 10px; border: none; background: var(--accent); color: #000;
     font-weight: 800; font-size: .92rem; cursor: pointer; transition: opacity .15s ease;
   }
   .btn:hover { opacity: .85; }
@@ -122,7 +157,7 @@
   .section-label { color: var(--muted); font-size: .72rem; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; margin: 26px 0 10px; }
   .search-bar { display: flex; gap: 10px; margin: 4px 0 20px; }
   .search-bar input { flex: 1; padding: 13px 16px; border-radius: 11px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: 1rem; outline: none; }
-  .search-bar input:focus { border-color: #666; box-shadow: 0 0 0 3px rgba(255,255,255,.08); }
+  .search-bar input:focus { border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .08); }
   .search-bar input:disabled { opacity: .5; }
 
   #tableSections { display: flex; flex-direction: column; gap: 10px; }
@@ -136,8 +171,8 @@
   .tsec.open .tsec-body { display: block; }
   .tsec-search { display: flex; gap: 8px; margin-bottom: 10px; }
   .tsec-search input { flex: 1; padding: 10px 13px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); font-size: .9rem; outline: none; }
-  .tsec-search input:focus { border-color: #666; box-shadow: 0 0 0 3px rgba(255,255,255,.07); }
-  .tsec-search button { padding: 10px 18px; border-radius: 9px; border: none; background: var(--text); color: #000; font-weight: 800; font-size: .85rem; cursor: pointer; }
+  .tsec-search input:focus { border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .07); }
+  .tsec-search button { padding: 10px 18px; border-radius: 9px; border: none; background: var(--accent); color: #000; font-weight: 800; font-size: .85rem; cursor: pointer; }
   .tsec-search button:disabled { opacity: .5; cursor: not-allowed; }
   .tsec-result { font-size: .82rem; color: var(--muted); }
 
@@ -148,9 +183,9 @@
     background: var(--panel); color: var(--text); font-size: 1rem; outline: none;
     transition: border-color .15s ease, box-shadow .15s ease;
   }
-  #osintForm input[type=text]:focus { border-color: #666; box-shadow: 0 0 0 3px rgba(255,255,255,.08); }
+  #osintForm input[type=text]:focus { border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .08); }
   button.scan {
-    padding: 13px 26px; border-radius: 11px; border: none; background: var(--text);
+    padding: 13px 26px; border-radius: 11px; border: none; background: var(--accent);
     color: #000; font-size: 1rem; font-weight: 800; cursor: pointer;
   }
   button.scan:disabled { opacity: .55; cursor: not-allowed; }
@@ -167,7 +202,7 @@
     font-size: .74rem; font-weight: 800; letter-spacing: .5px; padding: 5px 12px;
     border-radius: 999px; white-space: nowrap;
   }
-  .osint-badge.ok  { background: #f2f2f2; color: #000; }
+  .osint-badge.ok  { background: var(--accent); color: #000; }
   .osint-badge.no  { background: transparent; color: #7c7c7c; border: 1px solid #333; }
   .osint-badge.unk { background: #1c1c1c; color: #b4b4b4; border: 1px dashed #444; }
   .osint-reason { color: var(--muted); font-size: .74rem; margin-top: 3px; }
@@ -176,7 +211,7 @@
 
   .scan-loader { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 30px 0 36px; }
   .scan-loader.hidden { display: none; }
-  .scan-eye-svg { width: 84px; height: auto; filter: drop-shadow(0 0 18px rgba(255,255,255,0.10)); }
+  .scan-eye-svg { width: 84px; height: auto; filter: drop-shadow(0 0 18px rgb(var(--accent-rgb) / 0.10)); }
   .scan-iris { transform-box: fill-box; transform-origin: center; animation: scanLook 2.1s ease-in-out infinite; }
   @keyframes scanLook {
     0%, 8%    { transform: translate(0, 0); }
@@ -190,13 +225,13 @@
   .tbl-card { border: 1px solid var(--border); border-radius: 12px; background: var(--panel); margin-bottom: 14px; overflow: hidden; animation: pageIn .25s ease; }
   .tbl-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
   .tbl-head .tname { font-weight: 800; }
-  .tbl-head .tcount { font-size: .74rem; font-weight: 800; padding: 4px 10px; border-radius: 999px; background: var(--ok); color: #000; }
+  .tbl-head .tcount { font-size: .74rem; font-weight: 800; padding: 4px 10px; border-radius: 999px; background: var(--accent); color: #000; }
   .tbl-scroll { overflow-x: auto; }
   table { border-collapse: collapse; width: 100%; font-size: .82rem; }
   th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #1c1c1c; white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
   th { color: var(--muted); font-weight: 700; text-transform: uppercase; font-size: .68rem; letter-spacing: .5px; }
   td { color: #dcdcdc; user-select: text; }
-  mark { background: #f2f2f2; color: #000; border-radius: 3px; padding: 0 2px; }
+  mark { background: var(--accent); color: #000; border-radius: 3px; padding: 0 2px; }
   #dbSummary { margin: 6px 0 16px; color: var(--muted); font-size: .88rem; }
   #dbError { color: #e58a8a; font-size: .9rem; margin-top: 10px; }
   .hidden { display: none !important; }
@@ -210,15 +245,15 @@
   <div class="glass-wrap">
     <svg class="glass" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
       <defs><clipPath id="lensClip"><circle cx="150" cy="140" r="100"/></clipPath></defs>
-      <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+      <line x1="221" y1="211" x2="286" y2="276" stroke="var(--accent)" stroke-width="16" stroke-linecap="round"/>
       <g clip-path="url(#lensClip)">
         <circle cx="150" cy="140" r="100" fill="#000"/>
         <g class="eye-inner">
-          <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="#f4f4f4"/>
-          <g class="iris"><circle cx="146" cy="156" r="46" fill="#000"/><circle cx="126" cy="138" r="6.5" fill="#f4f4f4"/></g>
+          <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="var(--accent)"/>
+          <g class="iris"><circle cx="146" cy="156" r="46" fill="#000"/><circle cx="126" cy="138" r="6.5" fill="var(--accent)"/></g>
         </g>
       </g>
-      <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
+      <circle cx="150" cy="140" r="100" fill="none" stroke="var(--accent)" stroke-width="9"/>
     </svg>
   </div>
   <h1 class="intro-title">m3's investigation tool</h1>
@@ -232,11 +267,11 @@
   <aside class="sidebar">
     <div class="brand">
       <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+        <line x1="221" y1="211" x2="286" y2="276" stroke="var(--accent)" stroke-width="16" stroke-linecap="round"/>
         <circle cx="150" cy="140" r="100" fill="#000"/>
-        <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="#f4f4f4"/>
-        <circle cx="146" cy="156" r="46" fill="#000"/><circle cx="126" cy="138" r="6" fill="#f4f4f4"/>
-        <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
+        <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="var(--accent)"/>
+        <circle cx="146" cy="156" r="46" fill="#000"/><circle cx="126" cy="138" r="6" fill="var(--accent)"/>
+        <circle cx="150" cy="140" r="100" fill="none" stroke="var(--accent)" stroke-width="9"/>
       </svg>
       <div><div class="bt">m3's tool</div><div class="bs">db client</div></div>
     </div>
@@ -253,6 +288,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
       Database
     </div>
+    <div class="nav-item" data-page="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
     <div class="footer-credit">m3fxn — theres always a clue, find it.</div>
   </aside>
 
@@ -261,11 +300,11 @@
     <section class="page show" id="page-home">
       <div class="home-hero">
         <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+          <line x1="221" y1="211" x2="286" y2="276" stroke="var(--accent)" stroke-width="16" stroke-linecap="round"/>
           <circle cx="150" cy="140" r="100" fill="#000"/>
-          <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="#f4f4f4"/>
-          <circle cx="146" cy="156" r="46" fill="#000"/><circle cx="126" cy="138" r="6" fill="#f4f4f4"/>
-          <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
+          <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="var(--accent)"/>
+          <circle cx="146" cy="156" r="46" fill="#000"/><circle cx="126" cy="138" r="6" fill="var(--accent)"/>
+          <circle cx="150" cy="140" r="100" fill="none" stroke="var(--accent)" stroke-width="9"/>
         </svg>
         <div>
           <h1>m3's investigation tool — desktop</h1>
@@ -296,16 +335,16 @@
       <div class="scan-loader hidden" id="scanLoader">
         <svg class="scan-eye-svg" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs><clipPath id="scanLensClip"><circle cx="150" cy="140" r="100"/></clipPath></defs>
-          <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+          <line x1="221" y1="211" x2="286" y2="276" stroke="var(--accent)" stroke-width="16" stroke-linecap="round"/>
           <g clip-path="url(#scanLensClip)">
             <circle cx="150" cy="140" r="100" fill="#000000"/>
-            <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="#f4f4f4"/>
+            <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="var(--accent)"/>
             <g class="scan-iris">
               <circle cx="146" cy="156" r="46" fill="#000000"/>
-              <circle cx="126" cy="138" r="6.5" fill="#f4f4f4"/>
+              <circle cx="126" cy="138" r="6.5" fill="var(--accent)"/>
             </g>
           </g>
-          <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
+          <circle cx="150" cy="140" r="100" fill="none" stroke="var(--accent)" stroke-width="9"/>
         </svg>
         <p class="scan-loader-text">Scanning platforms…</p>
       </div>
@@ -385,10 +424,116 @@
         <div id="tableSections"></div>
       </div>
     </section>
+
+    <!-- SETTINGS -->
+    <section class="page" id="page-settings">
+      <h1>Settings</h1>
+      <p class="sub">Preferences are saved on this device and stay set the next time you open the app.</p>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Black &amp; white mode</div>
+          <div class="settings-desc">Monochrome look. Turn off for a colored theme.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="toggleBW"><span class="track"><span class="knob"></span></span></label>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Play music on intro</div>
+          <div class="settings-desc">Fades in a short theme when the intro screen opens.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="toggleMusic"><span class="track"><span class="knob"></span></span></label>
+      </div>
+    </section>
   </main>
 </div>
+<audio id="introAudio" src="./audio/intro-theme.mp3" preload="auto" loop></audio>
 
 <script>
+  /* ---------- settings (persisted in localStorage) ---------- */
+  const SETTINGS_KEY = "m3-settings";
+  const DEFAULT_SETTINGS = { blackWhite: true, introMusic: true };
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (raw) return Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw));
+    } catch (_) {}
+    return Object.assign({}, DEFAULT_SETTINGS);
+  }
+  function saveSettings() {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (_) {}
+  }
+  let settings = loadSettings();
+  function applyTheme() {
+    document.documentElement.classList.toggle("color-theme", !settings.blackWhite);
+  }
+  applyTheme();
+
+  const toggleBW = document.getElementById("toggleBW");
+  const toggleMusic = document.getElementById("toggleMusic");
+  toggleBW.checked = settings.blackWhite;
+  toggleMusic.checked = settings.introMusic;
+  toggleBW.addEventListener("change", () => {
+    settings.blackWhite = toggleBW.checked;
+    saveSettings();
+    applyTheme();
+  });
+  toggleMusic.addEventListener("change", () => {
+    settings.introMusic = toggleMusic.checked;
+    saveSettings();
+    if (!settings.introMusic) stopIntroMusic();
+  });
+
+  /* ---------- intro music: fades in from 0 while the intro is showing ---------- */
+  const introAudio = document.getElementById("introAudio");
+  let musicFadeTimer = null;
+  const MUSIC_TARGET_VOLUME = 0.45;
+
+  function fadeInIntroMusic() {
+    introAudio.volume = 0;
+    introAudio.currentTime = 0;
+    const playPromise = introAudio.play();
+    const startRamp = () => {
+      clearInterval(musicFadeTimer);
+      const steps = 40, stepMs = 4500 / steps;
+      let i = 0;
+      musicFadeTimer = setInterval(() => {
+        i++;
+        introAudio.volume = Math.min(MUSIC_TARGET_VOLUME, (MUSIC_TARGET_VOLUME * i) / steps);
+        if (i >= steps) clearInterval(musicFadeTimer);
+      }, stepMs);
+    };
+    if (playPromise && playPromise.then) {
+      playPromise.then(startRamp).catch(() => {
+        const retry = () => { introAudio.play().then(startRamp).catch(() => {}); cleanup(); };
+        const cleanup = () => {
+          window.removeEventListener("pointerdown", retry);
+          window.removeEventListener("keydown", retry);
+        };
+        window.addEventListener("pointerdown", retry, { once: true });
+        window.addEventListener("keydown", retry, { once: true });
+      });
+    }
+  }
+  function stopIntroMusic() {
+    clearInterval(musicFadeTimer);
+    introAudio.pause();
+    introAudio.currentTime = 0;
+  }
+  function fadeOutIntroMusic() {
+    clearInterval(musicFadeTimer);
+    const steps = 14, stepMs = 700 / steps;
+    const startVol = introAudio.volume;
+    let i = 0;
+    musicFadeTimer = setInterval(() => {
+      i++;
+      introAudio.volume = Math.max(0, startVol * (1 - i / steps));
+      if (i >= steps) { clearInterval(musicFadeTimer); introAudio.pause(); introAudio.currentTime = 0; }
+    }, stepMs);
+  }
+  if (settings.introMusic) fadeInIntroMusic();
+
   /* ---------- sounds (synthesized) ---------- */
   let audioCtx = null, noiseBuffer = null;
   function getCtx() {
@@ -440,6 +585,7 @@
   const intro = document.getElementById("intro"), app = document.getElementById("app");
   function enterApp() {
     intro.classList.add("leaving"); document.body.classList.add("entered");
+    fadeOutIntroMusic();
     setTimeout(() => { intro.style.display = "none"; app.classList.add("show"); }, 700);
   }
   document.getElementById("enterBtn").addEventListener("click", enterApp);
@@ -759,7 +905,7 @@
   termEl.addEventListener("keydown", (e) => { if (e.key === "Enter") runSearch(); });
 
   /* wire sounds */
-  document.querySelectorAll(".enter-btn, .nav-item, .btn, button.scan").forEach(attachSounds);
+  document.querySelectorAll(".enter-btn, .nav-item, .btn, button.scan, .switch").forEach(attachSounds);
 </script>
 </body>
 </html>
