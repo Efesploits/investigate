@@ -4,6 +4,16 @@
 <meta charset="utf-8" />
 <title>m3's investigation tool</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>
+  // apply the saved theme before first paint, so there's no flash of the wrong theme
+  (function () {
+    try {
+      var raw = localStorage.getItem("m3-settings");
+      var s = raw ? JSON.parse(raw) : null;
+      if (s && s.blackWhite === false) document.documentElement.classList.add("color-theme");
+    } catch (_) {}
+  })();
+</script>
 <style>
   :root {
     --bg: #000000;
@@ -13,7 +23,23 @@
     --border: #262626;
     --text: #f4f4f4;
     --muted: #888888;
-    --accent: #ffffff;
+    --accent: #f4f4f4;
+    --accent-rgb: 244 244 244;
+    --intro-bg-inner: #141414;
+    --intro-bg-outer: #000;
+  }
+  html.color-theme {
+    --bg: #080a0f;
+    --bg2: #0d1017;
+    --panel: #12161f;
+    --panel2: #161b26;
+    --border: #232a38;
+    --text: #e8eef7;
+    --muted: #8b95a7;
+    --accent: #38e0d0;
+    --accent-rgb: 56 224 208;
+    --intro-bg-inner: #101a2b;
+    --intro-bg-outer: #05070d;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
@@ -36,14 +62,14 @@
     justify-content: center;
     gap: 26px;
     z-index: 50;
-    background: radial-gradient(760px 620px at 50% 34%, #141414 0%, #000 72%);
+    background: radial-gradient(760px 620px at 50% 34%, var(--intro-bg-inner) 0%, var(--intro-bg-outer) 72%);
     transition: opacity 0.7s ease, transform 0.7s ease;
   }
   #intro.leaving { opacity: 0; transform: scale(1.08); pointer-events: none; }
 
   .glass-wrap {
     width: min(320px, 72vw);
-    filter: drop-shadow(0 0 34px rgba(255,255,255,0.10));
+    filter: drop-shadow(0 0 34px rgb(var(--accent-rgb) / 0.10));
     animation: glassIn 1s cubic-bezier(.2,.8,.2,1) both,
                float 6s ease-in-out 1s infinite;
   }
@@ -134,7 +160,7 @@
     margin-top: 6px;
     padding: 13px 42px;
     border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.55);
+    border: 1px solid rgb(var(--accent-rgb) / 0.55);
     background: transparent;
     color: var(--text);
     font-size: 1rem;
@@ -147,13 +173,13 @@
   }
   .enter-btn:hover {
     transform: translateY(-2px);
-    background: var(--text);
+    background: var(--accent);
     color: #000;
-    box-shadow: 0 0 26px rgba(255,255,255,0.25);
+    box-shadow: 0 0 26px rgb(var(--accent-rgb) / 0.25);
   }
   @keyframes pulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.0); }
-    50%     { box-shadow: 0 0 22px 1px rgba(255,255,255,0.18); }
+    0%,100% { box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0.0); }
+    50%     { box-shadow: 0 0 22px 1px rgb(var(--accent-rgb) / 0.18); }
   }
 
   .intro-credit {
@@ -221,7 +247,7 @@
   .nav-item.active {
     background: var(--panel2);
     border-color: #3a3a3a;
-    color: #fff;
+    color: var(--text);
   }
   .nav-item.active svg { opacity: 1; }
 
@@ -251,7 +277,7 @@
   .card { padding: 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
   .card h3 { margin: 0 0 6px; font-size: 1rem; }
   .card p { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
-  .card .big { font-size: 1.5rem; color: var(--text); font-weight: 800; }
+  .card .big { font-size: 1.5rem; color: var(--accent); font-weight: 800; }
 
   .cta {
     display: inline-flex;
@@ -261,7 +287,7 @@
     padding: 12px 22px;
     border-radius: 10px;
     border: none;
-    background: var(--text);
+    background: var(--accent);
     color: #000;
     font-weight: 800;
     font-size: .95rem;
@@ -272,9 +298,29 @@
   a.cta { text-decoration: none; }
   .db-note { color: var(--muted); font-size: .78rem; margin: 12px 0 0; letter-spacing: .3px; }
 
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    padding: 18px 20px; border: 1px solid var(--border); border-radius: 14px;
+    background: var(--panel); margin-bottom: 12px;
+  }
+  .settings-label { font-weight: 700; font-size: .95rem; }
+  .settings-desc { color: var(--muted); font-size: .82rem; margin-top: 3px; }
+  .switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+  .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .switch .track {
+    position: absolute; inset: 0; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 999px; cursor: pointer; transition: background .2s ease, border-color .2s ease;
+  }
+  .switch .knob {
+    position: absolute; top: 2px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--muted); transition: transform .2s ease, background .2s ease;
+  }
+  .switch input:checked + .track { background: rgb(var(--accent-rgb) / .22); border-color: rgb(var(--accent-rgb) / .6); }
+  .switch input:checked + .track .knob { transform: translateX(20px); background: var(--accent); }
+
   .scan-loader { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 30px 0 36px; }
   .scan-loader.hidden { display: none; }
-  .scan-eye-svg { width: 84px; height: auto; filter: drop-shadow(0 0 18px rgba(255,255,255,0.10)); }
+  .scan-eye-svg { width: 84px; height: auto; filter: drop-shadow(0 0 18px rgb(var(--accent-rgb) / 0.10)); }
   .scan-iris { transform-box: fill-box; transform-origin: center; animation: scanLook 2.1s ease-in-out infinite; }
   @keyframes scanLook {
     0%, 8%    { transform: translate(0, 0); }
@@ -297,12 +343,12 @@
     outline: none;
     transition: border-color .15s ease, box-shadow .15s ease;
   }
-  input[type=text]:focus { border-color: #666; box-shadow: 0 0 0 3px rgba(255,255,255,0.08); }
+  input[type=text]:focus { border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.08); }
   button.scan {
     padding: 13px 26px;
     border-radius: 11px;
     border: none;
-    background: var(--text);
+    background: var(--accent);
     color: #000;
     font-size: 1rem;
     font-weight: 800;
@@ -334,7 +380,7 @@
     border-radius: 999px;
     white-space: nowrap;
   }
-  .badge.ok  { background: #f2f2f2; color: #000; }
+  .badge.ok  { background: var(--accent); color: #000; }
   .badge.no  { background: transparent; color: #7c7c7c; border: 1px solid #333; }
   .badge.unk { background: #1c1c1c; color: #b4b4b4; border: 1px dashed #444; }
   .reason { color: var(--muted); font-size: .74rem; margin-top: 3px; }
@@ -367,23 +413,23 @@
       </defs>
 
       <!-- handle -->
-      <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+      <line x1="221" y1="211" x2="286" y2="276" stroke="var(--accent)" stroke-width="16" stroke-linecap="round"/>
 
       <!-- lens interior + eye -->
       <g clip-path="url(#lensClip)">
         <circle cx="150" cy="140" r="100" fill="#000000"/>
         <g class="eye-inner">
           <!-- sly wide side-eye: lowered lid on top, round bottom, pointed corners -->
-          <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="#f4f4f4"/>
+          <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="var(--accent)"/>
           <g class="iris">
             <circle cx="146" cy="156" r="46" fill="#000000"/>
-            <circle cx="126" cy="138" r="6.5" fill="#f4f4f4"/>
+            <circle cx="126" cy="138" r="6.5" fill="var(--accent)"/>
           </g>
         </g>
       </g>
 
       <!-- rim -->
-      <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
+      <circle cx="150" cy="140" r="100" fill="none" stroke="var(--accent)" stroke-width="9"/>
     </svg>
   </div>
 
@@ -392,18 +438,19 @@
   <button class="enter-btn" id="enterBtn">ENTER</button>
   <p class="intro-credit">m3fxn — theres always a clue, find it.</p>
 </div>
+<audio id="introAudio" src="/audio/intro-theme.mp3" preload="auto" loop></audio>
 
 <!-- ===================== APP ===================== -->
 <div id="app">
   <aside class="sidebar">
     <div class="brand">
       <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+        <line x1="221" y1="211" x2="286" y2="276" stroke="var(--accent)" stroke-width="16" stroke-linecap="round"/>
         <circle cx="150" cy="140" r="100" fill="#000"/>
-        <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="#f4f4f4"/>
+        <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="var(--accent)"/>
         <circle cx="146" cy="156" r="46" fill="#000"/>
-        <circle cx="126" cy="138" r="6" fill="#f4f4f4"/>
-        <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
+        <circle cx="126" cy="138" r="6" fill="var(--accent)"/>
+        <circle cx="150" cy="140" r="100" fill="none" stroke="var(--accent)" stroke-width="9"/>
       </svg>
       <div>
         <div class="bt">m3's tool</div>
@@ -424,6 +471,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
       Database
     </div>
+    <div class="nav-item" data-page="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
     <div class="footer-credit">m3fxn — theres always a clue, find it.</div>
   </aside>
 
@@ -432,12 +483,12 @@
     <section class="page show" id="page-home">
       <div class="home-hero">
         <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+          <line x1="221" y1="211" x2="286" y2="276" stroke="var(--accent)" stroke-width="16" stroke-linecap="round"/>
           <circle cx="150" cy="140" r="100" fill="#000"/>
-          <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="#f4f4f4"/>
+          <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="var(--accent)"/>
           <circle cx="146" cy="156" r="46" fill="#000"/>
-          <circle cx="126" cy="138" r="6" fill="#f4f4f4"/>
-          <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
+          <circle cx="126" cy="138" r="6" fill="var(--accent)"/>
+          <circle cx="150" cy="140" r="100" fill="none" stroke="var(--accent)" stroke-width="9"/>
         </svg>
         <div>
           <h1>Welcome to m3's investigation tool</h1>
@@ -471,16 +522,16 @@
       <div class="scan-loader hidden" id="scanLoader">
         <svg class="scan-eye-svg" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs><clipPath id="scanLensClip"><circle cx="150" cy="140" r="100"/></clipPath></defs>
-          <line x1="221" y1="211" x2="286" y2="276" stroke="#f4f4f4" stroke-width="16" stroke-linecap="round"/>
+          <line x1="221" y1="211" x2="286" y2="276" stroke="var(--accent)" stroke-width="16" stroke-linecap="round"/>
           <g clip-path="url(#scanLensClip)">
             <circle cx="150" cy="140" r="100" fill="#000000"/>
-            <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="#f4f4f4"/>
+            <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="var(--accent)"/>
             <g class="scan-iris">
               <circle cx="146" cy="156" r="46" fill="#000000"/>
-              <circle cx="126" cy="138" r="6.5" fill="#f4f4f4"/>
+              <circle cx="126" cy="138" r="6.5" fill="var(--accent)"/>
             </g>
           </g>
-          <circle cx="150" cy="140" r="100" fill="none" stroke="#f4f4f4" stroke-width="9"/>
+          <circle cx="150" cy="140" r="100" fill="none" stroke="var(--accent)" stroke-width="9"/>
         </svg>
         <p class="scan-loader-text">Scanning platforms…</p>
       </div>
@@ -493,7 +544,7 @@
     <!-- DATABASE -->
     <section class="page" id="page-database">
       <div class="home-hero">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#f4f4f4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:64px;height:64px;flex-shrink:0"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:64px;height:64px;flex-shrink:0"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
         <div>
           <h1>Connect your own database</h1>
           <p class="sub">Connect your own database for more advanced investigations.</p>
@@ -514,10 +565,116 @@
       </a>
       <p class="db-note">Windows · standalone desktop app · connects to your local or remote SQL database</p>
     </section>
+
+    <!-- SETTINGS -->
+    <section class="page" id="page-settings">
+      <h1>Settings</h1>
+      <p class="sub">Preferences are saved on this device and stay set the next time you open the site.</p>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Black &amp; white mode</div>
+          <div class="settings-desc">Monochrome look. Turn off for a colored theme.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="toggleBW"><span class="track"><span class="knob"></span></span></label>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Play music on intro</div>
+          <div class="settings-desc">Fades in a short theme when the intro screen opens.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="toggleMusic"><span class="track"><span class="knob"></span></span></label>
+      </div>
+    </section>
   </main>
 </div>
 
 <script>
+  /* ---------- settings (persisted in localStorage) ---------- */
+  const SETTINGS_KEY = "m3-settings";
+  const DEFAULT_SETTINGS = { blackWhite: true, introMusic: true };
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (raw) return Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw));
+    } catch (_) {}
+    return Object.assign({}, DEFAULT_SETTINGS);
+  }
+  function saveSettings() {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (_) {}
+  }
+  let settings = loadSettings();
+  function applyTheme() {
+    document.documentElement.classList.toggle("color-theme", !settings.blackWhite);
+  }
+  applyTheme();
+
+  const toggleBW = document.getElementById("toggleBW");
+  const toggleMusic = document.getElementById("toggleMusic");
+  toggleBW.checked = settings.blackWhite;
+  toggleMusic.checked = settings.introMusic;
+  toggleBW.addEventListener("change", () => {
+    settings.blackWhite = toggleBW.checked;
+    saveSettings();
+    applyTheme();
+  });
+  toggleMusic.addEventListener("change", () => {
+    settings.introMusic = toggleMusic.checked;
+    saveSettings();
+    if (!settings.introMusic) stopIntroMusic();
+  });
+
+  /* ---------- intro music: fades in from 0 while the intro is showing ---------- */
+  const introAudio = document.getElementById("introAudio");
+  let musicFadeTimer = null;
+  const MUSIC_TARGET_VOLUME = 0.45;
+
+  function fadeInIntroMusic() {
+    introAudio.volume = 0;
+    introAudio.currentTime = 0;
+    const playPromise = introAudio.play();
+    const startRamp = () => {
+      clearInterval(musicFadeTimer);
+      const steps = 40, stepMs = 4500 / steps;
+      let i = 0;
+      musicFadeTimer = setInterval(() => {
+        i++;
+        introAudio.volume = Math.min(MUSIC_TARGET_VOLUME, (MUSIC_TARGET_VOLUME * i) / steps);
+        if (i >= steps) clearInterval(musicFadeTimer);
+      }, stepMs);
+    };
+    if (playPromise && playPromise.then) {
+      playPromise.then(startRamp).catch(() => {
+        // autoplay blocked — start on the first real user gesture instead
+        const retry = () => { introAudio.play().then(startRamp).catch(() => {}); cleanup(); };
+        const cleanup = () => {
+          window.removeEventListener("pointerdown", retry);
+          window.removeEventListener("keydown", retry);
+        };
+        window.addEventListener("pointerdown", retry, { once: true });
+        window.addEventListener("keydown", retry, { once: true });
+      });
+    }
+  }
+  function stopIntroMusic() {
+    clearInterval(musicFadeTimer);
+    introAudio.pause();
+    introAudio.currentTime = 0;
+  }
+  function fadeOutIntroMusic() {
+    clearInterval(musicFadeTimer);
+    const steps = 14, stepMs = 700 / steps;
+    const startVol = introAudio.volume;
+    let i = 0;
+    musicFadeTimer = setInterval(() => {
+      i++;
+      introAudio.volume = Math.max(0, startVol * (1 - i / steps));
+      if (i >= steps) { clearInterval(musicFadeTimer); introAudio.pause(); introAudio.currentTime = 0; }
+    }, stepMs);
+  }
+  if (settings.introMusic) fadeInIntroMusic();
+
   /* ---------- sounds (synthesized, no external files) ---------- */
   let audioCtx = null;
   function getCtx() {
@@ -629,6 +786,7 @@
   function enterApp() {
     intro.classList.add("leaving");
     document.body.classList.add("entered");
+    fadeOutIntroMusic();
     setTimeout(() => {
       intro.style.display = "none";
       app.classList.add("show");
@@ -656,7 +814,7 @@
   });
 
   /* wire hover + click sounds onto every interactive control */
-  document.querySelectorAll(".enter-btn, .nav-item, .cta, button.scan").forEach(attachSounds);
+  document.querySelectorAll(".enter-btn, .nav-item, .cta, button.scan, .switch").forEach(attachSounds);
 
   /* ---------- scanner ---------- */
   const form = document.getElementById("form");
