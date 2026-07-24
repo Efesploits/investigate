@@ -1,6 +1,6 @@
 {
   "name": "investigate-client",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "m3's investigation tool — desktop SQL database client",
   "main": "main.js",
   "author": "m3",
@@ -17,6 +17,7 @@
       "preload.js",
       "db.js",
       "checker.js",
+      "updater.js",
       "renderer/**/*",
       "node_modules/**/*"
     ],

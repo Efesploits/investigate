@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const db = require("./db");
 const checker = require("./checker");
+const updater = require("./updater");
 
 let win;
 
@@ -113,6 +114,29 @@ ipcMain.handle("db:importSqlFile", async (event, filePath) => {
     return { ok: false, error: err.message };
   }
 });
+
+ipcMain.handle("update:check", async () => {
+  try {
+    return await updater.check(app.getVersion());
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle("update:install", async (event, url) => {
+  try {
+    const res = await updater.install(url, (p) => {
+      event.sender.send("update:progress", p);
+    });
+    // hand over to the swap script
+    setTimeout(() => app.quit(), 400);
+    return res;
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle("app:version", async () => app.getVersion());
 
 ipcMain.handle("osint:check", async (event, handle) => {
   try {

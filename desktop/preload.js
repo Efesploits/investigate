@@ -13,4 +13,8 @@ contextBridge.exposeInMainWorld("api", {
   onImportProgress: (cb) => ipcRenderer.on("db:importProgress", (_e, data) => cb(data)),
   checkHandle: (handle) => ipcRenderer.invoke("osint:check", handle),
   onOsintResult: (cb) => ipcRenderer.on("osint:result", (_e, data) => cb(data)),
+  appVersion: () => ipcRenderer.invoke("app:version"),
+  checkUpdate: () => ipcRenderer.invoke("update:check"),
+  installUpdate: (url) => ipcRenderer.invoke("update:install", url),
+  onUpdateProgress: (cb) => ipcRenderer.on("update:progress", (_e, data) => cb(data)),
 });
