@@ -108,35 +108,54 @@ async function download(url, destPath, onProgress) {
 // builds the swap script and hands control to it
 function scheduleSwapAndRestart(newExe, targetExe) {
   const cmdPath = path.join(os.tmpdir(), "m3-update-" + process.pid + ".cmd");
+  const vbsPath = path.join(os.tmpdir(), "m3-update-" + process.pid + ".vbs");
+  // the running process' image name — matched together with the PID so a reused
+  // PID (Windows recycles them) can't be mistaken for our still-running app
+  const exeImage = path.basename(process.execPath);
+
   const script = [
     "@echo off",
-    "setlocal",
+    "setlocal enabledelayedexpansion",
     'set "TARGET=' + targetExe + '"',
     'set "NEWFILE=' + newExe + '"',
+    // wait for the old app to exit — bounded so it can never spin forever, and
+    // matched on PID *and* image name to survive PID reuse
+    "set /a WAITS=0",
     ":waitloop",
+    'tasklist /fi "PID eq ' + process.pid + '" /fi "IMAGENAME eq ' + exeImage + '" /nh 2>nul | find /i "' + exeImage + '" >nul',
+    "if errorlevel 1 goto swap",
+    "set /a WAITS+=1",
+    "if !WAITS! GEQ 30 goto swap",
     "ping -n 2 127.0.0.1 >nul",
-    'tasklist /fi "PID eq ' + process.pid + '" 2>nul | find "' + process.pid + '" >nul',
-    "if not errorlevel 1 goto waitloop",
-    // a couple of retries in case the file lock lingers a moment
-    "set /a TRIES=0",
+    "goto waitloop",
+    // retry the move in case the file lock lingers a moment
     ":swap",
+    "set /a TRIES=0",
+    ":swaploop",
     'move /y "%NEWFILE%" "%TARGET%" >nul 2>&1',
     "if not errorlevel 1 goto done",
     "set /a TRIES+=1",
-    "if %TRIES% GEQ 10 goto fail",
+    "if !TRIES! GEQ 20 goto fail",
     "ping -n 2 127.0.0.1 >nul",
-    "goto swap",
+    "goto swaploop",
     ":done",
     'start "" "%TARGET%"',
     "goto cleanup",
     ":fail",
     'del "%NEWFILE%" >nul 2>&1',
     ":cleanup",
+    'del "' + vbsPath + '" >nul 2>&1',
     '(goto) 2>nul & del "%~f0"',
   ].join("\r\n");
-
   fs.writeFileSync(cmdPath, script, "utf8");
-  const child = spawn("cmd.exe", ["/c", cmdPath], {
+
+  // Launch the batch through a hidden WScript shell so no console window ever
+  // flashes. spawn()'s windowsHide is unreliable for a detached console; the
+  // VBScript Run(..., 0, ...) style reliably runs it fully hidden.
+  const vbs = 'CreateObject("WScript.Shell").Run "cmd /c ""' + cmdPath + '""", 0, False';
+  fs.writeFileSync(vbsPath, vbs, "utf8");
+
+  const child = spawn("wscript.exe", ["//B", "//Nologo", vbsPath], {
     detached: true,
     stdio: "ignore",
     windowsHide: true,
