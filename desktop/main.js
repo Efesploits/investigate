@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const db = require("./db");
 const checker = require("./checker");
+const nicotine = require("./nicotine");
 const updater = require("./updater");
 
 let win;
@@ -144,6 +145,14 @@ ipcMain.handle("osint:check", async (event, handle) => {
       event.sender.send("osint:result", result);
     });
     return { ok: true, results };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle("osint:lookup", async (_e, { query, type }) => {
+  try {
+    return await nicotine.osintLookup(query, type);
   } catch (err) {
     return { ok: false, error: err.message };
   }

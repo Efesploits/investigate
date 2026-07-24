@@ -74,6 +74,66 @@ const PLATFORMS = [
     url: (h) => `https://linktr.ee/${encodeURIComponent(h)}`,
     notFound: /isn.?t claimed yet|page not found/i,
   },
+  {
+    name: "Roblox",
+    url: (h) => `https://www.roblox.com/users/profile?username=${encodeURIComponent(h)}`,
+    notFound: /User Not Found|Sorry! This user does not exist|couldn.?t find that user/i,
+  },
+  {
+    name: "GitHub",
+    url: (h) => `https://github.com/${encodeURIComponent(h)}`,
+    notFound: /This is not the web page you are looking for|Page not found/i,
+  },
+  {
+    name: "Reddit",
+    url: (h) => `https://www.reddit.com/user/${encodeURIComponent(h)}/`,
+    notFound: /Sorry, nobody on Reddit goes by that name|page not found/i,
+  },
+  {
+    name: "Steam",
+    url: (h) => `https://steamcommunity.com/id/${encodeURIComponent(h)}`,
+    notFound: /The specified profile could not be found/i,
+  },
+  {
+    name: "VK",
+    url: (h) => `https://vk.com/${encodeURIComponent(h)}`,
+    notFound: /This page has been deleted or is not available|page does not exist/i,
+    unreliable: true, // VK genelde geçersiz kullanıcılar için de normal görünen bir sayfa döndürüyor
+  },
+  {
+    name: "Keybase",
+    url: (h) => `https://keybase.io/${encodeURIComponent(h)}`,
+    notFound: /User not found/i,
+  },
+  {
+    name: "Dribbble",
+    url: (h) => `https://dribbble.com/${encodeURIComponent(h)}`,
+    notFound: /Whoops, that page is gone|page not found/i,
+  },
+  {
+    name: "Kick",
+    url: (h) => `https://kick.com/${encodeURIComponent(h)}`,
+    notFound: /Page could not be found|not found/i,
+    unreliable: true, // Kick genelde geçersiz kullanıcılar için de normal görünen bir sayfa döndürüyor
+  },
+  {
+    name: "Spotify",
+    url: (h) => `https://open.spotify.com/user/${encodeURIComponent(h)}`,
+    notFound: /Page not found|Not Found/i,
+    unreliable: true, // Spotify handles are usually opaque IDs, not the typed-in username
+  },
+  {
+    name: "DeviantArt",
+    url: (h) => `https://www.deviantart.com/${encodeURIComponent(h)}`,
+    notFound: /doesn.?t exist|couldn.?t find that page/i,
+    unreliable: true, // sayfa yapısı sık değişiyor, tespit her zaman güvenilir değil
+  },
+  {
+    name: "Telegram",
+    url: (h) => `https://t.me/${encodeURIComponent(h)}`,
+    notFound: /^Telegram Messenger$/i,
+    unreliable: true, // t.me önizlemesi çoğu zaman kullanıcı olsa da olmasa da benzer görünür
+  },
 ];
 
 async function checkOne(browser, platform, handle) {
@@ -86,8 +146,13 @@ async function checkOne(browser, platform, handle) {
     );
     await page.setExtraHTTPHeaders({ "Accept-Language": "en-US,en;q=0.9,tr;q=0.8" });
 
-    const response = await page.goto(url, { waitUntil: "networkidle2", timeout: 20000 });
-    await new Promise((r) => setTimeout(r, 1500));
+    // "networkidle2" never fires on sites with persistent background requests
+    // (analytics beacons, websockets, ad trackers) — on Instagram/X/Facebook/
+    // Threads etc. that reliably burned the full 20s timeout on every request.
+    // "domcontentloaded" resolves as soon as the HTML is parsed; the fixed
+    // settle delay below gives client-side JS time to render the real content.
+    const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
+    await new Promise((r) => setTimeout(r, 2200));
 
     const status = response ? response.status() : null;
     if (status === 404 || status === 410) {

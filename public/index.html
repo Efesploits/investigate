@@ -465,7 +465,6 @@
   <button class="enter-btn" id="enterBtn">ENTER</button>
   <p class="intro-credit">m3fxn — theres always a clue, find it.</p>
 </div>
-<audio id="introAudio" src="/audio/intro-theme.mp3" preload="auto" loop></audio>
 
 <!-- ===================== APP ===================== -->
 <div id="app">
@@ -605,14 +604,6 @@
         </div>
         <label class="switch"><input type="checkbox" id="toggleBW"><span class="track"><span class="knob"></span></span></label>
       </div>
-
-      <div class="settings-row">
-        <div>
-          <div class="settings-label">Play music on intro</div>
-          <div class="settings-desc">Fades in a short theme when the intro screen opens.</div>
-        </div>
-        <label class="switch"><input type="checkbox" id="toggleMusic"><span class="track"><span class="knob"></span></span></label>
-      </div>
     </section>
   </main>
 </div>
@@ -620,7 +611,7 @@
 <script>
   /* ---------- settings (persisted in localStorage) ---------- */
   const SETTINGS_KEY = "m3-settings";
-  const DEFAULT_SETTINGS = { blackWhite: true, introMusic: true };
+  const DEFAULT_SETTINGS = { blackWhite: true };
   function loadSettings() {
     try {
       const raw = localStorage.getItem(SETTINGS_KEY);
@@ -638,69 +629,12 @@
   applyTheme();
 
   const toggleBW = document.getElementById("toggleBW");
-  const toggleMusic = document.getElementById("toggleMusic");
   toggleBW.checked = settings.blackWhite;
-  toggleMusic.checked = settings.introMusic;
   toggleBW.addEventListener("change", () => {
     settings.blackWhite = toggleBW.checked;
     saveSettings();
     applyTheme();
   });
-  toggleMusic.addEventListener("change", () => {
-    settings.introMusic = toggleMusic.checked;
-    saveSettings();
-    if (!settings.introMusic) stopIntroMusic();
-  });
-
-  /* ---------- intro music: fades in from 0 while the intro is showing ---------- */
-  const introAudio = document.getElementById("introAudio");
-  let musicFadeTimer = null;
-  const MUSIC_TARGET_VOLUME = 0.45;
-
-  function fadeInIntroMusic() {
-    introAudio.volume = 0;
-    introAudio.currentTime = 0;
-    const playPromise = introAudio.play();
-    const startRamp = () => {
-      clearInterval(musicFadeTimer);
-      const steps = 40, stepMs = 4500 / steps;
-      let i = 0;
-      musicFadeTimer = setInterval(() => {
-        i++;
-        introAudio.volume = Math.min(MUSIC_TARGET_VOLUME, (MUSIC_TARGET_VOLUME * i) / steps);
-        if (i >= steps) clearInterval(musicFadeTimer);
-      }, stepMs);
-    };
-    if (playPromise && playPromise.then) {
-      playPromise.then(startRamp).catch(() => {
-        // autoplay blocked — start on the first real user gesture instead
-        const retry = () => { introAudio.play().then(startRamp).catch(() => {}); cleanup(); };
-        const cleanup = () => {
-          window.removeEventListener("pointerdown", retry);
-          window.removeEventListener("keydown", retry);
-        };
-        window.addEventListener("pointerdown", retry, { once: true });
-        window.addEventListener("keydown", retry, { once: true });
-      });
-    }
-  }
-  function stopIntroMusic() {
-    clearInterval(musicFadeTimer);
-    introAudio.pause();
-    introAudio.currentTime = 0;
-  }
-  function fadeOutIntroMusic() {
-    clearInterval(musicFadeTimer);
-    const steps = 14, stepMs = 700 / steps;
-    const startVol = introAudio.volume;
-    let i = 0;
-    musicFadeTimer = setInterval(() => {
-      i++;
-      introAudio.volume = Math.max(0, startVol * (1 - i / steps));
-      if (i >= steps) { clearInterval(musicFadeTimer); introAudio.pause(); introAudio.currentTime = 0; }
-    }, stepMs);
-  }
-  if (settings.introMusic) fadeInIntroMusic();
 
   /* ---------- sounds (synthesized, no external files) ---------- */
   let audioCtx = null;
@@ -837,7 +771,6 @@
   function enterApp() {
     intro.classList.add("leaving");
     document.body.classList.add("entered");
-    fadeOutIntroMusic();
     setTimeout(() => {
       intro.style.display = "none";
       app.classList.add("show");

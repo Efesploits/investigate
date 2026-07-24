@@ -82,6 +82,66 @@ const PLATFORMS = [
     url: (h) => `https://linktr.ee/${encodeURIComponent(h)}`,
     notFound: /isn.?t claimed yet|page not found/i,
   },
+  {
+    name: "Roblox",
+    url: (h) => `https://www.roblox.com/users/profile?username=${encodeURIComponent(h)}`,
+    notFound: /User Not Found|Sorry! This user does not exist|couldn.?t find that user/i,
+  },
+  {
+    name: "GitHub",
+    url: (h) => `https://github.com/${encodeURIComponent(h)}`,
+    notFound: /This is not the web page you are looking for|Page not found/i,
+  },
+  {
+    name: "Reddit",
+    url: (h) => `https://www.reddit.com/user/${encodeURIComponent(h)}/`,
+    notFound: /Sorry, nobody on Reddit goes by that name|page not found/i,
+  },
+  {
+    name: "Steam",
+    url: (h) => `https://steamcommunity.com/id/${encodeURIComponent(h)}`,
+    notFound: /The specified profile could not be found/i,
+  },
+  {
+    name: "VK",
+    url: (h) => `https://vk.com/${encodeURIComponent(h)}`,
+    notFound: /This page has been deleted or is not available|page does not exist/i,
+    unreliable: true,
+  },
+  {
+    name: "Keybase",
+    url: (h) => `https://keybase.io/${encodeURIComponent(h)}`,
+    notFound: /User not found/i,
+  },
+  {
+    name: "Dribbble",
+    url: (h) => `https://dribbble.com/${encodeURIComponent(h)}`,
+    notFound: /Whoops, that page is gone|page not found/i,
+  },
+  {
+    name: "Kick",
+    url: (h) => `https://kick.com/${encodeURIComponent(h)}`,
+    notFound: /Page could not be found|not found/i,
+    unreliable: true,
+  },
+  {
+    name: "Spotify",
+    url: (h) => `https://open.spotify.com/user/${encodeURIComponent(h)}`,
+    notFound: /Page not found|Not Found/i,
+    unreliable: true,
+  },
+  {
+    name: "DeviantArt",
+    url: (h) => `https://www.deviantart.com/${encodeURIComponent(h)}`,
+    notFound: /doesn.?t exist|couldn.?t find that page/i,
+    unreliable: true,
+  },
+  {
+    name: "Telegram",
+    url: (h) => `https://t.me/${encodeURIComponent(h)}`,
+    notFound: /^Telegram Messenger$/i,
+    unreliable: true,
+  },
 ];
 
 const USER_AGENT =
@@ -99,6 +159,12 @@ async function checkOne(platform, handle) {
   const onNavigate = (_e, navUrl, code) => { httpStatus = code; };
   win.webContents.on("did-navigate", onNavigate);
   win.webContents.on("did-frame-navigate", onNavigate);
+  // some sites (Telegram, TikTok...) try to bounce to an app deep-link
+  // (tg://, tiktok://) which has no handler here and aborts the whole load
+  win.webContents.on("will-navigate", (e, navUrl) => {
+    if (!/^https?:\/\//i.test(navUrl)) e.preventDefault();
+  });
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
 
   try {
     win.webContents.setUserAgent(USER_AGENT, "en-US,en;q=0.9,tr;q=0.8");

@@ -247,6 +247,48 @@
   #osintSummary { margin-top: 18px; color: var(--muted); font-size: .9rem; }
   #osintError { color: #d0d0d0; margin-top: 12px; font-size: .9rem; }
 
+  /* ---------- nicotine.ws data lookup ---------- */
+  .nic-src { opacity: .55; font-size: .62em; font-weight: 400; letter-spacing: .5px; }
+  #nicForm { display: flex; gap: 10px; margin: 4px 0 8px; flex-wrap: wrap; align-items: stretch; }
+  #nicForm select.nic-select {
+    padding: 13px 14px; border-radius: 11px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--text); font-size: .95rem; outline: none; cursor: pointer;
+  }
+  #nicForm input[type=text] {
+    flex: 1; min-width: 220px; padding: 13px 16px; border-radius: 11px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--text); font-size: 1rem; outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  #nicForm input[type=text]:focus, #nicForm select.nic-select:focus { border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .08); }
+  #nicSummary { margin: 12px 0 14px; color: var(--muted); font-size: .9rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  #nicSummary:empty { display: none; }
+  #nicError { color: #e58a8a; margin-top: 12px; font-size: .9rem; }
+  .nic-card {
+    border: 1px solid var(--border); border-radius: 12px; background: var(--panel);
+    padding: 12px 16px 14px; margin-bottom: 10px; animation: pageIn .25s ease;
+  }
+  .nic-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .nic-card-idx { font-size: .72rem; font-weight: 800; letter-spacing: .5px; color: var(--muted); text-transform: uppercase; }
+  .nic-field { display: flex; gap: 12px; padding: 6px 0; border-top: 1px solid #1c1c1c; }
+  .nic-field:first-of-type { border-top: none; }
+  .nic-key { flex: 0 0 96px; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; padding-top: 2px; }
+  .nic-val { flex: 1; color: #e6e6e6; font-size: .9rem; word-break: break-all; user-select: text; cursor: text; }
+  .nic-val.mono { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; color: var(--text); }
+  .nic-val a { color: #9ecbff; text-decoration: none; user-select: text; }
+  .nic-val a:hover { text-decoration: underline; }
+  .nic-copy, .nic-copyall {
+    border: 1px solid var(--border); background: var(--panel2); color: var(--text);
+    font-weight: 700; cursor: pointer; border-radius: 8px;
+  }
+  .nic-copy { padding: 4px 10px; font-size: .72rem; flex-shrink: 0; }
+  .nic-copyall { padding: 5px 12px; font-size: .74rem; border-radius: 999px; }
+  .nic-copy:hover, .nic-copyall:hover { border-color: #666; }
+  .nic-copy.copied, .nic-copyall.copied { background: var(--accent); color: #000; border-color: var(--accent); }
+  .nic-raw {
+    white-space: pre-wrap; word-break: break-word; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px; font-size: .82rem; user-select: text; cursor: text; margin-top: 10px;
+  }
+
   .scan-loader { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 30px 0 36px; }
   .scan-loader.hidden { display: none; }
   .scan-eye-svg { width: 84px; height: auto; filter: drop-shadow(0 0 18px rgb(var(--accent-rgb) / 0.10)); }
@@ -397,6 +439,23 @@
       <div id="osintResults"></div>
       <div id="osintSummary"></div>
       <div id="osintError"></div>
+
+      <h2 style="margin-top:34px">Data lookup <span class="nic-src">nicotine.ws</span></h2>
+      <p class="sub">Query the nicotine.ws OSINT API by email, username or password. Runs from this app over an authenticated request.</p>
+
+      <form id="nicForm">
+        <select id="nicType" class="nic-select" aria-label="Lookup type">
+          <option value="email">email</option>
+          <option value="username">username</option>
+          <option value="password">password</option>
+        </select>
+        <input type="text" id="nicQuery" placeholder="value to look up" autocomplete="off" spellcheck="false" required />
+        <button type="submit" class="scan" id="nicSubmitBtn">Look up</button>
+      </form>
+
+      <div id="nicError"></div>
+      <div id="nicSummary"></div>
+      <div id="nicResults"></div>
     </section>
 
     <!-- DATABASE -->
@@ -483,14 +542,6 @@
         <label class="switch"><input type="checkbox" id="toggleBW"><span class="track"><span class="knob"></span></span></label>
       </div>
 
-      <div class="settings-row">
-        <div>
-          <div class="settings-label">Play music on intro</div>
-          <div class="settings-desc">Fades in a short theme when the intro screen opens.</div>
-        </div>
-        <label class="switch"><input type="checkbox" id="toggleMusic"><span class="track"><span class="knob"></span></span></label>
-      </div>
-
       <div class="section-label">Updates</div>
       <div class="settings-row">
         <div>
@@ -505,12 +556,11 @@
     </section>
   </main>
 </div>
-<audio id="introAudio" src="./audio/intro-theme.mp3" preload="auto" loop></audio>
 
 <script>
   /* ---------- settings (persisted in localStorage) ---------- */
   const SETTINGS_KEY = "m3-settings";
-  const DEFAULT_SETTINGS = { blackWhite: true, introMusic: true };
+  const DEFAULT_SETTINGS = { blackWhite: true };
   function loadSettings() {
     try {
       const raw = localStorage.getItem(SETTINGS_KEY);
@@ -528,68 +578,12 @@
   applyTheme();
 
   const toggleBW = document.getElementById("toggleBW");
-  const toggleMusic = document.getElementById("toggleMusic");
   toggleBW.checked = settings.blackWhite;
-  toggleMusic.checked = settings.introMusic;
   toggleBW.addEventListener("change", () => {
     settings.blackWhite = toggleBW.checked;
     saveSettings();
     applyTheme();
   });
-  toggleMusic.addEventListener("change", () => {
-    settings.introMusic = toggleMusic.checked;
-    saveSettings();
-    if (!settings.introMusic) stopIntroMusic();
-  });
-
-  /* ---------- intro music: fades in from 0 while the intro is showing ---------- */
-  const introAudio = document.getElementById("introAudio");
-  let musicFadeTimer = null;
-  const MUSIC_TARGET_VOLUME = 0.45;
-
-  function fadeInIntroMusic() {
-    introAudio.volume = 0;
-    introAudio.currentTime = 0;
-    const playPromise = introAudio.play();
-    const startRamp = () => {
-      clearInterval(musicFadeTimer);
-      const steps = 40, stepMs = 4500 / steps;
-      let i = 0;
-      musicFadeTimer = setInterval(() => {
-        i++;
-        introAudio.volume = Math.min(MUSIC_TARGET_VOLUME, (MUSIC_TARGET_VOLUME * i) / steps);
-        if (i >= steps) clearInterval(musicFadeTimer);
-      }, stepMs);
-    };
-    if (playPromise && playPromise.then) {
-      playPromise.then(startRamp).catch(() => {
-        const retry = () => { introAudio.play().then(startRamp).catch(() => {}); cleanup(); };
-        const cleanup = () => {
-          window.removeEventListener("pointerdown", retry);
-          window.removeEventListener("keydown", retry);
-        };
-        window.addEventListener("pointerdown", retry, { once: true });
-        window.addEventListener("keydown", retry, { once: true });
-      });
-    }
-  }
-  function stopIntroMusic() {
-    clearInterval(musicFadeTimer);
-    introAudio.pause();
-    introAudio.currentTime = 0;
-  }
-  function fadeOutIntroMusic() {
-    clearInterval(musicFadeTimer);
-    const steps = 14, stepMs = 700 / steps;
-    const startVol = introAudio.volume;
-    let i = 0;
-    musicFadeTimer = setInterval(() => {
-      i++;
-      introAudio.volume = Math.max(0, startVol * (1 - i / steps));
-      if (i >= steps) { clearInterval(musicFadeTimer); introAudio.pause(); introAudio.currentTime = 0; }
-    }, stepMs);
-  }
-  if (settings.introMusic) fadeInIntroMusic();
 
   /* ---------- sounds (synthesized) ---------- */
   let audioCtx = null, noiseBuffer = null;
@@ -666,7 +660,6 @@
   const intro = document.getElementById("intro"), app = document.getElementById("app");
   function enterApp() {
     intro.classList.add("leaving"); document.body.classList.add("entered");
-    fadeOutIntroMusic();
     setTimeout(() => { intro.style.display = "none"; app.classList.add("show"); }, 700);
   }
   document.getElementById("enterBtn").addEventListener("click", enterApp);
@@ -777,6 +770,158 @@
     const found = res.results.filter((r) => r.exists === true).length;
     const unknown = res.results.filter((r) => r.exists === null).length;
     osintSummaryEl.textContent = `${found} account(s) found, ${unknown} platform(s) couldn't be verified.`;
+  });
+
+  /* ---------- nicotine.ws data lookup ---------- */
+  const nicForm = document.getElementById("nicForm");
+  const nicType = document.getElementById("nicType");
+  const nicQuery = document.getElementById("nicQuery");
+  const nicSubmitBtn = document.getElementById("nicSubmitBtn");
+  const nicResults = document.getElementById("nicResults");
+  const nicSummary = document.getElementById("nicSummary");
+  const nicError = document.getElementById("nicError");
+
+  // Known fields shown first, in this order; anything else the API returns is appended generically.
+  const NIC_FIELDS = [
+    { key: "url", label: "URL", link: true },
+    { key: "username", label: "Username", mono: true },
+    { key: "email", label: "Email", mono: true },
+    { key: "password", label: "Password", mono: true },
+    { key: "source_name", label: "Source" },
+    { key: "source_date", label: "Date" },
+    { key: "imported_at", label: "Imported" },
+    { key: "id", label: "ID", mono: true },
+  ];
+
+  const recordToText = (rec) => Object.entries(rec).map(([k, v]) => `${k}: ${v}`).join("\n");
+
+  async function copyText(text, btn) {
+    let ok = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        ok = true;
+      }
+    } catch (_) {}
+    if (!ok) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch (_) {}
+    }
+    if (ok && btn) {
+      const prev = btn.textContent;
+      btn.classList.add("copied"); btn.textContent = "Copied";
+      setTimeout(() => { btn.classList.remove("copied"); btn.textContent = prev; }, 1100);
+    }
+    return ok;
+  }
+
+  function nicFieldRow(label, value, opts) {
+    opts = opts || {};
+    const row = document.createElement("div");
+    row.className = "nic-field";
+    const k = document.createElement("div");
+    k.className = "nic-key";
+    k.textContent = label;
+    const v = document.createElement("div");
+    v.className = "nic-val" + (opts.mono ? " mono" : "");
+    if (opts.link) {
+      const a = document.createElement("a");
+      a.href = value; a.target = "_blank"; a.rel = "noopener noreferrer";
+      a.textContent = value;
+      v.appendChild(a);
+    } else {
+      v.textContent = value;
+    }
+    row.appendChild(k); row.appendChild(v);
+    return row;
+  }
+
+  function renderNicCard(rec, idx) {
+    const card = document.createElement("div");
+    card.className = "nic-card";
+
+    const head = document.createElement("div");
+    head.className = "nic-card-head";
+    const idxEl = document.createElement("div");
+    idxEl.className = "nic-card-idx";
+    idxEl.textContent = "Result " + (idx + 1);
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "nic-copy";
+    copyBtn.textContent = "Copy";
+    copyBtn.addEventListener("click", () => copyText(recordToText(rec), copyBtn));
+    head.appendChild(idxEl); head.appendChild(copyBtn);
+    card.appendChild(head);
+
+    const shown = new Set();
+    for (const f of NIC_FIELDS) {
+      if (rec[f.key] != null && rec[f.key] !== "") {
+        card.appendChild(nicFieldRow(f.label, String(rec[f.key]), { mono: f.mono, link: f.link }));
+        shown.add(f.key);
+      }
+    }
+    // any extra fields the API returns that aren't in NIC_FIELDS
+    for (const [k, val] of Object.entries(rec)) {
+      if (!shown.has(k) && val != null && val !== "") {
+        card.appendChild(nicFieldRow(k, String(val)));
+      }
+    }
+    return card;
+  }
+
+  nicForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const query = nicQuery.value.trim();
+    if (!query) return;
+
+    nicError.textContent = "";
+    nicResults.innerHTML = "";
+    nicSummary.innerHTML = "";
+    nicSubmitBtn.disabled = true;
+    nicSubmitBtn.textContent = "Looking up...";
+
+    const res = await window.api.osintLookup(query, nicType.value);
+
+    nicSubmitBtn.disabled = false;
+    nicSubmitBtn.textContent = "Look up";
+
+    if (!res.ok) {
+      nicError.textContent = res.error || "Lookup failed.";
+      if (res.data != null) {
+        const pre = document.createElement("pre");
+        pre.className = "nic-raw";
+        pre.textContent = typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2);
+        nicResults.appendChild(pre);
+      }
+      return;
+    }
+
+    // API shape: { success, query, type, data: { total, results: [...] } }
+    const payload = res.data && res.data.data ? res.data.data : null;
+    const results = payload && Array.isArray(payload.results) ? payload.results : [];
+    const total = payload && typeof payload.total === "number" ? payload.total : results.length;
+
+    if (!results.length) {
+      nicSummary.textContent = `No records found for "${query}".`;
+      return;
+    }
+
+    const summaryText = document.createElement("span");
+    summaryText.textContent = `${total} record${total === 1 ? "" : "s"} for "${query}" · ${nicType.value}`;
+    const copyAll = document.createElement("button");
+    copyAll.type = "button";
+    copyAll.className = "nic-copyall";
+    copyAll.textContent = "Copy all";
+    copyAll.addEventListener("click", () => copyText(results.map(recordToText).join("\n\n"), copyAll));
+    nicSummary.appendChild(summaryText);
+    nicSummary.appendChild(copyAll);
+
+    results.forEach((rec, i) => nicResults.appendChild(renderNicCard(rec, i)));
   });
 
   /* ---------- database ---------- */

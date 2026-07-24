@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Local Investigate scanner, .sql dump import, per-table search, Settings (theme + intro music), stage-light intro."
+  "notes": "Added nicotine.ws OSINT data lookup (email / username / password) with parsed, copyable results. Removed the intro music."
 }
