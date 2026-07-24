@@ -80,6 +80,89 @@
   @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0); } 50% { box-shadow: 0 0 22px 1px rgb(var(--accent-rgb) / .18); } }
   .intro-credit { position: absolute; bottom: clamp(20px, 6vh, 48px); margin: 0; color: var(--muted); font-size: .72rem; letter-spacing: 1px; opacity: 0; animation: fadeUp .8s ease 5.1s forwards; }
 
+  /* ================= follow-spot rig ================= */
+  .stage-rig { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .stage-source {
+    position: absolute; right: 6%; bottom: 9%;
+    width: 62px; height: 62px; margin: 31px -31px 0 0; border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%,
+      rgb(var(--accent-rgb) / .95) 0%, rgb(var(--accent-rgb) / .55) 26%,
+      rgb(var(--accent-rgb) / .16) 52%, rgb(var(--accent-rgb) / 0) 76%);
+    filter: blur(1px); mix-blend-mode: screen; opacity: 0;
+    animation: lampWarmUp 1.1s ease 3.9s forwards, lampBreathe 5.5s ease-in-out 6.2s infinite;
+  }
+  .stage-source::after {
+    content: ""; position: absolute; left: 50%; top: 50%;
+    width: 15px; height: 15px; transform: translate(-50%, -50%); border-radius: 50%;
+    background: rgb(var(--accent-rgb) / .98); filter: blur(2.5px);
+  }
+  .stage-beam, .stage-dust {
+    position: absolute; right: 6%; bottom: 9%;
+    transform-origin: 100% 50%; opacity: 0; will-change: transform;
+    animation: beamOn 1s ease 4.55s forwards,
+               beamSweep 1.9s cubic-bezier(.34,.9,.25,1) 4.55s forwards,
+               beamDrift 7s ease-in-out 6.6s infinite;
+  }
+  /* wedge drawn with a conic gradient — clip-path would be applied after the
+     blur and leave a hard polygon edge, which never reads as real light */
+  .stage-beam {
+    width: 62%; height: 620px; margin-bottom: -310px;
+    background: conic-gradient(from 262deg at 100% 50%,
+      rgb(var(--accent-rgb) / 0) 0deg, rgb(var(--accent-rgb) / .05) 2.5deg,
+      rgb(var(--accent-rgb) / .34) 8deg, rgb(var(--accent-rgb) / .05) 13.5deg,
+      rgb(var(--accent-rgb) / 0) 16deg);
+    -webkit-mask-image: radial-gradient(circle at 100% 50%, #000 0%, rgba(0,0,0,.9) 42%, rgba(0,0,0,.45) 72%, transparent 96%);
+    mask-image: radial-gradient(circle at 100% 50%, #000 0%, rgba(0,0,0,.9) 42%, rgba(0,0,0,.45) 72%, transparent 96%);
+    filter: blur(6px); mix-blend-mode: screen;
+  }
+  .stage-dust {
+    width: 50%; height: 300px; margin-bottom: -150px; mix-blend-mode: screen;
+    clip-path: polygon(100% 49%, 100% 51%, 0% 69%, 0% 31%);
+  }
+  .mote {
+    position: absolute; border-radius: 50%; background: rgb(var(--accent-rgb) / .9);
+    animation-name: moteDrift; animation-timing-function: linear;
+    animation-iteration-count: infinite; will-change: transform, opacity;
+  }
+  @keyframes moteDrift {
+    0%   { transform: translate3d(0,0,0); opacity: 0; }
+    15%  { opacity: .8; }
+    50%  { transform: translate3d(-14px,-20px,0); opacity: .35; }
+    85%  { opacity: .65; }
+    100% { transform: translate3d(-30px,-44px,0); opacity: 0; }
+  }
+  @keyframes lampWarmUp { to { opacity: 1; } }
+  @keyframes lampBreathe { 0%,100% { opacity: 1; } 50% { opacity: .88; } }
+  @keyframes beamOn { to { opacity: 1; } }
+  @keyframes beamSweep {
+    0%   { transform: rotate(-12deg); }
+    62%  { transform: rotate(19.6deg); }
+    80%  { transform: rotate(15.2deg); }
+    100% { transform: rotate(16.6deg); }
+  }
+  @keyframes beamDrift { 0%,100% { transform: rotate(16.6deg); } 50% { transform: rotate(17.2deg); } }
+
+  .spotlight-wrap { position: relative; display: inline-block; margin-top: 6px; }
+  .spotlight-pool {
+    position: absolute; top: 50%; left: 50%; width: 250px; height: 112px;
+    transform: translate(-50%,-50%) rotate(-8deg);
+    background: radial-gradient(ellipse at center,
+      rgb(var(--accent-rgb) / .40) 0%, rgb(var(--accent-rgb) / .15) 44%, rgb(var(--accent-rgb) / 0) 74%);
+    filter: blur(7px); mix-blend-mode: screen; pointer-events: none; opacity: 0; z-index: 0;
+    animation: spotFadeIn .7s ease 5.7s forwards, spotFlicker 5.5s ease-in-out 7s infinite;
+  }
+  .spotlight-wrap .enter-btn { position: relative; z-index: 1; }
+  .spotlight-wrap .enter-btn::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit;
+    background: linear-gradient(295deg, rgb(var(--accent-rgb) / .22) 0%, rgb(var(--accent-rgb) / 0) 62%);
+    opacity: 0; pointer-events: none; animation: spotFadeIn .7s ease 5.7s forwards;
+  }
+  @keyframes spotFadeIn { to { opacity: 1; } }
+  @keyframes spotFlicker {
+    0%,100% { opacity: 1; } 43% { opacity: .87; } 47% { opacity: 1; }
+    72% { opacity: .93; } 75% { opacity: 1; }
+  }
+
   /* ---------- APP ---------- */
   #app { display: none; min-height: 100vh; }
   #app.show { display: flex; }
@@ -107,6 +190,29 @@
   .card { padding: 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
   .card h3 { margin: 0 0 6px; font-size: 1rem; }
   .card p { margin: 0; color: var(--muted); font-size: .84rem; line-height: 1.5; }
+
+  /* update banner across the top of the app */
+  #app.show { flex-direction: row; }
+  .update-banner {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+    display: none; align-items: center; gap: 14px;
+    padding: 10px 18px;
+    background: var(--accent); color: #000;
+    font-size: .88rem; font-weight: 700;
+    box-shadow: 0 2px 18px rgb(var(--accent-rgb) / .25);
+  }
+  .update-banner.show { display: flex; }
+  .update-banner .ub-text { flex: 1; }
+  .update-banner .ub-sub { font-weight: 500; opacity: .75; font-size: .8rem; }
+  .update-banner button {
+    border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer;
+    background: #000; color: var(--accent); font-weight: 800; font-size: .82rem;
+  }
+  .update-banner button:disabled { opacity: .55; cursor: not-allowed; }
+  .update-banner .ub-close {
+    background: transparent; color: #000; font-size: 1.1rem; padding: 4px 8px; opacity: .6;
+  }
+  body.has-update .sidebar, body.has-update .content { padding-top: 52px; }
 
   .settings-row {
     display: flex; align-items: center; justify-content: space-between; gap: 20px;
@@ -241,6 +347,11 @@
 
 <!-- INTRO -->
 <div id="intro">
+  <div class="stage-rig" aria-hidden="true">
+    <div class="stage-beam"></div>
+    <div class="stage-dust" id="spotlightDust"></div>
+    <div class="stage-source"></div>
+  </div>
   <p class="print-tag">everything leaves a print.</p>
   <div class="glass-wrap">
     <svg class="glass" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
@@ -258,11 +369,20 @@
   </div>
   <h1 class="intro-title">m3's investigation tool</h1>
   <p class="intro-sub">osint · sql database client</p>
-  <button class="enter-btn" id="enterBtn">ENTER</button>
+  <div class="spotlight-wrap">
+    <div class="spotlight-pool" aria-hidden="true"></div>
+    <button class="enter-btn" id="enterBtn">ENTER</button>
+  </div>
   <p class="intro-credit">m3fxn — theres always a clue, find it.</p>
 </div>
 
 <!-- APP -->
+<div class="update-banner" id="updateBanner">
+  <span class="ub-text">Update available<span class="ub-sub" id="ubVersion"></span></span>
+  <button id="ubInstall" type="button">Update now</button>
+  <button class="ub-close" id="ubDismiss" type="button" title="Dismiss">✕</button>
+</div>
+
 <div id="app">
   <aside class="sidebar">
     <div class="brand">
@@ -445,6 +565,18 @@
         </div>
         <label class="switch"><input type="checkbox" id="toggleMusic"><span class="track"><span class="knob"></span></span></label>
       </div>
+
+      <div class="section-label">Updates</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Client version <span id="appVersion" style="color:var(--muted);font-weight:600"></span></div>
+          <div class="settings-desc" id="updateStatus">Check whether a newer client is available.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <button class="btn ghost" id="checkUpdateBtn" type="button">Check for updates</button>
+          <button class="btn hidden" id="installUpdateBtn" type="button">Update now</button>
+        </div>
+      </div>
     </section>
   </main>
 </div>
@@ -580,6 +712,31 @@
     dx = Math.max(-1, Math.min(1, dx)); dy = Math.max(-1, Math.min(1, dy));
     irisEl.style.transform = `translate(${dx * 22}px, ${dy * 15}px)`;
   });
+
+  /* ---------- dust motes floating in the spotlight beam ---------- */
+  (function seedDust() {
+    const host = document.getElementById("spotlightDust");
+    if (!host) return;
+    const COUNT = 54;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < COUNT; i++) {
+      const m = document.createElement("span");
+      m.className = "mote";
+      // x runs along the cone: 0% = wide mouth (button end), 100% = apex (lamp)
+      const along = Math.pow(Math.random(), 0.75);
+      const spread = 2 + (1 - along) * 17;
+      const size = 1 + Math.random() * 2.3;
+      m.style.width = size + "px";
+      m.style.height = size + "px";
+      m.style.left = (along * 100) + "%";
+      m.style.top = (50 + (Math.random() * 2 - 1) * spread) + "%";
+      m.style.opacity = "0";
+      m.style.animationDuration = (6 + Math.random() * 9).toFixed(2) + "s";
+      m.style.animationDelay = (-Math.random() * 12).toFixed(2) + "s";
+      frag.appendChild(m);
+    }
+    host.appendChild(frag);
+  })();
 
   /* ---------- intro -> app ---------- */
   const intro = document.getElementById("intro"), app = document.getElementById("app");
@@ -906,6 +1063,77 @@
 
   /* wire sounds */
   document.querySelectorAll(".enter-btn, .nav-item, .btn, button.scan, .switch").forEach(attachSounds);
+
+  /* ---------- self-update ---------- */
+  const updateBanner = document.getElementById("updateBanner");
+  const ubVersion = document.getElementById("ubVersion");
+  const ubInstall = document.getElementById("ubInstall");
+  const ubDismiss = document.getElementById("ubDismiss");
+  const checkUpdateBtn = document.getElementById("checkUpdateBtn");
+  const installUpdateBtn = document.getElementById("installUpdateBtn");
+  const updateStatus = document.getElementById("updateStatus");
+  const appVersionEl = document.getElementById("appVersion");
+  let pendingUpdateUrl = null;
+
+  [ubInstall, ubDismiss, checkUpdateBtn, installUpdateBtn].forEach(attachSounds);
+
+  window.api.appVersion().then((v) => { appVersionEl.textContent = "v" + v; });
+
+  function showUpdateAvailable(info) {
+    pendingUpdateUrl = info.url;
+    ubVersion.textContent = "  ·  v" + info.currentVersion + " → v" + info.latestVersion;
+    updateBanner.classList.add("show");
+    document.body.classList.add("has-update");
+    installUpdateBtn.classList.remove("hidden");
+    updateStatus.textContent = "Version " + info.latestVersion + " is available." + (info.notes ? " " + info.notes : "");
+  }
+
+  async function runCheck(manual) {
+    if (manual) { checkUpdateBtn.disabled = true; checkUpdateBtn.textContent = "Checking…"; }
+    const res = await window.api.checkUpdate();
+    if (manual) { checkUpdateBtn.disabled = false; checkUpdateBtn.textContent = "Check for updates"; }
+    if (!res.ok) {
+      if (manual) updateStatus.textContent = "Couldn't check for updates: " + res.error;
+      return;
+    }
+    if (res.available) showUpdateAvailable(res);
+    else if (manual) updateStatus.textContent = "You're on the latest version (v" + res.currentVersion + ").";
+  }
+
+  window.api.onUpdateProgress((p) => {
+    const pct = p.total ? Math.round((p.received / p.total) * 100) : 0;
+    const label = "Downloading… " + pct + "%";
+    ubInstall.textContent = label;
+    installUpdateBtn.textContent = label;
+    updateStatus.textContent = "Downloading the new client… " + pct + "%";
+  });
+
+  async function runInstall() {
+    if (!pendingUpdateUrl) return;
+    ubInstall.disabled = true; installUpdateBtn.disabled = true;
+    ubInstall.textContent = "Downloading…"; installUpdateBtn.textContent = "Downloading…";
+    updateStatus.textContent = "Downloading the new client…";
+    const res = await window.api.installUpdate(pendingUpdateUrl);
+    if (!res || !res.ok) {
+      ubInstall.disabled = false; installUpdateBtn.disabled = false;
+      ubInstall.textContent = "Update now"; installUpdateBtn.textContent = "Update now";
+      updateStatus.textContent = "Update failed: " + ((res && res.error) || "unknown error");
+      return;
+    }
+    ubInstall.textContent = "Restarting…"; installUpdateBtn.textContent = "Restarting…";
+    updateStatus.textContent = "Update downloaded — restarting the app…";
+  }
+
+  ubInstall.addEventListener("click", runInstall);
+  installUpdateBtn.addEventListener("click", runInstall);
+  checkUpdateBtn.addEventListener("click", () => runCheck(true));
+  ubDismiss.addEventListener("click", () => {
+    updateBanner.classList.remove("show");
+    document.body.classList.remove("has-update");
+  });
+
+  // quiet check shortly after launch
+  setTimeout(() => runCheck(false), 2500);
 </script>
 </body>
 </html>
