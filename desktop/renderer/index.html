@@ -10,6 +10,8 @@
       var raw = localStorage.getItem("m3-settings");
       var s = raw ? JSON.parse(raw) : null;
       if (s && s.blackWhite === false) document.documentElement.classList.add("color-theme");
+      if (s && s.theme === "cimbom") document.documentElement.classList.add("theme-cimbom");
+      else if (s && s.theme === "karakartal") document.documentElement.classList.add("theme-karakartal");
     } catch (_) {}
   })();
 </script>
@@ -397,6 +399,41 @@
     70%,80%  { transform: translate(-10px, 8px); }
     92%,100% { transform: translate(0, 0); }
   }
+
+  /* ============ football easter-egg themes ============ */
+  html.theme-cimbom {
+    --bg: #12060a; --bg2: #1c0a0e; --panel: #240d12; --panel2: #2e1116;
+    --border: #6a1020; --text: #ffe9a8; --muted: #d29a5e; --accent: #ffcf1a;
+    --accent-rgb: 255 207 26; --intro-bg-inner: #2a0d12; --intro-bg-outer: #0a0406;
+  }
+  html.theme-karakartal {
+    --bg: #050505; --bg2: #0c0c0c; --panel: #121212; --panel2: #191919;
+    --border: #363636; --text: #ffffff; --muted: #9a9a9a; --accent: #ffffff;
+    --accent-rgb: 255 255 255; --intro-bg-inner: #161616; --intro-bg-outer: #000;
+  }
+  #themesLabel { margin-top: 24px; color: var(--muted); font-size: .72rem; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; }
+  .theme-picker { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0 4px; }
+  .theme-card { display: flex; flex-direction: column; align-items: center; gap: 9px; cursor: pointer;
+    padding: 14px 20px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel);
+    color: var(--text); font-weight: 800; font-size: .9rem; transition: border-color .15s ease, transform .15s ease; }
+  .theme-card:hover { border-color: #888; transform: translateY(-2px); }
+  .theme-card.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgb(var(--accent-rgb) / .3); }
+  .tc-swatch { width: 58px; height: 20px; border-radius: 6px; }
+  .tc-default { background: linear-gradient(90deg, #555, #eee); }
+  .tc-cimbom { background: linear-gradient(90deg, #ffcf1a 50%, #a30028 50%); }
+  .tc-karakartal { background: linear-gradient(90deg, #000 50%, #fff 50%); box-shadow: inset 0 0 0 1px #666; }
+
+  /* zero-gravity floating team chips */
+  .floaties { position: fixed; inset: 0; z-index: 45; pointer-events: none; overflow: hidden; }
+  .floaty { position: absolute; top: 0; left: 0; will-change: transform; pointer-events: auto;
+    cursor: grab; user-select: none; -webkit-user-select: none; padding: 8px 16px; border-radius: 999px;
+    font-weight: 900; font-size: 1.05rem; letter-spacing: 1px; white-space: nowrap;
+    box-shadow: 0 8px 22px rgba(0,0,0,.55); touch-action: none; }
+  .floaty.grabbing { cursor: grabbing; }
+  .floaty-cimbom { background: #ffcf1a; color: #a30028; border: 2px solid #a30028; }
+  .floaty-cimbom:nth-child(2n) { background: #a30028; color: #ffcf1a; border-color: #ffcf1a; }
+  .floaty-karakartal { background: #ffffff; color: #000; border: 2px solid #000; }
+  .floaty-karakartal:nth-child(2n) { background: #000; color: #fff; border-color: #fff; }
 </style>
 </head>
 <body>
@@ -627,6 +664,13 @@
         <label class="switch"><input type="checkbox" id="toggleBW"><span class="track"><span class="knob"></span></span></label>
       </div>
 
+      <div class="hidden" id="themesLabel">Themes ⚽</div>
+      <div class="theme-picker hidden" id="themePicker">
+        <button class="theme-card" data-theme="default" type="button"><span>Default</span><span class="tc-swatch tc-default"></span></button>
+        <button class="theme-card" data-theme="cimbom" type="button"><span>Cimbom</span><span class="tc-swatch tc-cimbom"></span></button>
+        <button class="theme-card" data-theme="karakartal" type="button"><span>Karakartal</span><span class="tc-swatch tc-karakartal"></span></button>
+      </div>
+
       <div class="section-label">Updates</div>
       <div class="settings-row">
         <div>
@@ -645,7 +689,7 @@
 <script>
   /* ---------- settings (persisted in localStorage) ---------- */
   const SETTINGS_KEY = "m3-settings";
-  const DEFAULT_SETTINGS = { blackWhite: true };
+  const DEFAULT_SETTINGS = { blackWhite: true, theme: "default", themesUnlocked: false };
   function loadSettings() {
     try {
       const raw = localStorage.getItem(SETTINGS_KEY);
@@ -765,6 +809,133 @@
     showPage("investigate");
     document.getElementById("invQuery").focus();
   });
+
+  /* ---------- football easter-egg themes + zero-g floaties ---------- */
+  const THEME_WORDS = {
+    cimbom: ["OSIMHEN", "METINBABA", "ICARDI", "MUSLERA"],
+    karakartal: ["QUARESMA", "KARAKARTAL", "ERSIN", "TINER"],
+  };
+  let floatyLayer = null, floaties = [], floatyRAF = null;
+
+  function stopFloaties() {
+    if (floatyRAF) cancelAnimationFrame(floatyRAF);
+    floatyRAF = null; floaties = [];
+    if (floatyLayer) { floatyLayer.remove(); floatyLayer = null; }
+  }
+  function startFloaties(theme) {
+    stopFloaties();
+    const words = THEME_WORDS[theme];
+    if (!words) return;
+    floatyLayer = document.createElement("div");
+    floatyLayer.className = "floaties";
+    document.body.appendChild(floatyLayer);
+    const list = [];
+    for (let c = 0; c < 2; c++) for (const w of words) list.push(w);
+    list.forEach((word, i) => {
+      const el = document.createElement("div");
+      el.className = "floaty floaty-" + theme;
+      el.textContent = word;
+      floatyLayer.appendChild(el);
+      const f = {
+        el,
+        x: 30 + ((i * 173) % Math.max(1, window.innerWidth - 200)),
+        y: 30 + ((i * 121) % Math.max(1, window.innerHeight - 140)),
+        vx: ((i % 4) - 1.5) * 0.5 + 0.3,
+        vy: ((i % 3) - 1) * 0.5 - 0.2,
+        rot: ((i * 53) % 30) - 15,
+        vrot: ((i % 3) - 1) * 0.12,
+        w: 150, h: 44, dragging: false,
+      };
+      floaties.push(f);
+      requestAnimationFrame(() => { f.w = el.offsetWidth; f.h = el.offsetHeight; });
+      let gx = 0, gy = 0, lx = 0, ly = 0;
+      el.addEventListener("pointerdown", (e) => {
+        f.dragging = true; el.classList.add("grabbing");
+        try { el.setPointerCapture(e.pointerId); } catch (_) {}
+        const r = el.getBoundingClientRect();
+        gx = e.clientX - r.left; gy = e.clientY - r.top;
+        lx = e.clientX; ly = e.clientY; f.vx = 0; f.vy = 0;
+        e.preventDefault();
+      });
+      el.addEventListener("pointermove", (e) => {
+        if (!f.dragging) return;
+        f.x = e.clientX - gx; f.y = e.clientY - gy;
+        f.vx = e.clientX - lx; f.vy = e.clientY - ly;
+        lx = e.clientX; ly = e.clientY;
+      });
+      const release = () => {
+        if (!f.dragging) return;
+        f.dragging = false; el.classList.remove("grabbing");
+        const m = 16;
+        f.vx = Math.max(-m, Math.min(m, f.vx));
+        f.vy = Math.max(-m, Math.min(m, f.vy));
+      };
+      el.addEventListener("pointerup", release);
+      el.addEventListener("pointercancel", release);
+    });
+    function tick() {
+      const w = window.innerWidth, h = window.innerHeight;
+      for (const f of floaties) {
+        if (!f.dragging) {
+          f.x += f.vx; f.y += f.vy; f.rot += f.vrot;
+          if (f.x < 0) { f.x = 0; f.vx = Math.abs(f.vx); }
+          if (f.x > w - f.w) { f.x = w - f.w; f.vx = -Math.abs(f.vx); }
+          if (f.y < 0) { f.y = 0; f.vy = Math.abs(f.vy); }
+          if (f.y > h - f.h) { f.y = h - f.h; f.vy = -Math.abs(f.vy); }
+          f.vx *= 0.992; f.vy *= 0.992;
+          const sp = Math.hypot(f.vx, f.vy);
+          if (sp < 0.22) {
+            if (sp < 0.001) { f.vx = 0.3; f.vy = -0.22; }
+            else { const k = 0.28 / sp; f.vx *= k; f.vy *= k; }
+          }
+        }
+        f.el.style.transform = "translate(" + f.x + "px," + f.y + "px) rotate(" + f.rot + "deg)";
+      }
+      floatyRAF = requestAnimationFrame(tick);
+    }
+    tick();
+  }
+
+  function applyThemeChoice(theme) {
+    const root = document.documentElement;
+    root.classList.remove("theme-cimbom", "theme-karakartal");
+    if (theme === "cimbom") root.classList.add("theme-cimbom");
+    else if (theme === "karakartal") root.classList.add("theme-karakartal");
+    startFloaties(theme === "cimbom" || theme === "karakartal" ? theme : null);
+  }
+
+  const themesLabel = document.getElementById("themesLabel");
+  const themePicker = document.getElementById("themePicker");
+  function updateThemeCards() {
+    themePicker.querySelectorAll(".theme-card").forEach((c) =>
+      c.classList.toggle("active", c.dataset.theme === (settings.theme || "default")));
+  }
+  function revealThemes() {
+    themesLabel.classList.remove("hidden");
+    themePicker.classList.remove("hidden");
+    if (!settings.themesUnlocked) { settings.themesUnlocked = true; saveSettings(); }
+  }
+  themePicker.addEventListener("click", (e) => {
+    const card = e.target.closest(".theme-card");
+    if (!card) return;
+    settings.theme = card.dataset.theme;
+    saveSettings();
+    applyThemeChoice(settings.theme);
+    updateThemeCards();
+  });
+
+  // secret: click Settings 5x in a row to reveal the themes
+  let settingsClicks = 0;
+  navItems.forEach((n) => n.addEventListener("click", () => {
+    if (n.dataset.page === "settings") {
+      settingsClicks++;
+      if (settingsClicks >= 5) revealThemes();
+    } else settingsClicks = 0;
+  }));
+
+  applyThemeChoice(settings.theme || "default");
+  updateThemeCards();
+  if (settings.themesUnlocked || (settings.theme && settings.theme !== "default")) revealThemes();
 
   /* ---------- unified investigation (social scan + nicotine records) ---------- */
   const invForm = document.getElementById("invForm");
