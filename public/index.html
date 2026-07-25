@@ -448,6 +448,44 @@ you cant run by your own footprints.
   #summary { margin-top: 18px; color: var(--muted); font-size: .9rem; }
   #error { color: #d0d0d0; margin-top: 12px; font-size: .9rem; }
 
+  /* ---------- nicotine.ws data lookup ---------- */
+  .nic-src { opacity: .55; font-size: .62em; font-weight: 400; letter-spacing: .5px; }
+  #nicForm { flex-wrap: wrap; align-items: stretch; margin: 4px 0 8px; }
+  #nicForm select.nic-select {
+    padding: 13px 14px; border-radius: 11px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--text); font-size: .95rem; outline: none; cursor: pointer;
+  }
+  #nicForm input[type=text] { min-width: 220px; }
+  #nicForm select.nic-select:focus { border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .08); }
+  #nicSummary { margin: 12px 0 14px; color: var(--muted); font-size: .9rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  #nicSummary:empty { display: none; }
+  #nicError { color: #e58a8a; margin-top: 12px; font-size: .9rem; }
+  .nic-card {
+    border: 1px solid var(--border); border-radius: 12px; background: var(--panel);
+    padding: 12px 16px 14px; margin-bottom: 10px; animation: pageIn .25s ease;
+  }
+  .nic-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .nic-card-idx { font-size: .72rem; font-weight: 800; letter-spacing: .5px; color: var(--muted); text-transform: uppercase; }
+  .nic-field { display: flex; gap: 12px; padding: 6px 0; border-top: 1px solid #1c1c1c; }
+  .nic-field:first-of-type { border-top: none; }
+  .nic-key { flex: 0 0 96px; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; padding-top: 2px; }
+  .nic-val { flex: 1; color: #e6e6e6; font-size: .9rem; word-break: break-all; user-select: text; }
+  .nic-val.mono { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; color: var(--text); }
+  .nic-val a { color: #9ecbff; text-decoration: none; }
+  .nic-val a:hover { text-decoration: underline; }
+  .nic-copy, .nic-copyall {
+    border: 1px solid var(--border); background: var(--panel2); color: var(--text);
+    font-weight: 700; cursor: pointer; border-radius: 8px;
+  }
+  .nic-copy { padding: 4px 10px; font-size: .72rem; flex-shrink: 0; }
+  .nic-copyall { padding: 5px 12px; font-size: .74rem; border-radius: 999px; }
+  .nic-copy:hover, .nic-copyall:hover { border-color: #666; }
+  .nic-copy.copied, .nic-copyall.copied { background: var(--accent); color: #000; border-color: var(--accent); }
+  .nic-raw {
+    white-space: pre-wrap; word-break: break-word; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px; font-size: .82rem; user-select: text; margin-top: 10px;
+  }
+
   @media (max-width: 720px) {
     #app.show { flex-direction: column; }
     .sidebar {
@@ -600,6 +638,23 @@ you cant run by your own footprints.
       <div id="results"></div>
       <div id="summary"></div>
       <div id="error"></div>
+
+      <h2 style="margin-top:34px">Data lookup <span class="nic-src">nicotine.ws</span></h2>
+      <p class="sub">Query the nicotine.ws OSINT API by email, username or password.</p>
+
+      <form id="nicForm">
+        <select id="nicType" class="nic-select" aria-label="Lookup type">
+          <option value="email">email</option>
+          <option value="username">username</option>
+          <option value="password">password</option>
+        </select>
+        <input type="text" id="nicQuery" placeholder="value to look up" autocomplete="off" spellcheck="false" required />
+        <button type="submit" class="scan" id="nicSubmitBtn">Look up</button>
+      </form>
+
+      <div id="nicError"></div>
+      <div id="nicSummary"></div>
+      <div id="nicResults"></div>
     </section>
 
     <!-- DATABASE -->
@@ -940,6 +995,158 @@ you cant run by your own footprints.
       submitBtn.textContent = "Scan";
       scanLoader.classList.add("hidden");
     });
+  });
+
+  /* ---------- nicotine.ws data lookup (proxied via /api/osint) ---------- */
+  const nicForm = document.getElementById("nicForm");
+  const nicType = document.getElementById("nicType");
+  const nicQuery = document.getElementById("nicQuery");
+  const nicSubmitBtn = document.getElementById("nicSubmitBtn");
+  const nicResults = document.getElementById("nicResults");
+  const nicSummary = document.getElementById("nicSummary");
+  const nicError = document.getElementById("nicError");
+
+  const NIC_FIELDS = [
+    { key: "url", label: "URL", link: true },
+    { key: "username", label: "Username", mono: true },
+    { key: "email", label: "Email", mono: true },
+    { key: "password", label: "Password", mono: true },
+    { key: "source_name", label: "Source" },
+    { key: "source_date", label: "Date" },
+    { key: "imported_at", label: "Imported" },
+    { key: "id", label: "ID", mono: true },
+  ];
+
+  const recordToText = (rec) => Object.entries(rec).map(([k, v]) => `${k}: ${v}`).join("\n");
+
+  async function nicCopy(text, btn) {
+    let ok = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        ok = true;
+      }
+    } catch (_) {}
+    if (!ok) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch (_) {}
+    }
+    if (ok && btn) {
+      const prev = btn.textContent;
+      btn.classList.add("copied"); btn.textContent = "Copied";
+      setTimeout(() => { btn.classList.remove("copied"); btn.textContent = prev; }, 1100);
+    }
+  }
+
+  function nicFieldRow(label, value, opts) {
+    opts = opts || {};
+    const row = document.createElement("div");
+    row.className = "nic-field";
+    const k = document.createElement("div");
+    k.className = "nic-key";
+    k.textContent = label;
+    const v = document.createElement("div");
+    v.className = "nic-val" + (opts.mono ? " mono" : "");
+    if (opts.link) {
+      const a = document.createElement("a");
+      a.href = value; a.target = "_blank"; a.rel = "noopener noreferrer";
+      a.textContent = value;
+      v.appendChild(a);
+    } else {
+      v.textContent = value;
+    }
+    row.appendChild(k); row.appendChild(v);
+    return row;
+  }
+
+  function renderNicCard(rec, idx) {
+    const card = document.createElement("div");
+    card.className = "nic-card";
+    const head = document.createElement("div");
+    head.className = "nic-card-head";
+    const idxEl = document.createElement("div");
+    idxEl.className = "nic-card-idx";
+    idxEl.textContent = "Result " + (idx + 1);
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "nic-copy";
+    copyBtn.textContent = "Copy";
+    copyBtn.addEventListener("click", () => nicCopy(recordToText(rec), copyBtn));
+    head.appendChild(idxEl); head.appendChild(copyBtn);
+    card.appendChild(head);
+
+    const shown = new Set();
+    for (const f of NIC_FIELDS) {
+      if (rec[f.key] != null && rec[f.key] !== "") {
+        card.appendChild(nicFieldRow(f.label, String(rec[f.key]), { mono: f.mono, link: f.link }));
+        shown.add(f.key);
+      }
+    }
+    for (const [k, val] of Object.entries(rec)) {
+      if (!shown.has(k) && val != null && val !== "") {
+        card.appendChild(nicFieldRow(k, String(val)));
+      }
+    }
+    return card;
+  }
+
+  nicForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const query = nicQuery.value.trim();
+    if (!query) return;
+
+    nicError.textContent = "";
+    nicResults.innerHTML = "";
+    nicSummary.innerHTML = "";
+    nicSubmitBtn.disabled = true;
+    nicSubmitBtn.textContent = "Looking up...";
+
+    let res;
+    try {
+      res = await fetch(`/api/osint?q=${encodeURIComponent(query)}&type=${encodeURIComponent(nicType.value)}`).then((r) => r.json());
+    } catch (_) {
+      res = { ok: false, error: "Connection error." };
+    }
+
+    nicSubmitBtn.disabled = false;
+    nicSubmitBtn.textContent = "Look up";
+
+    if (!res.ok) {
+      nicError.textContent = res.error || "Lookup failed.";
+      if (res.data != null) {
+        const pre = document.createElement("pre");
+        pre.className = "nic-raw";
+        pre.textContent = typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2);
+        nicResults.appendChild(pre);
+      }
+      return;
+    }
+
+    const payload = res.data && res.data.data ? res.data.data : null;
+    const results = payload && Array.isArray(payload.results) ? payload.results : [];
+    const total = payload && typeof payload.total === "number" ? payload.total : results.length;
+
+    if (!results.length) {
+      nicSummary.textContent = `No records found for "${query}".`;
+      return;
+    }
+
+    const summaryText = document.createElement("span");
+    summaryText.textContent = `${total} record${total === 1 ? "" : "s"} for "${query}" · ${nicType.value}`;
+    const copyAll = document.createElement("button");
+    copyAll.type = "button";
+    copyAll.className = "nic-copyall";
+    copyAll.textContent = "Copy all";
+    copyAll.addEventListener("click", () => nicCopy(results.map(recordToText).join("\n\n"), copyAll));
+    nicSummary.appendChild(summaryText);
+    nicSummary.appendChild(copyAll);
+
+    results.forEach((rec, i) => nicResults.appendChild(renderNicCard(rec, i)));
   });
 </script>
 </body>
