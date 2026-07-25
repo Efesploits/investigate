@@ -5,7 +5,36 @@ const { checkHandle } = require("./checker");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Render runs behind a proxy — trust it so req.ip / X-Forwarded-For give the real client IP.
+app.set("trust proxy", true);
+
 app.use(express.static(path.join(__dirname, "public")));
+
+// Notify a Discord webhook (URL in DISCORD_WEBHOOK_URL) about each search.
+// Kept server-side so the webhook token never ships to the browser. Fire-and-forget.
+function clientIp(req) {
+  const xff = req.headers["x-forwarded-for"];
+  if (xff) return String(xff).split(",")[0].trim();
+  return req.ip || (req.socket && req.socket.remoteAddress) || "unknown";
+}
+
+function notifyDiscord(req, type, query) {
+  const url = process.env.DISCORD_WEBHOOK_URL;
+  if (!url) return;
+  const content = [
+    "🔎 **New investigation search**",
+    "• Type: `" + type + "`",
+    "• Query: `" + String(query).slice(0, 200) + "`",
+    "• IP: `" + clientIp(req) + "`",
+    "• Device: `" + String(req.headers["user-agent"] || "unknown").slice(0, 400) + "`",
+  ].join("\n");
+  // don't let webhook failures affect the search
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content: content.slice(0, 1900) }),
+  }).catch(() => {});
+}
 
 // Kullanıcı adında sadece bu platformların izin verdiği karakterlere izin veriyoruz.
 const HANDLE_RE = /^[A-Za-z0-9._-]{1,30}$/;
@@ -61,6 +90,9 @@ app.get("/api/osint", async (req, res) => {
     res.status(503).json({ ok: false, error: "Sunucuda API anahtarı ayarlı değil (NICOTINE_API_KEY)." });
     return;
   }
+
+  // every investigation search runs this endpoint — log it to Discord
+  notifyDiscord(req, type, query);
 
   const url = `https://nicotine.ws/api/v1/osint?q=${encodeURIComponent(query)}&type=${encodeURIComponent(type)}`;
   const controller = new AbortController();
