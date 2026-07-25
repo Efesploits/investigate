@@ -1,5 +1,5 @@
 {
-  "version": "1.2.2",
+  "version": "1.2.3",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Polished the UI with subtle animated effects: sliding accent bar and glow on the sidebar nav, a scan-line under the Data lookup heading, breathing focus glow on inputs, and sheen/lift on buttons and result cards."
+  "notes": "Unified search: one box now runs the social-platform sweep and the nicotine.ws records together, grouped into Social medias and Records categories with the eye search animation. New grey-black background and a liquid-glass sidebar; contained the scan-line effect."
 }

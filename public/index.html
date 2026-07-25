@@ -450,16 +450,16 @@ you cant run by your own footprints.
 
   /* ---------- nicotine.ws data lookup ---------- */
   .nic-src { opacity: .55; font-size: .62em; font-weight: 400; letter-spacing: .5px; }
-  #nicForm { flex-wrap: wrap; align-items: stretch; margin: 4px 0 8px; }
-  #nicForm select.nic-select {
+  #invForm { flex-wrap: wrap; align-items: stretch; margin: 4px 0 8px; }
+  #invForm select.nic-select {
     padding: 13px 14px; border-radius: 11px; border: 1px solid var(--border);
     background: var(--panel); color: var(--text); font-size: .95rem; outline: none; cursor: pointer;
   }
-  #nicForm input[type=text] { min-width: 220px; }
-  #nicForm select.nic-select:focus { border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .08); }
+  #invForm input[type=text] { min-width: 220px; }
+  #invForm select.nic-select:focus { border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .08); }
   #nicSummary { margin: 12px 0 14px; color: var(--muted); font-size: .9rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   #nicSummary:empty { display: none; }
-  #nicError { color: #e58a8a; margin-top: 12px; font-size: .9rem; }
+  #invError { color: #e58a8a; margin-top: 12px; font-size: .9rem; }
   .nic-card {
     border: 1px solid var(--border); border-radius: 12px; background: var(--panel);
     padding: 12px 16px 14px; margin-bottom: 10px; animation: pageIn .25s ease;
@@ -544,6 +544,31 @@ you cant run by your own footprints.
     background: linear-gradient(90deg, transparent, var(--accent), transparent); border-radius: 2px;
     box-shadow: 0 0 10px rgb(var(--accent-rgb) / .7); animation: scanSweep 3.6s cubic-bezier(.5,0,.5,1) infinite; }
   @keyframes scanSweep { 0% { left: -34%; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
+
+  /* ============ background + liquid-glass sidebar + categories ============ */
+  body { background:
+      radial-gradient(1100px 620px at 6% -8%, #1c1e23 0%, rgba(28,30,35,0) 55%),
+      radial-gradient(950px 720px at 112% 114%, #17191e 0%, rgba(23,25,30,0) 52%),
+      #060608; }
+  .content { background: transparent; }
+  .sidebar {
+    background: rgba(17, 18, 22, 0.5);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    backdrop-filter: blur(22px) saturate(1.4);
+    border-right: 1px solid rgba(255,255,255,0.09);
+  }
+  .sidebar::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 22%); }
+  .brand, .nav-item, .nav-label, .footer-credit { position: relative; z-index: 1; }
+
+  /* result categories */
+  .cat { margin-top: 30px; }
+  .cat-note { color: var(--muted); font-size: .85rem; margin-top: 10px; }
+
+  /* keep the scan-line contained under its heading */
+  .nic-head { overflow: hidden; padding-bottom: 8px; }
+  .nic-head::after { box-shadow: 0 0 6px rgb(var(--accent-rgb) / .55); }
+  #catRecords .nic-head::after { animation-delay: 1.8s; }
 </style>
 </head>
 <body>
@@ -655,13 +680,18 @@ you cant run by your own footprints.
 
     <!-- INVESTIGATE -->
     <section class="page" id="page-investigate">
-      <h1>Username Investigation</h1>
-      <p class="sub">Scan a username across platforms to see where an account exists. Results marked <b>UNKNOWN</b> mean the site showed a login wall or bot protection, so it couldn't actually be verified.</p>
-      <p class="db-note">*client is recommended for faster results*</p>
+      <h1>Investigation</h1>
+      <p class="sub">Search by username, email or password. A username search also sweeps social platforms; every search checks the nicotine.ws records.</p>
+      <p class="db-note">*client is recommended for faster social scans*</p>
 
-      <form id="form">
-        <input type="text" id="handle" placeholder="username" autocomplete="off" spellcheck="false" required />
-        <button type="submit" class="scan" id="submitBtn">Scan</button>
+      <form id="invForm">
+        <select id="invType" class="nic-select" aria-label="Search type">
+          <option value="username">username</option>
+          <option value="email">email</option>
+          <option value="password">password</option>
+        </select>
+        <input type="text" id="invQuery" placeholder="value to search" autocomplete="off" spellcheck="false" required />
+        <button type="submit" class="scan" id="invSubmitBtn">Search</button>
       </form>
 
       <div class="scan-loader hidden" id="scanLoader">
@@ -678,29 +708,22 @@ you cant run by your own footprints.
           </g>
           <circle cx="150" cy="140" r="100" fill="none" stroke="var(--accent)" stroke-width="9"/>
         </svg>
-        <p class="scan-loader-text">Scanning platforms…</p>
+        <p class="scan-loader-text">Searching…</p>
       </div>
 
-      <div id="results"></div>
-      <div id="summary"></div>
-      <div id="error"></div>
+      <div id="invError"></div>
 
-      <h2 class="nic-head" style="margin-top:34px">Data lookup <span class="nic-src">nicotine.ws</span></h2>
-      <p class="sub">Query the nicotine.ws OSINT API by email, username or password.</p>
+      <div class="cat hidden" id="catSocial">
+        <h2 class="nic-head cat-head">Social medias <span class="nic-src" id="socialCount"></span></h2>
+        <div id="socialResults"></div>
+        <div id="socialSummary" class="cat-note"></div>
+      </div>
 
-      <form id="nicForm">
-        <select id="nicType" class="nic-select" aria-label="Lookup type">
-          <option value="email">email</option>
-          <option value="username">username</option>
-          <option value="password">password</option>
-        </select>
-        <input type="text" id="nicQuery" placeholder="value to look up" autocomplete="off" spellcheck="false" required />
-        <button type="submit" class="scan" id="nicSubmitBtn">Look up</button>
-      </form>
-
-      <div id="nicError"></div>
-      <div id="nicSummary"></div>
-      <div id="nicResults"></div>
+      <div class="cat hidden" id="catRecords">
+        <h2 class="nic-head cat-head">Records <span class="nic-src">nicotine.ws</span></h2>
+        <div id="nicSummary"></div>
+        <div id="nicResults"></div>
+      </div>
     </section>
 
     <!-- DATABASE -->
@@ -930,20 +953,26 @@ you cant run by your own footprints.
   navItems.forEach((n) => n.addEventListener("click", () => showPage(n.dataset.page)));
   document.getElementById("goInvestigate").addEventListener("click", () => {
     showPage("investigate");
-    document.getElementById("handle").focus();
+    document.getElementById("invQuery").focus();
   });
 
   /* wire hover + click sounds onto every interactive control */
   document.querySelectorAll(".enter-btn, .nav-item, .cta, button.scan, .switch").forEach(attachSounds);
 
-  /* ---------- scanner ---------- */
-  const form = document.getElementById("form");
-  const handleInput = document.getElementById("handle");
-  const submitBtn = document.getElementById("submitBtn");
-  const resultsEl = document.getElementById("results");
-  const summaryEl = document.getElementById("summary");
-  const errorEl = document.getElementById("error");
+  /* ---------- unified investigation (social scan + nicotine records) ---------- */
+  const invForm = document.getElementById("invForm");
+  const invType = document.getElementById("invType");
+  const invQuery = document.getElementById("invQuery");
+  const invSubmitBtn = document.getElementById("invSubmitBtn");
+  const invError = document.getElementById("invError");
   const scanLoader = document.getElementById("scanLoader");
+  const catSocial = document.getElementById("catSocial");
+  const socialResults = document.getElementById("socialResults");
+  const socialSummary = document.getElementById("socialSummary");
+  const socialCount = document.getElementById("socialCount");
+  const catRecords = document.getElementById("catRecords");
+  const nicResults = document.getElementById("nicResults");
+  const nicSummary = document.getElementById("nicSummary");
 
   const REASON_LABELS = {
     login_wall: "login wall — couldn't verify",
@@ -996,62 +1025,39 @@ you cant run by your own footprints.
 
     row.appendChild(left);
     row.appendChild(badge);
-    resultsEl.appendChild(row);
+    socialResults.appendChild(row);
   }
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const handle = handleInput.value.trim();
-    if (!handle) return;
-
-    resultsEl.innerHTML = "";
-    summaryEl.textContent = "";
-    errorEl.textContent = "";
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Scanning...";
-    scanLoader.classList.remove("hidden");
-
-    const results = [];
-    const source = new EventSource("/api/check?handle=" + encodeURIComponent(handle));
-
-    source.addEventListener("result", (e) => {
-      const result = JSON.parse(e.data);
-      results.push(result);
-      renderRow(result);
+  // Social medias — streamed from the server (username only)
+  function runSocialScan(handle) {
+    catSocial.classList.remove("hidden");
+    return new Promise((resolve) => {
+      const results = [];
+      const source = new EventSource("/api/check?handle=" + encodeURIComponent(handle));
+      source.addEventListener("result", (e) => {
+        const result = JSON.parse(e.data);
+        results.push(result);
+        renderRow(result);
+      });
+      source.addEventListener("done", () => {
+        const found = results.filter((r) => r.exists === true).length;
+        const unknown = results.filter((r) => r.exists === null).length;
+        socialCount.textContent = found + " found";
+        socialSummary.textContent = `${found} account(s) found, ${unknown} platform(s) couldn't be verified.`;
+        source.close();
+        resolve();
+      });
+      source.addEventListener("error", (e) => {
+        let message = "Connection error.";
+        try { if (e.data) message = JSON.parse(e.data).message || message; } catch (_) {}
+        socialSummary.textContent = message;
+        source.close();
+        resolve();
+      });
     });
+  }
 
-    source.addEventListener("done", () => {
-      const found = results.filter((r) => r.exists === true).length;
-      const unknown = results.filter((r) => r.exists === null).length;
-      summaryEl.textContent = `${found} account(s) found, ${unknown} platform(s) couldn't be verified.`;
-      source.close();
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Scan";
-      scanLoader.classList.add("hidden");
-    });
-
-    source.addEventListener("error", (e) => {
-      let message = "Connection error.";
-      try {
-        if (e.data) message = JSON.parse(e.data).message || message;
-      } catch (_) {}
-      errorEl.textContent = message;
-      source.close();
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Scan";
-      scanLoader.classList.add("hidden");
-    });
-  });
-
-  /* ---------- nicotine.ws data lookup (proxied via /api/osint) ---------- */
-  const nicForm = document.getElementById("nicForm");
-  const nicType = document.getElementById("nicType");
-  const nicQuery = document.getElementById("nicQuery");
-  const nicSubmitBtn = document.getElementById("nicSubmitBtn");
-  const nicResults = document.getElementById("nicResults");
-  const nicSummary = document.getElementById("nicSummary");
-  const nicError = document.getElementById("nicError");
-
+  /* ---------- nicotine.ws records (proxied via /api/osint) ---------- */
   const NIC_FIELDS = [
     { key: "url", label: "URL", link: true },
     { key: "username", label: "Username", mono: true },
@@ -1141,29 +1147,17 @@ you cant run by your own footprints.
     return card;
   }
 
-  nicForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const query = nicQuery.value.trim();
-    if (!query) return;
-
-    nicError.textContent = "";
-    nicResults.innerHTML = "";
-    nicSummary.innerHTML = "";
-    nicSubmitBtn.disabled = true;
-    nicSubmitBtn.textContent = "Looking up...";
-
+  // Records — nicotine.ws lookup (all types)
+  async function runNicLookup(query, type) {
     let res;
     try {
-      res = await fetch(`/api/osint?q=${encodeURIComponent(query)}&type=${encodeURIComponent(nicType.value)}`).then((r) => r.json());
+      res = await fetch(`/api/osint?q=${encodeURIComponent(query)}&type=${encodeURIComponent(type)}`).then((r) => r.json());
     } catch (_) {
       res = { ok: false, error: "Connection error." };
     }
-
-    nicSubmitBtn.disabled = false;
-    nicSubmitBtn.textContent = "Look up";
-
+    catRecords.classList.remove("hidden");
     if (!res.ok) {
-      nicError.textContent = res.error || "Lookup failed.";
+      nicSummary.textContent = res.error || "Lookup failed.";
       if (res.data != null) {
         const pre = document.createElement("pre");
         pre.className = "nic-raw";
@@ -1172,18 +1166,15 @@ you cant run by your own footprints.
       }
       return;
     }
-
     const payload = res.data && res.data.data ? res.data.data : null;
     const results = payload && Array.isArray(payload.results) ? payload.results : [];
     const total = payload && typeof payload.total === "number" ? payload.total : results.length;
-
     if (!results.length) {
       nicSummary.textContent = `No records found for "${query}".`;
       return;
     }
-
     const summaryText = document.createElement("span");
-    summaryText.textContent = `${total} record${total === 1 ? "" : "s"} for "${query}" · ${nicType.value}`;
+    summaryText.textContent = `${total} record${total === 1 ? "" : "s"} for "${query}" · ${type}`;
     const copyAll = document.createElement("button");
     copyAll.type = "button";
     copyAll.className = "nic-copyall";
@@ -1191,8 +1182,31 @@ you cant run by your own footprints.
     copyAll.addEventListener("click", () => nicCopy(results.map(recordToText).join("\n\n"), copyAll));
     nicSummary.appendChild(summaryText);
     nicSummary.appendChild(copyAll);
-
     results.forEach((rec, i) => nicResults.appendChild(renderNicCard(rec, i)));
+  }
+
+  invForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const query = invQuery.value.trim();
+    const type = invType.value;
+    if (!query) return;
+
+    invError.textContent = "";
+    socialResults.innerHTML = ""; socialSummary.textContent = ""; socialCount.textContent = "";
+    nicResults.innerHTML = ""; nicSummary.innerHTML = "";
+    catSocial.classList.add("hidden");
+    catRecords.classList.add("hidden");
+    invSubmitBtn.disabled = true;
+    invSubmitBtn.textContent = "Searching...";
+    scanLoader.classList.remove("hidden");
+
+    const tasks = [runNicLookup(query, type)];
+    if (type === "username") tasks.push(runSocialScan(query));
+    await Promise.allSettled(tasks);
+
+    scanLoader.classList.add("hidden");
+    invSubmitBtn.disabled = false;
+    invSubmitBtn.textContent = "Search";
   });
 </script>
 </body>
