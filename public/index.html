@@ -498,6 +498,52 @@ you cant run by your own footprints.
     .content { padding: 28px 18px; }
     form { flex-direction: column; }
   }
+
+  /* ============ interactive effects (nav + forms) ============ */
+  /* sidebar nav: sliding accent bar, hover glide, active glow */
+  .nav-item { position: relative; overflow: hidden;
+    transition: background .2s ease, border-color .2s ease, transform .18s cubic-bezier(.4,0,.2,1), box-shadow .25s ease; }
+  .nav-item::before { content: ""; position: absolute; left: 0; top: 50%; width: 3px; height: 0;
+    transform: translateY(-50%); background: var(--accent); border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 12px rgb(var(--accent-rgb) / .7); transition: height .25s cubic-bezier(.4,0,.2,1); }
+  .nav-item svg { transition: opacity .2s ease, transform .2s ease; }
+  .nav-item:hover { transform: translateX(3px); }
+  .nav-item:hover::before { height: 52%; }
+  .nav-item:hover svg { opacity: 1; transform: scale(1.12); }
+  .nav-item.active::before { height: 60%; }
+  .nav-item.active { box-shadow: 0 0 22px -8px rgb(var(--accent-rgb) / .38); }
+  .brand svg { filter: drop-shadow(0 0 10px rgb(var(--accent-rgb) / .18)); }
+
+  /* inputs & selects: breathing focus glow */
+  input[type=text], select.nic-select { transition: border-color .18s ease, box-shadow .25s ease, background .2s ease; }
+  input[type=text]:focus, select.nic-select:focus { animation: fieldGlow 2.4s ease-in-out infinite; }
+  @keyframes fieldGlow {
+    0%,100% { box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .07); }
+    50%     { box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .13), 0 0 20px -3px rgb(var(--accent-rgb) / .28); } }
+
+  /* scan / look up buttons: lift, glow, sheen sweep */
+  button.scan { position: relative; overflow: hidden; transition: transform .16s ease, box-shadow .25s ease, filter .2s ease; }
+  button.scan::after { content: ""; position: absolute; top: 0; bottom: 0; left: -80%; width: 45%;
+    background: linear-gradient(100deg, transparent, rgba(0,0,0,.10) 42%, rgba(255,255,255,.5) 60%, transparent);
+    transform: skewX(-22deg); transition: left .6s cubic-bezier(.4,0,.2,1); pointer-events: none; }
+  button.scan:hover { transform: translateY(-2px); box-shadow: 0 10px 26px -10px rgb(var(--accent-rgb) / .55); filter: brightness(1.04); }
+  button.scan:hover::after { left: 135%; }
+  button.scan:active { transform: translateY(0); box-shadow: 0 4px 12px -8px rgb(var(--accent-rgb) / .5); }
+
+  /* result rows/cards: hover lift + accent edge */
+  .row, .osint-row, .nic-card { transition: border-color .2s ease, transform .2s ease, box-shadow .25s ease; }
+  .row:hover, .osint-row:hover, .nic-card:hover {
+    border-color: rgb(var(--accent-rgb) / .35); transform: translateY(-1px);
+    box-shadow: 0 8px 24px -14px rgb(var(--accent-rgb) / .45); }
+
+  /* data lookup heading: scan-line underline */
+  .nic-head { position: relative; display: inline-block; padding-bottom: 7px; }
+  .nic-head::before { content: ""; position: absolute; left: 0; bottom: 0; height: 2px; width: 100%;
+    background: linear-gradient(90deg, rgb(var(--accent-rgb) / .5), rgb(var(--accent-rgb) / .05)); border-radius: 2px; }
+  .nic-head::after { content: ""; position: absolute; bottom: 0; left: 0; height: 2px; width: 34%;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent); border-radius: 2px;
+    box-shadow: 0 0 10px rgb(var(--accent-rgb) / .7); animation: scanSweep 3.6s cubic-bezier(.5,0,.5,1) infinite; }
+  @keyframes scanSweep { 0% { left: -34%; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
 </style>
 </head>
 <body>
@@ -639,7 +685,7 @@ you cant run by your own footprints.
       <div id="summary"></div>
       <div id="error"></div>
 
-      <h2 style="margin-top:34px">Data lookup <span class="nic-src">nicotine.ws</span></h2>
+      <h2 class="nic-head" style="margin-top:34px">Data lookup <span class="nic-src">nicotine.ws</span></h2>
       <p class="sub">Query the nicotine.ws OSINT API by email, username or password.</p>
 
       <form id="nicForm">

@@ -1,5 +1,5 @@
 {
-  "version": "1.2.1",
+  "version": "1.2.2",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Fixed the self-updater: the swap step could spin forever and pop a visible ping window on machines that reuse process IDs. The update now waits with a bounded, image-name-matched check and runs fully hidden. Includes the nicotine.ws data lookup and no intro music."
+  "notes": "Polished the UI with subtle animated effects: sliding accent bar and glow on the sidebar nav, a scan-line under the Data lookup heading, breathing focus glow on inputs, and sheen/lift on buttons and result cards."
 }
