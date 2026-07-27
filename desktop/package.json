@@ -1,6 +1,6 @@
 {
   "name": "investigate-client",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "description": "m3's investigation tool — desktop SQL database client",
   "main": "main.js",
   "author": "m3",
@@ -27,7 +27,8 @@
       "**/sql.js/dist/*.wasm"
     ],
     "win": {
-      "target": "portable"
+      "target": "portable",
+      "icon": "build/icon.ico"
     },
     "portable": {
       "artifactName": "investigate-client.exe"

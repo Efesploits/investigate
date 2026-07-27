@@ -1,5 +1,5 @@
 {
-  "version": "1.2.8",
+  "version": "1.2.9",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Home hero and feature cards now use the same theme-tinted liquid-glass material as the sidebar."
+  "notes": "New investigation graph: the query sits in the centre with red physics-rope lines stamped onto 3D record/social papers (drag to move, filter chips to hide results, papers show user/pass/date). Classic list view kept in Settings. App now has the eye logo icon."
 }

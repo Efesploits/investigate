@@ -588,6 +588,67 @@ you cant run by your own footprints.
   .nic-head::after { box-shadow: 0 0 6px rgb(var(--accent-rgb) / .55); }
   #catRecords .nic-head::after { animation-delay: 1.8s; }
 
+  /* ---------- investigation graph ---------- */
+  .graph-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+  .graph-filter:empty { display: none; }
+  .gf-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: .8rem; font-weight: 600;
+    cursor: pointer; user-select: none; transition: opacity .15s ease, border-color .15s ease; }
+  .gf-chip:hover { border-color: #666; }
+  .gf-chip.off { opacity: .4; text-decoration: line-through; }
+  .graph-stage { position: relative; height: 540px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+    background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--panel) 55%, transparent), transparent 68%), var(--bg2);
+    cursor: grab; touch-action: none; user-select: none; }
+  .graph-stage.grabbing { cursor: grabbing; }
+  .graph-canvas { position: absolute; top: 0; left: 0; width: 4000px; height: 4000px; }
+  .graph-edges { position: absolute; top: 0; left: 0; overflow: visible; pointer-events: none; }
+  .g-edge { fill: none; stroke: #ff2d3f; stroke-width: 2.6; stroke-linecap: round; opacity: .85; transition: stroke-dashoffset .7s ease .4s; filter: drop-shadow(0 0 3px rgba(255,45,63,.4)); }
+  .g-edge.off { display: none; }
+  .g-center, .g-node { position: absolute; transform: translate(-50%, -50%); }
+  .g-center { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 13px 22px; border-radius: 14px;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 96%, #fff), var(--accent)); color: #000;
+    font-weight: 800; box-shadow: 0 10px 34px rgba(0,0,0,.55); text-align: center; max-width: 260px; z-index: 2; }
+  .g-center-type { font-size: .6rem; text-transform: uppercase; letter-spacing: 2px; opacity: .65; }
+  .g-center-q { font-size: 1.05rem; word-break: break-all; line-height: 1.15; }
+  .g-node { display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; white-space: normal; max-width: 330px;
+    background: linear-gradient(158deg, #fdfcf8 0%, #efeadd 55%, #e3dcca 100%); color: #1b1b1b;
+    border: 1px solid rgba(0,0,0,.18); border-radius: 3px; font-size: .84rem; font-weight: 700;
+    box-shadow: 0 2px 3px rgba(0,0,0,.4), 0 16px 26px rgba(0,0,0,.5), 0 30px 52px -12px rgba(0,0,0,.45);
+    animation: paperIn .55s cubic-bezier(.2,.85,.25,1.12) both; }
+  .g-node::after { content: ""; position: absolute; top: 0; right: 0;
+    border: 7px solid; border-color: #d3ccbb #d3ccbb transparent transparent; border-top-right-radius: 3px;
+    box-shadow: -1px 1px 2px rgba(0,0,0,.18); }
+  @keyframes paperIn {
+    0%   { opacity: 0; transform: translate(-50%, -88%) perspective(700px) rotateX(-82deg) rotateZ(-1deg) scale(.85); }
+    60%  { opacity: 1; transform: translate(-50%, -46%) perspective(700px) rotateX(16deg) rotateZ(-1deg) scale(1.02); }
+    100% { opacity: 1; transform: translate(-50%, -50%) perspective(700px) rotateX(9deg) rotateZ(-1deg) scale(1); } }
+  .g-node.off { display: none; }
+  .g-node-social::before { content: ""; position: absolute; left: -1px; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: #ff2d3f; }
+  .g-body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .g-title { font-size: .9rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px; }
+  .g-fields { display: flex; flex-direction: column; gap: 3px; margin-top: 1px; }
+  .g-field { display: flex; gap: 8px; font-size: .74rem; font-weight: 600; align-items: baseline; }
+  .g-fk { color: #9a8f74; text-transform: uppercase; letter-spacing: .5px; flex: 0 0 40px; }
+  .g-fv { color: #262626; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+  img.g-ico { width: 20px; height: 20px; border-radius: 4px; flex-shrink: 0; display: block; object-fit: contain; background: rgba(0,0,0,.05); margin-top: 1px; }
+  .g-stamp { position: absolute; transform: translate(-50%,-50%) rotate(-8deg); width: 30px; height: 30px; border-radius: 50%;
+    border: 2.5px solid #ff2d3f; background: radial-gradient(circle, rgba(255,45,63,.24), rgba(255,45,63,.07));
+    box-shadow: 0 0 0 2px rgba(255,45,63,.12), 0 3px 8px rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center;
+    z-index: 3; pointer-events: none; animation: stampIn .4s cubic-bezier(.3,1.5,.5,1) .3s both; }
+  .g-stamp::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #ff2d3f; }
+  .g-stamp.off { display: none; }
+  @keyframes stampIn { 0% { opacity: 0; transform: translate(-50%,-50%) rotate(-26deg) scale(2.2); }
+    65% { opacity: 1; } 100% { opacity: .95; transform: translate(-50%,-50%) rotate(-8deg) scale(1); } }
+  span.g-ico { width: 20px; height: 20px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+  span.g-ico svg { width: 20px; height: 20px; }
+  .gf-chip img.g-ico, .gf-chip span.g-ico, .gf-chip span.g-ico svg { width: 15px; height: 15px; }
+  .graph-scan { position: absolute; left: 14px; bottom: 12px; display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 13px; border-radius: 999px; background: rgba(0,0,0,.55); color: var(--text); font-size: .76rem;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .graph-scan .spin { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.22); border-top-color: #ff2d3f; border-radius: 50%; animation: gSpin .8s linear infinite; }
+  @keyframes gSpin { to { transform: rotate(360deg); } }
+  .graph-hint { position: absolute; right: 14px; bottom: 12px; font-size: .72rem; color: var(--muted); pointer-events: none; }
+
   /* home hero eye: blinks and looks around */
   .hero-eye-inner { transform-box: fill-box; transform-origin: center; animation: blink 4.8s cubic-bezier(.6,0,.4,1) 1s infinite; }
   .hero-iris { transform-box: fill-box; transform-origin: center; animation: heroLook 7s ease-in-out infinite; }
@@ -785,16 +846,30 @@ you cant run by your own footprints.
 
       <div id="invError"></div>
 
-      <div class="cat hidden" id="catRecords">
-        <h2 class="nic-head cat-head">Records</h2>
-        <div id="nicSummary"></div>
-        <div id="nicResults"></div>
+      <div id="graphView">
+        <div class="graph-filter" id="graphFilter"></div>
+        <div class="graph-stage" id="graphStage">
+          <div class="graph-canvas" id="graphCanvas">
+            <svg class="graph-edges" id="graphEdges" width="4000" height="4000" viewBox="0 0 4000 4000"></svg>
+            <div class="g-center hidden" id="graphCenter"></div>
+          </div>
+          <div class="graph-scan hidden" id="graphScan"><span class="spin"></span> scanning platforms…</div>
+          <div class="graph-hint">drag to move around</div>
+        </div>
       </div>
 
-      <div class="cat hidden" id="catSocial">
-        <h2 class="nic-head cat-head">Social medias <span class="nic-src" id="socialCount"></span></h2>
-        <div id="socialResults"></div>
-        <div id="socialSummary" class="cat-note"></div>
+      <div id="classicView" class="hidden">
+        <div class="cat hidden" id="catRecords">
+          <h2 class="nic-head cat-head">Records</h2>
+          <div id="nicSummary"></div>
+          <div id="nicResults"></div>
+        </div>
+
+        <div class="cat hidden" id="catSocial">
+          <h2 class="nic-head cat-head">Social medias <span class="nic-src" id="socialCount"></span></h2>
+          <div id="socialResults"></div>
+          <div id="socialSummary" class="cat-note"></div>
+        </div>
       </div>
     </section>
 
@@ -836,6 +911,14 @@ you cant run by your own footprints.
         <label class="switch"><input type="checkbox" id="toggleBW"><span class="track"><span class="knob"></span></span></label>
       </div>
 
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Classic records list</div>
+          <div class="settings-desc">Show the old list view instead of the new investigation graph.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="toggleClassic"><span class="track"><span class="knob"></span></span></label>
+      </div>
+
       <div class="hidden" id="themesLabel">Themes ⚽</div>
       <div class="theme-picker hidden" id="themePicker">
         <button class="theme-card" data-theme="default" type="button"><span>Default</span><span class="tc-swatch tc-default"></span></button>
@@ -849,7 +932,7 @@ you cant run by your own footprints.
 <script>
   /* ---------- settings (persisted in localStorage) ---------- */
   const SETTINGS_KEY = "m3-settings";
-  const DEFAULT_SETTINGS = { blackWhite: true, theme: "default" };
+  const DEFAULT_SETTINGS = { blackWhite: true, theme: "default", classicRecords: false };
   function loadSettings() {
     try {
       const raw = localStorage.getItem(SETTINGS_KEY);
@@ -1221,6 +1304,7 @@ you cant run by your own footprints.
         const result = JSON.parse(e.data);
         results.push(result);
         renderRow(result);
+        if (result.exists === true) graphAddSocial(result);
       });
       source.addEventListener("done", () => {
         const found = results.filter((r) => r.exists === true).length;
@@ -1387,7 +1471,191 @@ you cant run by your own footprints.
     nicSummary.appendChild(summaryText);
     nicSummary.appendChild(copyAll);
     results.forEach((rec, i) => nicResults.appendChild(renderNicCard(rec, i)));
+    results.forEach((rec) => graphAddRecord(rec));
   }
+
+  /* ---------- investigation graph ---------- */
+  const graphView = document.getElementById("graphView");
+  const classicView = document.getElementById("classicView");
+  const graphStage = document.getElementById("graphStage");
+  const graphCanvas = document.getElementById("graphCanvas");
+  const graphEdges = document.getElementById("graphEdges");
+  const graphCenter = document.getElementById("graphCenter");
+  const graphFilter = document.getElementById("graphFilter");
+  const graphScan = document.getElementById("graphScan");
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const GCX = 2000, GCY = 2000, GRAPH_CAP = 120;
+  let gNodes = [], gCount = 0, gGroups = {}, gPanX = 0, gPanY = 0;
+  let gRopes = [], gRopeRAF = null;
+  function setRopeD(path, x1, y1, x2, y2, sag, sway) {
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    path.setAttribute("d", "M " + x1 + " " + y1 + " Q " + mx + " " + (my + sag + sway) + " " + x2 + " " + y2);
+  }
+  function gRopeLoop() {
+    let anyActive = false;
+    for (const r of gRopes) {
+      if (r.done) continue;
+      r.t += 1 / 60;
+      const decay = Math.exp(-r.t * 3.0);
+      if (decay < 0.02) { r.done = true; setRopeD(r.path, r.bx, r.by, GCX, GCY, r.rest, 0); continue; }
+      anyActive = true;
+      setRopeD(r.path, r.bx, r.by, GCX, GCY, r.rest, r.amp * decay * Math.sin(r.t * 9 + r.phase));
+    }
+    if (anyActive) gRopeRAF = requestAnimationFrame(gRopeLoop);
+    else { gRopes = []; gRopeRAF = null; }
+  }
+
+  function applyRecordsView() {
+    const classic = !!settings.classicRecords;
+    graphView.classList.toggle("hidden", classic);
+    classicView.classList.toggle("hidden", !classic);
+    if (!classic) requestAnimationFrame(graphCenterView);
+  }
+  function graphApplyPan() { graphCanvas.style.transform = "translate(" + gPanX + "px," + gPanY + "px)"; }
+  function graphCenterView() {
+    const r = graphStage.getBoundingClientRect();
+    gPanX = (r.width || 800) / 2 - GCX;
+    gPanY = (r.height || 540) / 2 - GCY;
+    graphApplyPan();
+  }
+  function graphReset(query, type) {
+    while (graphEdges.firstChild) graphEdges.removeChild(graphEdges.firstChild);
+    gNodes.forEach((n) => { n.el.remove(); if (n.stamp) n.stamp.remove(); });
+    gNodes = []; gCount = 0; gGroups = {};
+    gRopes = []; if (gRopeRAF) cancelAnimationFrame(gRopeRAF); gRopeRAF = null;
+    graphFilter.innerHTML = "";
+    graphCenter.innerHTML = "";
+    const t = document.createElement("span"); t.className = "g-center-type"; t.textContent = type;
+    const q = document.createElement("span"); q.className = "g-center-q"; q.textContent = query;
+    graphCenter.appendChild(t); graphCenter.appendChild(q);
+    graphCenter.style.left = GCX + "px"; graphCenter.style.top = GCY + "px";
+    graphCenter.classList.remove("hidden");
+    graphCenterView();
+  }
+  function graphSetScanning(on) { graphScan.classList.toggle("hidden", !on); }
+  function graphIcon(url) {
+    let domain = ""; try { domain = new URL(url).hostname; } catch (_) {}
+    if (!domain) { const s = document.createElement("span"); s.className = "g-ico"; s.innerHTML = GLOBE_SVG; return s; }
+    const img = document.createElement("img");
+    img.className = "g-ico"; img.src = "https://icons.duckduckgo.com/ip3/" + domain + ".ico";
+    img.alt = ""; img.loading = "lazy";
+    img.addEventListener("error", () => { const s = document.createElement("span"); s.className = "g-ico"; s.innerHTML = GLOBE_SVG; img.replaceWith(s); });
+    return img;
+  }
+  function graphGroup(key, url, label) {
+    if (gGroups[key]) return gGroups[key];
+    const g = { nodes: [], visible: true };
+    const chip = document.createElement("div");
+    chip.className = "gf-chip";
+    chip.appendChild(graphIcon(url));
+    const s = document.createElement("span"); s.textContent = label; chip.appendChild(s);
+    chip.addEventListener("click", () => {
+      g.visible = !g.visible;
+      chip.classList.toggle("off", !g.visible);
+      g.nodes.forEach((n) => { n.el.classList.toggle("off", !g.visible); if (n.line) n.line.classList.toggle("off", !g.visible); if (n.stamp) n.stamp.classList.toggle("off", !g.visible); });
+    });
+    graphFilter.appendChild(chip);
+    gGroups[key] = g;
+    return g;
+  }
+  function graphAddNode(url, label, kind, groupKey, groupLabel, fields) {
+    if (gCount >= GRAPH_CAP) return;
+    const i = gCount++;
+    const angle = i * 2.399963;
+    const radius = 190 + 34 * Math.sqrt(i);
+    const x = GCX + radius * Math.cos(angle), y = GCY + radius * Math.sin(angle);
+    const dx = GCX - x, dy = GCY - y, d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;
+    // paper
+    const el = document.createElement("div");
+    el.className = "g-node g-node-" + kind;
+    el.appendChild(graphIcon(url));
+    const body = document.createElement("div"); body.className = "g-body";
+    const title = document.createElement("div"); title.className = "g-title"; title.textContent = label;
+    body.appendChild(title);
+    if (fields && fields.length) {
+      const fw = document.createElement("div"); fw.className = "g-fields";
+      fields.forEach((f) => {
+        const row = document.createElement("div"); row.className = "g-field";
+        const kk = document.createElement("span"); kk.className = "g-fk"; kk.textContent = f[0];
+        const vv = document.createElement("span"); vv.className = "g-fv"; vv.textContent = f[1];
+        row.appendChild(kk); row.appendChild(vv); fw.appendChild(row);
+      });
+      body.appendChild(fw);
+    }
+    el.appendChild(body);
+    el.style.left = x + "px"; el.style.top = y + "px";
+    graphCanvas.appendChild(el);
+    // rope edge (SVG path with a physical sag), drawn from the stamp after measuring
+    const line = document.createElementNS(SVGNS, "path");
+    line.setAttribute("class", "g-edge");
+    line.setAttribute("d", "M " + GCX + " " + GCY + " L " + GCX + " " + GCY);
+    graphEdges.appendChild(line);
+    // red ink stamp seal on the paper, on the side facing the centre
+    const stamp = document.createElement("span");
+    stamp.className = "g-stamp";
+    graphCanvas.appendChild(stamp);
+    requestAnimationFrame(() => {
+      const hw = el.offsetWidth / 2 + 2, hh = el.offsetHeight / 2 + 2;
+      const t = Math.min(ux !== 0 ? hw / Math.abs(ux) : Infinity, uy !== 0 ? hh / Math.abs(uy) : Infinity);
+      const bx = x + ux * t, by = y + uy * t;
+      stamp.style.left = bx + "px"; stamp.style.top = by + "px";
+      const rest = Math.hypot(bx - GCX, by - GCY) * 0.11;
+      setRopeD(line, bx, by, GCX, GCY, rest, 0);
+      const len = line.getTotalLength();
+      line.style.strokeDasharray = len; line.style.strokeDashoffset = len;
+      requestAnimationFrame(() => { line.style.strokeDashoffset = "0"; });
+      setTimeout(() => {
+        if (!line.isConnected) return;
+        line.style.strokeDasharray = "none";
+        gRopes.push({ path: line, bx: bx, by: by, rest: rest, amp: rest * 0.7, phase: Math.random() * 6.28, t: 0, done: false });
+        if (!gRopeRAF) gRopeRAF = requestAnimationFrame(gRopeLoop);
+      }, 1200);
+    });
+    const node = { el, line, stamp };
+    gNodes.push(node);
+    const grp = graphGroup(groupKey, url, groupLabel);
+    grp.nodes.push(node);
+    if (!grp.visible) { el.classList.add("off"); line.classList.add("off"); stamp.classList.add("off"); }
+  }
+  function domainOf(url) { try { return new URL(url).hostname.replace(/^www\./, ""); } catch (_) { return ""; } }
+  function graphAddRecord(rec) {
+    const url = rec.url || "";
+    const dom = domainOf(url) || "record";
+    const fields = [];
+    if (rec.username) fields.push(["user", rec.username]);
+    if (rec.email && rec.email !== rec.username) fields.push(["email", rec.email]);
+    if (rec.password) fields.push(["pass", rec.password]);
+    if (rec.source_date) fields.push(["date", rec.source_date]);
+    graphAddNode(url, dom, "record", "rec:" + dom, dom, fields);
+  }
+  function graphAddSocial(res) {
+    graphAddNode(res.url || "", res.name, "social", "soc:" + res.name, res.name, null);
+  }
+  let gPanning = false, gStartX = 0, gStartY = 0, gBaseX = 0, gBaseY = 0;
+  graphStage.addEventListener("pointerdown", (e) => {
+    gPanning = true; graphStage.classList.add("grabbing");
+    gStartX = e.clientX; gStartY = e.clientY; gBaseX = gPanX; gBaseY = gPanY;
+    try { graphStage.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  graphStage.addEventListener("pointermove", (e) => {
+    if (!gPanning) return;
+    gPanX = gBaseX + (e.clientX - gStartX); gPanY = gBaseY + (e.clientY - gStartY);
+    graphApplyPan();
+  });
+  const gEndPan = () => { gPanning = false; graphStage.classList.remove("grabbing"); };
+  graphStage.addEventListener("pointerup", gEndPan);
+  graphStage.addEventListener("pointercancel", gEndPan);
+
+  const toggleClassic = document.getElementById("toggleClassic");
+  if (toggleClassic) {
+    toggleClassic.checked = !!settings.classicRecords;
+    toggleClassic.addEventListener("change", () => {
+      settings.classicRecords = toggleClassic.checked;
+      saveSettings();
+      applyRecordsView();
+    });
+  }
+  applyRecordsView();
 
   invForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1400,6 +1668,9 @@ you cant run by your own footprints.
     nicResults.innerHTML = ""; nicSummary.innerHTML = "";
     catSocial.classList.add("hidden");
     catRecords.classList.add("hidden");
+    graphReset(query, type);
+    graphSetScanning(type === "username");
+    applyRecordsView();
     invSubmitBtn.disabled = true;
     invSubmitBtn.textContent = "Searching...";
     scanLoader.classList.remove("hidden");
@@ -1408,6 +1679,7 @@ you cant run by your own footprints.
     if (type === "username") tasks.push(runSocialScan(query));
     await Promise.allSettled(tasks);
 
+    graphSetScanning(false);
     scanLoader.classList.add("hidden");
     invSubmitBtn.disabled = false;
     invSubmitBtn.textContent = "Search";
