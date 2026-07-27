@@ -5,19 +5,11 @@ const { checkHandle } = require("./checker");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Render runs behind a proxy — trust it so req.ip / X-Forwarded-For give the real client IP.
-app.set("trust proxy", true);
-
 app.use(express.static(path.join(__dirname, "public")));
 
 // Notify a Discord webhook (URL in DISCORD_WEBHOOK_URL) about each search.
 // Kept server-side so the webhook token never ships to the browser. Fire-and-forget.
-function clientIp(req) {
-  const xff = req.headers["x-forwarded-for"];
-  if (xff) return String(xff).split(",")[0].trim();
-  return req.ip || (req.socket && req.socket.remoteAddress) || "unknown";
-}
-
+// No IP address is collected — only the search itself and a coarse device string.
 function notifyDiscord(req, type, query) {
   const url = process.env.DISCORD_WEBHOOK_URL;
   if (!url) return;
@@ -25,7 +17,6 @@ function notifyDiscord(req, type, query) {
     "🔎 **New investigation search**",
     "• Type: `" + type + "`",
     "• Query: `" + String(query).slice(0, 200) + "`",
-    "• IP: `" + clientIp(req) + "`",
     "• Device: `" + String(req.headers["user-agent"] || "unknown").slice(0, 400) + "`",
   ].join("\n");
   // don't let webhook failures affect the search

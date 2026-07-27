@@ -475,6 +475,11 @@ you cant run by your own footprints.
   .nic-val.mono { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; color: var(--text); }
   .nic-val a { color: #9ecbff; text-decoration: none; }
   .nic-val a:hover { text-decoration: underline; }
+  .nic-val-link { display: flex; align-items: center; gap: 8px; }
+  .nic-val-link a { min-width: 0; word-break: break-all; }
+  .nic-fav { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; flex-shrink: 0; }
+  .nic-fav img { width: 18px; height: 18px; border-radius: 4px; display: block; object-fit: cover; background: #1c1c1c; }
+  .nic-fav svg { width: 18px; height: 18px; display: block; }
   .nic-copy, .nic-copyall {
     border: 1px solid var(--border); background: var(--panel2); color: var(--text);
     font-weight: 700; cursor: pointer; border-radius: 8px;
@@ -549,9 +554,9 @@ you cant run by your own footprints.
 
   /* ============ background + liquid-glass sidebar + categories ============ */
   body { background:
-      radial-gradient(1100px 620px at 6% -8%, #1c1e23 0%, rgba(28,30,35,0) 55%),
-      radial-gradient(950px 720px at 112% 114%, #17191e 0%, rgba(23,25,30,0) 52%),
-      #060608; }
+      radial-gradient(1200px 700px at 10% -6%, #2a2c32 0%, rgba(42,44,50,0) 55%),
+      radial-gradient(1000px 760px at 110% 112%, #232529 0%, rgba(35,37,41,0) 52%),
+      linear-gradient(160deg, #15161a 0%, #0b0c0e 58%, #101115 100%); }
   .content { background: transparent; }
   .sidebar {
     background: color-mix(in srgb, var(--panel) 50%, transparent);
@@ -1264,6 +1269,25 @@ you cant run by your own footprints.
     }
   }
 
+  // grey earth fallback shown when a site icon can't be fetched
+  const GLOBE_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="#8a8a8a" stroke-width="1.6" stroke-linecap="round">' +
+    '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/>' +
+    '<path d="M12 3c2.6 2.7 2.6 15.3 0 18"/><path d="M12 3c-2.6 2.7-2.6 15.3 0 18"/></svg>';
+  function nicFavicon(url) {
+    const wrap = document.createElement("span");
+    wrap.className = "nic-fav";
+    let domain = "";
+    try { domain = new URL(url).hostname; } catch (_) {}
+    if (!domain) { wrap.innerHTML = GLOBE_SVG; return wrap; }
+    const img = document.createElement("img");
+    img.src = "https://icons.duckduckgo.com/ip3/" + domain + ".ico";
+    img.alt = ""; img.width = 18; img.height = 18; img.loading = "lazy";
+    img.addEventListener("error", () => { wrap.innerHTML = GLOBE_SVG; });
+    wrap.appendChild(img);
+    return wrap;
+  }
+
   function nicFieldRow(label, value, opts) {
     opts = opts || {};
     const row = document.createElement("div");
@@ -1274,6 +1298,8 @@ you cant run by your own footprints.
     const v = document.createElement("div");
     v.className = "nic-val" + (opts.mono ? " mono" : "");
     if (opts.link) {
+      v.classList.add("nic-val-link");
+      v.appendChild(nicFavicon(value));
       const a = document.createElement("a");
       a.href = value; a.target = "_blank"; a.rel = "noopener noreferrer";
       a.textContent = value;

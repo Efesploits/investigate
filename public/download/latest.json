@@ -1,5 +1,5 @@
 {
-  "version": "1.2.6",
+  "version": "1.2.7",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Football themes refined: the picker only appears after 5 Settings clicks, the flying name chips and club emblems now drift in the background and are refracted through a theme-tinted liquid-glass sidebar."
+  "notes": "Records now show the site's favicon next to each URL (grey globe fallback). Greyer background blend. Search logging no longer records IP addresses."
 }
