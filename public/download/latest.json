@@ -1,5 +1,5 @@
 {
-  "version": "1.2.7",
+  "version": "1.2.8",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Records now show the site's favicon next to each URL (grey globe fallback). Greyer background blend. Search logging no longer records IP addresses."
+  "notes": "Home hero and feature cards now use the same theme-tinted liquid-glass material as the sidebar."
 }
