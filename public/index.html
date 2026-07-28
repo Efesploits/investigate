@@ -596,13 +596,13 @@ you cant run by your own footprints.
     cursor: pointer; user-select: none; transition: opacity .15s ease, border-color .15s ease; }
   .gf-chip:hover { border-color: #666; }
   .gf-chip.off { opacity: .4; text-decoration: line-through; }
-  .graph-stage { position: relative; height: 540px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
-    background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--panel) 55%, transparent), transparent 68%), var(--bg2);
+  .graph-stage { position: relative; height: 560px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+    background: color-mix(in srgb, var(--panel) 55%, #000);
     cursor: grab; touch-action: none; user-select: none; }
   .graph-stage.grabbing { cursor: grabbing; }
-  .graph-canvas { position: absolute; top: 0; left: 0; width: 4000px; height: 4000px; }
+  .graph-canvas { position: absolute; top: 0; left: 0; width: 4000px; height: 4000px; transform-origin: 0 0; }
   .graph-edges { position: absolute; top: 0; left: 0; overflow: visible; pointer-events: none; }
-  .g-edge { fill: none; stroke: #ff2d3f; stroke-width: 2.6; stroke-linecap: round; opacity: .85; transition: stroke-dashoffset .7s ease .4s; filter: drop-shadow(0 0 3px rgba(255,45,63,.4)); }
+  .g-edge { fill: none; stroke: #ff2d3f; stroke-width: 2.6; stroke-linecap: round; opacity: .9; filter: drop-shadow(0 0 3px rgba(255,45,63,.45)); }
   .g-edge.off { display: none; }
   .g-center, .g-node { position: absolute; transform: translate(-50%, -50%); }
   .g-center { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 13px 22px; border-radius: 14px;
@@ -619,9 +619,9 @@ you cant run by your own footprints.
     border: 7px solid; border-color: #d3ccbb #d3ccbb transparent transparent; border-top-right-radius: 3px;
     box-shadow: -1px 1px 2px rgba(0,0,0,.18); }
   @keyframes paperIn {
-    0%   { opacity: 0; transform: translate(-50%, -88%) perspective(700px) rotateX(-82deg) rotateZ(-1deg) scale(.85); }
-    60%  { opacity: 1; transform: translate(-50%, -46%) perspective(700px) rotateX(16deg) rotateZ(-1deg) scale(1.02); }
-    100% { opacity: 1; transform: translate(-50%, -50%) perspective(700px) rotateX(9deg) rotateZ(-1deg) scale(1); } }
+    0%   { opacity: 0; transform: translate(-50%, -88%) perspective(700px) rotateX(-82deg) rotateZ(var(--rot,-1deg)) scale(.85); }
+    60%  { opacity: 1; transform: translate(-50%, -46%) perspective(700px) rotateX(16deg) rotateZ(var(--rot,-1deg)) scale(1.02); }
+    100% { opacity: 1; transform: translate(-50%, -50%) perspective(700px) rotateX(9deg) rotateZ(var(--rot,-1deg)) scale(1); } }
   .g-node.off { display: none; }
   .g-node-social::before { content: ""; position: absolute; left: -1px; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: #ff2d3f; }
   .g-body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
@@ -631,14 +631,17 @@ you cant run by your own footprints.
   .g-fk { color: #9a8f74; text-transform: uppercase; letter-spacing: .5px; flex: 0 0 40px; }
   .g-fv { color: #262626; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
   img.g-ico { width: 20px; height: 20px; border-radius: 4px; flex-shrink: 0; display: block; object-fit: contain; background: rgba(0,0,0,.05); margin-top: 1px; }
-  .g-stamp { position: absolute; transform: translate(-50%,-50%) rotate(-8deg); width: 30px; height: 30px; border-radius: 50%;
-    border: 2.5px solid #ff2d3f; background: radial-gradient(circle, rgba(255,45,63,.24), rgba(255,45,63,.07));
-    box-shadow: 0 0 0 2px rgba(255,45,63,.12), 0 3px 8px rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center;
-    z-index: 3; pointer-events: none; animation: stampIn .4s cubic-bezier(.3,1.5,.5,1) .3s both; }
-  .g-stamp::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #ff2d3f; }
-  .g-stamp.off { display: none; }
-  @keyframes stampIn { 0% { opacity: 0; transform: translate(-50%,-50%) rotate(-26deg) scale(2.2); }
-    65% { opacity: 1; } 100% { opacity: .95; transform: translate(-50%,-50%) rotate(-8deg) scale(1); } }
+  .g-pin { position: absolute; transform: translate(-50%,-50%); width: 15px; height: 15px; border-radius: 50%; z-index: 4; pointer-events: none;
+    background: radial-gradient(circle at 34% 28%, #ff7a7a, #e01f1f 55%, #8f0d0d);
+    box-shadow: 0 3px 4px rgba(0,0,0,.5), inset -1px -1px 2px rgba(0,0,0,.35), inset 1px 1px 2px rgba(255,255,255,.55);
+    animation: pinIn .32s cubic-bezier(.3,1.5,.5,1) .28s both; }
+  .g-pin::after { content: ""; position: absolute; left: 50%; top: 52%; width: 4px; height: 4px; border-radius: 50%; transform: translate(-50%,-50%);
+    background: radial-gradient(circle at 40% 40%, #fff, #ffd6d6); }
+  .g-pin.off { display: none; }
+  @keyframes pinIn { 0% { opacity: 0; transform: translate(-50%,-50%) scale(2.6); } 60% { opacity: 1; } 100% { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+  .g-node { cursor: pointer; }
+  .g-node.g-copied::before { content: "copied ✓"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(28,140,66,.94); color: #fff; border-radius: 3px; font-size: .82rem; font-weight: 800; letter-spacing: .5px; z-index: 6; }
   span.g-ico { width: 20px; height: 20px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
   span.g-ico svg { width: 20px; height: 20px; }
   .gf-chip img.g-ico, .gf-chip span.g-ico, .gf-chip span.g-ico svg { width: 15px; height: 15px; }
@@ -854,7 +857,7 @@ you cant run by your own footprints.
             <div class="g-center hidden" id="graphCenter"></div>
           </div>
           <div class="graph-scan hidden" id="graphScan"><span class="spin"></span> scanning platforms…</div>
-          <div class="graph-hint">drag to move around</div>
+          <div class="graph-hint">drag · scroll to zoom · click a paper to copy</div>
         </div>
       </div>
 
@@ -1485,7 +1488,12 @@ you cant run by your own footprints.
   const graphScan = document.getElementById("graphScan");
   const SVGNS = "http://www.w3.org/2000/svg";
   const GCX = 2000, GCY = 2000, GRAPH_CAP = 120;
-  let gNodes = [], gCount = 0, gGroups = {}, gPanX = 0, gPanY = 0;
+  let gNodes = [], gCount = 0, gGroups = {}, gPanX = 0, gPanY = 0, gScale = 1, gBoxes = [];
+  let gCenterPin = null, gCenterPinX = GCX, gCenterPinY = GCY;
+  function gOverlaps(x, y, w, h) {
+    for (const b of gBoxes) { if (Math.abs(x - b.x) < (w + b.w) / 2 + 20 && Math.abs(y - b.y) < (h + b.h) / 2 + 20) return true; }
+    return false;
+  }
   let gRopes = [], gRopeRAF = null;
   function setRopeD(path, x1, y1, x2, y2, sag, sway) {
     const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
@@ -1497,9 +1505,9 @@ you cant run by your own footprints.
       if (r.done) continue;
       r.t += 1 / 60;
       const decay = Math.exp(-r.t * 3.0);
-      if (decay < 0.02) { r.done = true; setRopeD(r.path, r.bx, r.by, GCX, GCY, r.rest, 0); continue; }
+      if (decay < 0.02) { r.done = true; setRopeD(r.path, r.bx, r.by, gCenterPinX, gCenterPinY, r.rest, 0); continue; }
       anyActive = true;
-      setRopeD(r.path, r.bx, r.by, GCX, GCY, r.rest, r.amp * decay * Math.sin(r.t * 9 + r.phase));
+      setRopeD(r.path, r.bx, r.by, gCenterPinX, gCenterPinY, r.rest, r.amp * decay * Math.sin(r.t * 9 + r.phase));
     }
     if (anyActive) gRopeRAF = requestAnimationFrame(gRopeLoop);
     else { gRopes = []; gRopeRAF = null; }
@@ -1511,25 +1519,34 @@ you cant run by your own footprints.
     classicView.classList.toggle("hidden", !classic);
     if (!classic) requestAnimationFrame(graphCenterView);
   }
-  function graphApplyPan() { graphCanvas.style.transform = "translate(" + gPanX + "px," + gPanY + "px)"; }
+  function graphApplyPan() { graphCanvas.style.transform = "translate(" + gPanX + "px," + gPanY + "px) scale(" + gScale + ")"; }
   function graphCenterView() {
     const r = graphStage.getBoundingClientRect();
-    gPanX = (r.width || 800) / 2 - GCX;
-    gPanY = (r.height || 540) / 2 - GCY;
+    gPanX = (r.width || 800) / 2 - GCX * gScale;
+    gPanY = (r.height || 540) / 2 - GCY * gScale;
     graphApplyPan();
   }
   function graphReset(query, type) {
     while (graphEdges.firstChild) graphEdges.removeChild(graphEdges.firstChild);
-    gNodes.forEach((n) => { n.el.remove(); if (n.stamp) n.stamp.remove(); });
-    gNodes = []; gCount = 0; gGroups = {};
+    gNodes.forEach((n) => { n.el.remove(); if (n.pin) n.pin.remove(); });
+    gNodes = []; gCount = 0; gGroups = {}; gScale = 1; gBoxes = [];
     gRopes = []; if (gRopeRAF) cancelAnimationFrame(gRopeRAF); gRopeRAF = null;
     graphFilter.innerHTML = "";
+    if (gCenterPin) { gCenterPin.remove(); gCenterPin = null; }
     graphCenter.innerHTML = "";
     const t = document.createElement("span"); t.className = "g-center-type"; t.textContent = type;
     const q = document.createElement("span"); q.className = "g-center-q"; q.textContent = query;
     graphCenter.appendChild(t); graphCenter.appendChild(q);
     graphCenter.style.left = GCX + "px"; graphCenter.style.top = GCY + "px";
     graphCenter.classList.remove("hidden");
+    gCenterPinX = GCX; gCenterPinY = GCY;
+    gCenterPin = document.createElement("span"); gCenterPin.className = "g-pin";
+    graphCanvas.appendChild(gCenterPin);
+    requestAnimationFrame(() => {
+      gCenterPinY = GCY - graphCenter.offsetHeight / 2 - 1;
+      gCenterPin.style.left = gCenterPinX + "px"; gCenterPin.style.top = gCenterPinY + "px";
+      gBoxes.push({ x: GCX, y: GCY, w: graphCenter.offsetWidth, h: graphCenter.offsetHeight });
+    });
     graphCenterView();
   }
   function graphSetScanning(on) { graphScan.classList.toggle("hidden", !on); }
@@ -1552,7 +1569,7 @@ you cant run by your own footprints.
     chip.addEventListener("click", () => {
       g.visible = !g.visible;
       chip.classList.toggle("off", !g.visible);
-      g.nodes.forEach((n) => { n.el.classList.toggle("off", !g.visible); if (n.line) n.line.classList.toggle("off", !g.visible); if (n.stamp) n.stamp.classList.toggle("off", !g.visible); });
+      g.nodes.forEach((n) => { n.el.classList.toggle("off", !g.visible); if (n.line) n.line.classList.toggle("off", !g.visible); if (n.pin) n.pin.classList.toggle("off", !g.visible); });
     });
     graphFilter.appendChild(chip);
     gGroups[key] = g;
@@ -1561,17 +1578,19 @@ you cant run by your own footprints.
   function graphAddNode(url, label, kind, groupKey, groupLabel, fields) {
     if (gCount >= GRAPH_CAP) return;
     const i = gCount++;
-    const angle = i * 2.399963;
-    const radius = 190 + 34 * Math.sqrt(i);
-    const x = GCX + radius * Math.cos(angle), y = GCY + radius * Math.sin(angle);
-    const dx = GCX - x, dy = GCY - y, d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;
+    const angle = i * 2.399963 + (Math.random() - 0.5) * 0.4;
+    const radius = 250 + 42 * Math.sqrt(i);
+    let x = GCX + radius * Math.cos(angle) + (Math.random() * 60 - 30);
+    let y = GCY + radius * Math.sin(angle) + (Math.random() * 60 - 30);
     // paper
     const el = document.createElement("div");
     el.className = "g-node g-node-" + kind;
+    el.style.setProperty("--rot", (Math.random() * 9 - 4.5).toFixed(1) + "deg");
     el.appendChild(graphIcon(url));
     const body = document.createElement("div"); body.className = "g-body";
     const title = document.createElement("div"); title.className = "g-title"; title.textContent = label;
     body.appendChild(title);
+    const copyLines = [label];
     if (fields && fields.length) {
       const fw = document.createElement("div"); fw.className = "g-fields";
       fields.forEach((f) => {
@@ -1579,43 +1598,56 @@ you cant run by your own footprints.
         const kk = document.createElement("span"); kk.className = "g-fk"; kk.textContent = f[0];
         const vv = document.createElement("span"); vv.className = "g-fv"; vv.textContent = f[1];
         row.appendChild(kk); row.appendChild(vv); fw.appendChild(row);
+        copyLines.push(f[0] + ": " + f[1]);
       });
       body.appendChild(fw);
     }
+    if (url) copyLines.push(url);
     el.appendChild(body);
     el.style.left = x + "px"; el.style.top = y + "px";
+    el._copy = copyLines.join("\n");
     graphCanvas.appendChild(el);
-    // rope edge (SVG path with a physical sag), drawn from the stamp after measuring
+    // red string, drawn from the centre pin outward to this paper's pin
     const line = document.createElementNS(SVGNS, "path");
     line.setAttribute("class", "g-edge");
-    line.setAttribute("d", "M " + GCX + " " + GCY + " L " + GCX + " " + GCY);
+    line.setAttribute("d", "M " + gCenterPinX + " " + gCenterPinY + " L " + gCenterPinX + " " + gCenterPinY);
     graphEdges.appendChild(line);
-    // red ink stamp seal on the paper, on the side facing the centre
-    const stamp = document.createElement("span");
-    stamp.className = "g-stamp";
-    graphCanvas.appendChild(stamp);
+    // red pushpin at the top of the paper
+    const pin = document.createElement("span");
+    pin.className = "g-pin";
+    graphCanvas.appendChild(pin);
     requestAnimationFrame(() => {
-      const hw = el.offsetWidth / 2 + 2, hh = el.offsetHeight / 2 + 2;
-      const t = Math.min(ux !== 0 ? hw / Math.abs(ux) : Infinity, uy !== 0 ? hh / Math.abs(uy) : Infinity);
-      const bx = x + ux * t, by = y + uy * t;
-      stamp.style.left = bx + "px"; stamp.style.top = by + "px";
-      const rest = Math.hypot(bx - GCX, by - GCY) * 0.11;
-      setRopeD(line, bx, by, GCX, GCY, rest, 0);
+      const w = el.offsetWidth, h = el.offsetHeight;
+      const dirx = Math.cos(angle), diry = Math.sin(angle);
+      let tries = 0;
+      while (tries++ < 60 && gOverlaps(x, y, w, h)) { x += dirx * 26; y += diry * 26; }
+      el.style.left = x + "px"; el.style.top = y + "px";
+      gBoxes.push({ x: x, y: y, w: w, h: h });
+      const px = x, py = y - h / 2 - 1;
+      pin.style.left = px + "px"; pin.style.top = py + "px";
+      const rest = Math.hypot(px - gCenterPinX, py - gCenterPinY) * 0.08;
+      setRopeD(line, gCenterPinX, gCenterPinY, px, py, rest, 0);
       const len = line.getTotalLength();
+      line.style.transition = "none";
       line.style.strokeDasharray = len; line.style.strokeDashoffset = len;
-      requestAnimationFrame(() => { line.style.strokeDashoffset = "0"; });
+      setTimeout(() => {
+        if (!line.isConnected) return;
+        line.getBoundingClientRect();
+        line.style.transition = "stroke-dashoffset 1.5s ease-in-out";
+        line.style.strokeDashoffset = "0";
+      }, 350);
       setTimeout(() => {
         if (!line.isConnected) return;
         line.style.strokeDasharray = "none";
-        gRopes.push({ path: line, bx: bx, by: by, rest: rest, amp: rest * 0.7, phase: Math.random() * 6.28, t: 0, done: false });
+        gRopes.push({ path: line, bx: px, by: py, rest: rest, amp: rest * 0.55, phase: Math.random() * 6.28, t: 0, done: false });
         if (!gRopeRAF) gRopeRAF = requestAnimationFrame(gRopeLoop);
-      }, 1200);
+      }, 2000);
     });
-    const node = { el, line, stamp };
+    const node = { el, line, pin };
     gNodes.push(node);
     const grp = graphGroup(groupKey, url, groupLabel);
     grp.nodes.push(node);
-    if (!grp.visible) { el.classList.add("off"); line.classList.add("off"); stamp.classList.add("off"); }
+    if (!grp.visible) { el.classList.add("off"); line.classList.add("off"); pin.classList.add("off"); }
   }
   function domainOf(url) { try { return new URL(url).hostname.replace(/^www\./, ""); } catch (_) { return ""; } }
   function graphAddRecord(rec) {
@@ -1631,20 +1663,41 @@ you cant run by your own footprints.
   function graphAddSocial(res) {
     graphAddNode(res.url || "", res.name, "social", "soc:" + res.name, res.name, null);
   }
-  let gPanning = false, gStartX = 0, gStartY = 0, gBaseX = 0, gBaseY = 0;
+  let gDown = false, gMoved = false, gPan2 = false, gsx = 0, gsy = 0, gbx = 0, gby = 0, gDownTarget = null;
   graphStage.addEventListener("pointerdown", (e) => {
-    gPanning = true; graphStage.classList.add("grabbing");
-    gStartX = e.clientX; gStartY = e.clientY; gBaseX = gPanX; gBaseY = gPanY;
-    try { graphStage.setPointerCapture(e.pointerId); } catch (_) {}
+    gDown = true; gMoved = false; gPan2 = false; gsx = e.clientX; gsy = e.clientY; gbx = gPanX; gby = gPanY;
+    gDownTarget = e.target.closest(".g-node");
   });
   graphStage.addEventListener("pointermove", (e) => {
-    if (!gPanning) return;
-    gPanX = gBaseX + (e.clientX - gStartX); gPanY = gBaseY + (e.clientY - gStartY);
-    graphApplyPan();
+    if (!gDown) return;
+    const dxp = e.clientX - gsx, dyp = e.clientY - gsy;
+    if (!gPan2 && Math.hypot(dxp, dyp) > 5) { gPan2 = true; gMoved = true; graphStage.classList.add("grabbing"); try { graphStage.setPointerCapture(e.pointerId); } catch (_) {} }
+    if (gPan2) { gPanX = gbx + dxp; gPanY = gby + dyp; graphApplyPan(); }
   });
-  const gEndPan = () => { gPanning = false; graphStage.classList.remove("grabbing"); };
-  graphStage.addEventListener("pointerup", gEndPan);
-  graphStage.addEventListener("pointercancel", gEndPan);
+  graphStage.addEventListener("pointerup", () => {
+    graphStage.classList.remove("grabbing");
+    if (gDown && !gMoved && gDownTarget) copyPaper(gDownTarget);
+    gDown = false; gPan2 = false;
+  });
+  graphStage.addEventListener("pointercancel", () => { gDown = false; gPan2 = false; graphStage.classList.remove("grabbing"); });
+  graphStage.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const r = graphStage.getBoundingClientRect();
+    const mx = e.clientX - r.left, my = e.clientY - r.top;
+    const wx = (mx - gPanX) / gScale, wy = (my - gPanY) / gScale;
+    gScale = Math.max(0.35, Math.min(2.5, gScale * (e.deltaY < 0 ? 1.12 : 1 / 1.12)));
+    gPanX = mx - wx * gScale; gPanY = my - wy * gScale;
+    graphApplyPan();
+  }, { passive: false });
+  async function copyPaper(el) {
+    const text = el._copy || "";
+    if (!text) return;
+    let ok = false;
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); ok = true; } } catch (_) {}
+    if (!ok) { try { const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); } catch (__) {} }
+    el.classList.add("g-copied");
+    setTimeout(() => el.classList.remove("g-copied"), 850);
+  }
 
   const toggleClassic = document.getElementById("toggleClassic");
   if (toggleClassic) {
