@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0",
+  "version": "1.3.1",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Investigation board: red strings now animate slowly out from the centre query to pinned, scattered (non-overlapping) papers. Click a paper to copy it, scroll to zoom, drag to pan. Papers show user/pass/date. Classic list still in Settings."
+  "notes": "Board now threads papers from the same site together into branching chains instead of a ring, and added a Cancel button to stop a running search. Click a paper to copy, scroll to zoom, drag to pan."
 }
