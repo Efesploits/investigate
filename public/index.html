@@ -64,6 +64,9 @@ you cant run by your own footprints.
     --accent-rgb: 244 244 244;
     --intro-bg-inner: #141414;
     --intro-bg-outer: #000;
+    /* corkboard paper fonts: handwritten labels, typed credential strings */
+    --paper-hand: "Segoe Print", "Bradley Hand", "Comic Sans MS", "Comic Sans", cursive;
+    --paper-type: "Courier New", "Cutive Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
   }
   html.color-theme {
     --bg: #080a0f;
@@ -452,7 +455,7 @@ you cant run by your own footprints.
 
   /* ---------- nicotine.ws data lookup ---------- */
   .nic-src { opacity: .55; font-size: .62em; font-weight: 400; letter-spacing: .5px; }
-  #invForm { flex-wrap: wrap; align-items: stretch; margin: 4px 0 8px; }
+  #invForm { flex-wrap: wrap; align-items: stretch; justify-content: center; margin: 4px auto 8px; }
   #invForm select.nic-select {
     padding: 13px 14px; border-radius: 11px; border: 1px solid var(--border);
     background: var(--panel); color: var(--text); font-size: .95rem; outline: none; cursor: pointer;
@@ -589,14 +592,14 @@ you cant run by your own footprints.
   #catRecords .nic-head::after { animation-delay: 1.8s; }
 
   /* ---------- investigation graph ---------- */
-  .graph-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+  .graph-filter { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 4px 0 12px; }
   .graph-filter:empty { display: none; }
   .gf-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
     border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: .8rem; font-weight: 600;
     cursor: pointer; user-select: none; transition: opacity .15s ease, border-color .15s ease; }
   .gf-chip:hover { border-color: #666; }
   .gf-chip.off { opacity: .4; text-decoration: line-through; }
-  .graph-stage { position: relative; height: 560px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+  .graph-stage { position: relative; height: 76vh; min-height: 620px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
     background: color-mix(in srgb, var(--panel) 55%, #000);
     cursor: grab; touch-action: none; user-select: none; }
   .graph-stage.grabbing { cursor: grabbing; }
@@ -680,6 +683,74 @@ you cant run by your own footprints.
   .g-node-lead .g-title { color: #6a3d00; }
   .g-node-lead .g-title::before { content: "🔎 "; }
   .g-node-lead .g-lead-type { font-size: .58rem; text-transform: uppercase; letter-spacing: 1.5px; color: #a06a10; font-weight: 800; margin-top: 2px; }
+
+  /* center the investigate hero (title + sub + form) over the board */
+  #page-investigate h1, #page-investigate .sub, #page-investigate .db-note { text-align: center; }
+  #page-investigate .sub { margin-left: auto; margin-right: auto; }
+
+  /* ULTRA board — category header papers (Passwords / Usernames / Emails) */
+  .g-cat { flex-direction: column; align-items: center; text-align: center; min-width: 150px; padding-top: 15px; z-index: 3; }
+  .g-cat .g-body { align-items: center; }
+  .g-cat::before { content: ""; position: absolute; left: 9px; right: 9px; top: 0; height: 4px; border-radius: 0 0 3px 3px; }
+  .g-cat-title { font-size: .98rem; font-weight: 900; letter-spacing: 2px; color: #1b1b1b; }
+  .g-cat-count { font-size: .56rem; color: #8a8072; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px; }
+  .g-cat-password .g-cat-title { color: #c0431a; }
+  .g-cat-username .g-cat-title { color: #1d5fa8; }
+  .g-cat-email    .g-cat-title { color: #12786e; }
+  .g-cat-password::before { background: #e0561f; }
+  .g-cat-username::before { background: #2f7fd0; }
+  .g-cat-email::before    { background: #14a496; }
+
+  .g-node-agg { max-width: 320px; }
+  .g-node-agg .g-title { font-family: ui-monospace, Consolas, monospace; font-size: .82rem; max-width: 284px; }
+  .g-node-agg::before { content: ""; position: absolute; left: -1px; top: 7px; bottom: 7px; width: 3px; border-radius: 3px; }
+  .g-agg-password::before { background: #ff7a4d; box-shadow: 0 0 8px rgba(255,122,77,.6); }
+  .g-agg-username::before { background: #5aa8ff; box-shadow: 0 0 8px rgba(90,168,255,.6); }
+  .g-agg-email::before    { background: #38e0d0; box-shadow: 0 0 8px rgba(56,224,208,.6); }
+  .g-agg-password .g-title { color: #8a3b12; }
+  .g-agg-username .g-title { color: #17466f; }
+  .g-agg-email    .g-title { color: #0d5a52; }
+  .g-acct-list { display: flex; flex-direction: column; gap: 5px; margin-top: 7px; padding-top: 7px; border-top: 1px dashed rgba(0,0,0,.2); }
+  .g-acct { display: flex; align-items: center; gap: 7px; }
+  .g-acct img.g-ico, .g-acct span.g-ico, .g-acct span.g-ico svg { width: 15px; height: 15px; }
+  .g-acct-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+  .g-acct-dom { font-size: .72rem; font-weight: 800; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 232px; }
+  .g-acct-id { font-size: .64rem; color: #7c7160; font-family: ui-monospace, Consolas, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 232px; }
+  .g-acct-more { font-size: .66rem; color: #9a8f74; font-weight: 800; margin-top: 1px; }
+
+  /* ULTRA records view — categorized breakdown with easy copy */
+  .cat-block { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin: 0 0 14px; background: var(--panel); }
+  .cat-block-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 11px; }
+  .cat-block-title { font-size: .96rem; font-weight: 800; letter-spacing: .5px; display: flex; align-items: center; gap: 9px; }
+  .cat-block-title .cbt-bar { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+  .cat-block-n { font-size: .72rem; color: var(--muted); font-weight: 600; letter-spacing: .3px; }
+  .cat-pw .cat-block-title { color: #ff7a4d; } .cat-pw .cbt-bar { background: #e0561f; }
+  .cat-un .cat-block-title { color: #5aa8ff; } .cat-un .cbt-bar { background: #2f7fd0; }
+  .cat-em .cat-block-title { color: #38e0d0; } .cat-em .cbt-bar { background: #14a496; }
+  .cat-rows { display: flex; flex-direction: column; gap: 8px; }
+  .cat-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 11px; border: 1px solid #1c1c1c; border-radius: 9px; background: #0f0f0f;
+    transition: border-color .15s ease; }
+  .cat-row:hover { border-color: #333; }
+  .cat-row-main { flex: 1; min-width: 0; }
+  .cat-row-val { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: .87rem; font-weight: 700; color: var(--text);
+    cursor: pointer; word-break: break-all; display: inline-flex; align-items: center; gap: 7px; }
+  .cat-row-val::after { content: "copy"; font-family: inherit; font-size: .6rem; font-weight: 700; letter-spacing: .5px; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; opacity: 0; transition: opacity .15s ease; }
+  .cat-row-val:hover::after { opacity: .8; }
+  .cat-row-val.copied { color: var(--accent); } .cat-row-val.copied::after { content: "copied ✓"; opacity: 1; color: var(--accent); border-color: var(--accent); }
+  .cat-row-accts { display: flex; flex-wrap: wrap; gap: 5px 14px; margin-top: 6px; }
+  .cat-acct { display: inline-flex; align-items: center; gap: 5px; font-size: .73rem; color: var(--muted); }
+  .cat-acct img, .cat-acct span.g-ico, .cat-acct span.g-ico svg { width: 14px; height: 14px; border-radius: 3px; }
+  .cat-acct b { color: #cfcfcf; font-weight: 700; }
+  .cat-row .nic-copy { flex-shrink: 0; }
+
+  /* --- make text look written / typed on the paper --- */
+  .g-node, .g-center-q, .g-center-type { font-family: var(--paper-hand); }
+  .g-title, .g-cat-title, .g-cat-count, .g-acct-dom, .g-acct-more, .g-lead-type, .g-fk {
+    font-family: var(--paper-hand); letter-spacing: .2px; }
+  .g-center-q { letter-spacing: .3px; }
+  /* raw credential strings stay "typed" so emails/passwords remain legible */
+  .g-fv, .g-acct-id, .g-node-agg .g-title, .cat-row-val { font-family: var(--paper-type) !important; }
 
   /* home hero eye: blinks and looks around */
   .hero-eye-inner { transform-box: fill-box; transform-origin: center; animation: blink 4.8s cubic-bezier(.6,0,.4,1) 1s infinite; }
@@ -1506,15 +1577,71 @@ you cant run by your own footprints.
     if (t === "password") return v.length >= 6 && v.length <= 64;
     return false;
   }
+  const ultraSleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  // Records-view categorized breakdown (passwords / usernames / emails) with copy
+  function renderUltraCategories(cats) {
+    const DEFS = [
+      { key: "password", title: "Passwords", cls: "cat-pw" },
+      { key: "username", title: "Usernames", cls: "cat-un" },
+      { key: "email", title: "Emails", cls: "cat-em" },
+    ];
+    DEFS.forEach((def) => {
+      const map = cats[def.key];
+      if (!map.size) return;
+      const entries = [...map.entries()].sort((a, b) => b[1].length - a[1].length);
+      const block = document.createElement("div"); block.className = "cat-block " + def.cls;
+      const head = document.createElement("div"); head.className = "cat-block-head";
+      const ttl = document.createElement("div"); ttl.className = "cat-block-title";
+      const bar = document.createElement("span"); bar.className = "cbt-bar"; ttl.appendChild(bar);
+      const tt = document.createElement("span"); tt.textContent = def.title; ttl.appendChild(tt);
+      const n = document.createElement("span"); n.className = "cat-block-n";
+      n.textContent = entries.length + (entries.length === 1 ? " value" : " values"); ttl.appendChild(n);
+      const copyAll = document.createElement("button"); copyAll.type = "button"; copyAll.className = "nic-copyall"; copyAll.textContent = "Copy all";
+      copyAll.addEventListener("click", () => nicCopy(entries.map((e) => e[0]).join("\n"), copyAll));
+      head.appendChild(ttl); head.appendChild(copyAll); block.appendChild(head);
+      const rows = document.createElement("div"); rows.className = "cat-rows";
+      entries.forEach(([val, accts]) => {
+        const row = document.createElement("div"); row.className = "cat-row";
+        const main = document.createElement("div"); main.className = "cat-row-main";
+        const v = document.createElement("div"); v.className = "cat-row-val"; v.textContent = val; v.title = "click to copy";
+        v.addEventListener("click", () => { nicCopy(val); v.classList.add("copied"); setTimeout(() => v.classList.remove("copied"), 950); });
+        main.appendChild(v);
+        const al = document.createElement("div"); al.className = "cat-row-accts";
+        accts.forEach((a) => {
+          const s = document.createElement("span"); s.className = "cat-acct";
+          s.appendChild(nicFavicon(a.url || ""));
+          const b = document.createElement("b"); b.textContent = a.domain; s.appendChild(b);
+          if (a.ident) s.appendChild(document.createTextNode(" · " + a.ident));
+          al.appendChild(s);
+        });
+        main.appendChild(al);
+        const cp = document.createElement("button"); cp.type = "button"; cp.className = "nic-copy"; cp.textContent = "Copy";
+        const full = val + "\n" + accts.map((a) => "  " + a.domain + (a.ident ? " · " + a.ident : "")).join("\n");
+        cp.addEventListener("click", () => nicCopy(full, cp));
+        row.appendChild(main); row.appendChild(cp); rows.appendChild(row);
+      });
+      block.appendChild(rows); nicResults.appendChild(block);
+    });
+  }
   async function runUltraSearch(query, type, myId) {
     const scanLoaderText = document.querySelector(".scan-loader-text");
     catRecords.classList.remove("hidden");
+
+    // aggregation buckets: value -> [ {domain, ident, url} ]
+    const cats = { password: new Map(), username: new Map(), email: new Map() };
+    const addAcct = (map, val, acct) => {
+      if (!map.has(val)) map.set(val, []);
+      const arr = map.get(val);
+      if (arr.length < 14 && !arr.some((a) => a.domain === acct.domain && a.ident === acct.ident)) arr.push(acct);
+    };
+
+    // ---- phase 1: recursive discovery (feeds the buckets + classic list) ----
     const visited = new Set([type + "|" + query.toLowerCase()]);
-    const queue = [{ value: query, type: type, depth: 0, pin: null, seed: true }];
-    let lookups = 0, recCount = 0, leadCount = 0;
+    const queue = [{ value: query, type: type, depth: 0 }];
+    let lookups = 0, recCount = 0;
     const setStatus = () => {
       if (scanLoaderText) scanLoaderText.textContent =
-        `Ultra · ${lookups} lead${lookups === 1 ? "" : "s"} traced · ${recCount} records`;
+        `Ultra · tracing ${lookups} lead${lookups === 1 ? "" : "s"} · ${recCount} records`;
     };
     setStatus();
     while (queue.length && lookups < ULTRA_MAX_LOOKUPS) {
@@ -1526,9 +1653,11 @@ you cant run by your own footprints.
       if (myId !== curSearch) return;
       const results = parseNicResults(res).slice(0, ULTRA_MAX_PER_LOOKUP);
       for (const rec of results) {
-        if (myId !== curSearch) return;
-        const recPin = graphAddRecord(rec, item.seed ? null : item.pin);
-        nicResults.appendChild(renderNicCard(rec, recCount));
+        const domain = domainOf(rec.url || "") || "record";
+        const url = rec.url || "";
+        if (rec.password) addAcct(cats.password, String(rec.password).trim(), { domain: domain, ident: (rec.email || rec.username || "").trim(), url: url });
+        if (rec.username) addAcct(cats.username, String(rec.username).trim(), { domain: domain, ident: (rec.email || "").trim(), url: url });
+        if (rec.email) addAcct(cats.email, String(rec.email).trim(), { domain: domain, ident: (rec.username || "").trim(), url: url });
         recCount++;
         // mine this record for fresh leads to chase
         const cands = [];
@@ -1542,17 +1671,67 @@ you cant run by your own footprints.
           if (t === "password" && item.depth + 1 > 2) continue; // passwords explode — keep them shallow
           if (visited.size >= ULTRA_MAX_LEADS) continue;
           visited.add(key);
-          const leadPin = graphAddLead(v, t, recPin);
-          leadCount++;
-          queue.push({ value: v, type: t, depth: item.depth + 1, pin: leadPin, seed: false });
+          queue.push({ value: v, type: t, depth: item.depth + 1 });
         }
-        setStatus();
       }
+      setStatus();
     }
     if (myId !== curSearch) return;
-    nicSummary.textContent = recCount
-      ? `Ultra search complete · ${lookups} lead${lookups === 1 ? "" : "s"} traced · ${recCount} records found.`
-      : `No records found for "${query}".`;
+
+    // ---- phase 2: lay out the three columns (positions precomputed → no overlap) ----
+    const COLS = [
+      { key: "password", title: "PASSWORDS" },
+      { key: "username", title: "USERNAMES" },
+      { key: "email", title: "EMAILS" },
+    ];
+    const COL_GAP = 660, HEADER_Y = GCY + 250, TOP_GAP = 96, ROW_GAP = 52;
+    const baseX = GCX - COL_GAP;
+    let totalLeads = 0;
+    COLS.forEach((col, i) => {
+      col.x = baseX + i * COL_GAP;
+      // strongest leads first (most linked accounts)
+      col.entries = [...cats[col.key].entries()].sort((a, b) => b[1].length - a[1].length);
+      col.n = col.entries.length;
+      totalLeads += col.n;
+      // precompute each row's y from known heights so nothing can overlap
+      let cursor = HEADER_Y + 39 + TOP_GAP;
+      col.rows = col.entries.map(([value, accts]) => {
+        const h = graphAggSize(accts).h;
+        const y = cursor + h / 2;
+        cursor = y + h / 2 + ROW_GAP;
+        return { value: value, accts: accts, x: col.x, y: y };
+      });
+    });
+
+    if (!totalLeads) {
+      nicSummary.textContent = `No records found for "${query}".`;
+      if (scanLoaderText) scanLoaderText.textContent = "Searching…";
+      return;
+    }
+
+    // Records view: the same passwords / usernames / emails, with copy buttons
+    renderUltraCategories(cats);
+
+    // mount headers, then reveal rows round-robin so all columns grow together
+    const headerPins = COLS.map((col) => graphAddCategoryHeader(col, col.x, HEADER_Y));
+    const lastPin = headerPins.slice();
+    const maxRows = Math.max(...COLS.map((c) => c.rows.length));
+    for (let r = 0; r < maxRows; r++) {
+      for (let c = 0; c < COLS.length; c++) {
+        if (myId !== curSearch) return;
+        const row = COLS[c].rows[r];
+        if (!row) continue;
+        const pin = graphAddAggregate(COLS[c], row.value, row.accts, row.x, row.y, lastPin[c]);
+        if (pin) lastPin[c] = pin;
+        await ultraSleep(55);
+        if (myId !== curSearch) return;
+      }
+    }
+
+    graphFitView();
+    nicSummary.textContent =
+      `Ultra search complete · ${totalLeads} lead${totalLeads === 1 ? "" : "s"} across ${recCount} records · ` +
+      `${cats.password.size} password, ${cats.username.size} username, ${cats.email.size} email.`;
     if (scanLoaderText) scanLoaderText.textContent = "Searching…";
   }
 
@@ -1800,6 +1979,110 @@ you cant run by your own footprints.
   }
   function graphAddSocial(res) {
     graphAddNode(res.url || "", res.name, "social", "soc:" + res.name, res.name, null, null);
+  }
+
+  /* ---- ULTRA board: deterministic column layout (no overlap) ---- */
+  // Mount a pre-built paper element at an EXACT position (no scatter, no
+  // collision push) and string it to a parent pin. Used by the category
+  // columns so papers can never land on top of each other.
+  function graphMountPaper(el, x, y, estW, estH, kind, groupKey, groupLabel, fromX, fromY) {
+    if (gCount >= GRAPH_CAP) return null;
+    gCount++;
+    gBoxes.push({ x: x, y: y, w: estW, h: estH });
+    const pinX = x, pinY = y - estH / 2 - 1;
+    el.style.left = x + "px"; el.style.top = y + "px";
+    graphCanvas.appendChild(el);
+    const pin = document.createElement("span"); pin.className = "g-pin";
+    pin.style.left = pinX + "px"; pin.style.top = pinY + "px";
+    graphCanvas.appendChild(pin);
+    const line = document.createElementNS(SVGNS, "path");
+    line.setAttribute("class", "g-edge");
+    const rest = Math.hypot(pinX - fromX, pinY - fromY) * 0.08;
+    setRopeD(line, fromX, fromY, pinX, pinY, rest, 0);
+    graphEdges.appendChild(line);
+    const len = line.getTotalLength();
+    line.style.transition = "none";
+    line.style.strokeDasharray = len; line.style.strokeDashoffset = len;
+    setTimeout(() => {
+      if (!line.isConnected) return;
+      line.getBoundingClientRect();
+      line.style.transition = "stroke-dashoffset 1.4s ease-in-out";
+      line.style.strokeDashoffset = "0";
+    }, 250);
+    setTimeout(() => {
+      if (!line.isConnected) return;
+      line.style.strokeDasharray = "none";
+      gRopes.push({ path: line, x1: fromX, y1: fromY, x2: pinX, y2: pinY, rest: rest, amp: rest * 0.5, phase: Math.random() * 6.28, t: 0, done: false });
+      if (!gRopeRAF) gRopeRAF = requestAnimationFrame(gRopeLoop);
+    }, 1650);
+    const node = { el, line, pin };
+    gNodes.push(node);
+    const grp = graphGroup(groupKey, "", groupLabel);
+    grp.nodes.push(node);
+    if (!grp.visible) { el.classList.add("off"); line.classList.add("off"); pin.classList.add("off"); }
+    return { x: pinX, y: pinY };
+  }
+  function graphAddCategoryHeader(col, x, y) {
+    const el = document.createElement("div");
+    el.className = "g-node g-cat g-cat-" + col.key;
+    el.style.setProperty("--rot", "0deg");
+    const body = document.createElement("div"); body.className = "g-body";
+    const title = document.createElement("div"); title.className = "g-cat-title"; title.textContent = col.title;
+    const cnt = document.createElement("div"); cnt.className = "g-cat-count";
+    cnt.textContent = col.n + (col.n === 1 ? " entry" : " entries");
+    body.appendChild(title); body.appendChild(cnt); el.appendChild(body);
+    // clicking the header copies every value in the category
+    el._copy = (col.entries || []).map((e) => e[0]).join("\n") || col.title;
+    return graphMountPaper(el, x, y, 170, 78, "cat", "cat:" + col.key, col.title, gCenterPinX, gCenterPinY);
+  }
+  function graphAggSize(accts) {
+    const shown = Math.min(6, accts.length);
+    return { w: 300, h: 62 + shown * 32 + (accts.length > shown ? 20 : 0) };
+  }
+  function graphAddAggregate(col, value, accts, x, y, parentPin) {
+    const el = document.createElement("div");
+    el.className = "g-node g-node-agg g-agg-" + col.key;
+    el.style.setProperty("--rot", (Math.random() * 5 - 2.5).toFixed(1) + "deg");
+    const body = document.createElement("div"); body.className = "g-body";
+    const title = document.createElement("div"); title.className = "g-title"; title.textContent = value;
+    body.appendChild(title);
+    const list = document.createElement("div"); list.className = "g-acct-list";
+    const shown = accts.slice(0, 6);
+    const copyLines = [col.key + ": " + value];
+    shown.forEach((a) => {
+      const row = document.createElement("div"); row.className = "g-acct";
+      row.appendChild(graphIcon(a.url || ""));
+      const txt = document.createElement("div"); txt.className = "g-acct-txt";
+      const d = document.createElement("span"); d.className = "g-acct-dom"; d.textContent = a.domain; txt.appendChild(d);
+      if (a.ident) { const id = document.createElement("span"); id.className = "g-acct-id"; id.textContent = a.ident; txt.appendChild(id); }
+      row.appendChild(txt); list.appendChild(row);
+      copyLines.push("  " + a.domain + (a.ident ? " · " + a.ident : ""));
+    });
+    if (accts.length > shown.length) {
+      const more = document.createElement("div"); more.className = "g-acct-more";
+      more.textContent = "+" + (accts.length - shown.length) + " more account" + (accts.length - shown.length === 1 ? "" : "s");
+      list.appendChild(more);
+    }
+    body.appendChild(list); el.appendChild(body);
+    el._copy = copyLines.join("\n");
+    const est = graphAggSize(accts);
+    return graphMountPaper(el, x, y, est.w, est.h, "agg", "cat:" + col.key, col.title, parentPin.x, parentPin.y);
+  }
+  // frame the whole result inside the viewport
+  function graphFitView() {
+    if (!gBoxes.length) { graphCenterView(); return; }
+    let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    for (const b of gBoxes) {
+      minX = Math.min(minX, b.x - b.w / 2); maxX = Math.max(maxX, b.x + b.w / 2);
+      minY = Math.min(minY, b.y - b.h / 2); maxY = Math.max(maxY, b.y + b.h / 2);
+    }
+    const bw = maxX - minX + 180, bh = maxY - minY + 180;
+    const r = graphStage.getBoundingClientRect();
+    const sc = Math.max(0.35, Math.min(1.3, Math.min((r.width || 800) / bw, (r.height || 620) / bh)));
+    gScale = sc;
+    gPanX = (r.width || 800) / 2 - ((minX + maxX) / 2) * sc;
+    gPanY = (r.height || 620) / 2 - ((minY + maxY) / 2) * sc;
+    graphApplyPan();
   }
   let gDown = false, gMoved = false, gPan2 = false, gsx = 0, gsy = 0, gbx = 0, gby = 0, gDownTarget = null;
   graphStage.addEventListener("pointerdown", (e) => {

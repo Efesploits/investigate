@@ -1,5 +1,5 @@
 {
-  "version": "1.4.0",
+  "version": "1.5.0",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "New Ultra Search: pivot automatically. Any email, username or password a search turns up is searched too, and those results are chased further outward — the whole chain is woven onto the board as amber lead papers linked by red string. Plus the earlier same-site chaining and Cancel button."
+  "notes": "Ultra Search redesigned: results are now organised into PASSWORDS, USERNAMES and EMAILS columns on the board, each value pinned to the accounts it is linked to — no more overlapping papers. Bigger board, centered search bar, category papers with handwritten labels, and the same breakdown in Records view with one-click copy (per value, per row, or copy-all)."
 }
