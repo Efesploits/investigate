@@ -471,6 +471,33 @@
   button.scan.g-cancel { background: #3a3a3a; color: #fff; }
   button.scan.g-cancel:hover { background: #4a4a4a; }
 
+  /* Ultra Search — recursive pivoting button (minimalist accent-outline) */
+  button.scan.ultra {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgb(var(--accent-rgb) / .06); color: var(--accent);
+    border: 1px solid rgb(var(--accent-rgb) / .5);
+    letter-spacing: .3px;
+    animation: ultraGlow 2.8s ease-in-out infinite; }
+  button.scan.ultra .ultra-ico { width: 14px; height: 14px; opacity: .9; animation: ultraSpark 2.4s steps(1) infinite; }
+  @keyframes ultraGlow {
+    0%,100% { box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0), inset 0 0 0 0 rgb(var(--accent-rgb) / 0); border-color: rgb(var(--accent-rgb) / .5); }
+    50%     { box-shadow: 0 0 18px -2px rgb(var(--accent-rgb) / .28), inset 0 0 12px -6px rgb(var(--accent-rgb) / .5); border-color: rgb(var(--accent-rgb) / .8); } }
+  @keyframes ultraSpark { 0%,86%,100% { opacity: .9; } 90% { opacity: .35; } 95% { opacity: .9; } }
+  button.scan.ultra::after { width: 55%; background: linear-gradient(90deg, transparent, rgb(var(--accent-rgb) / .35), transparent); animation: ultraSweep 3.4s ease-in-out infinite; }
+  @keyframes ultraSweep { 0% { left: -80%; } 55%,100% { left: 150%; } }
+  button.scan.ultra:hover { transform: translateY(-2px); background: rgb(var(--accent-rgb) / .12); border-color: var(--accent);
+    box-shadow: 0 10px 26px -12px rgb(var(--accent-rgb) / .5); filter: none; }
+  button.scan.ultra:disabled { animation-play-state: paused; opacity: .5; }
+
+  /* traced-lead papers on the board (amber) */
+  .g-node-lead { background: linear-gradient(158deg, #fff6e0 0%, #ffe4a8 55%, #ffd274 100%); border-color: rgba(150,95,0,.42); }
+  .g-node-lead::after { border-color: #e9c98a #e9c98a transparent transparent; }
+  .g-node-lead::before { content: ""; position: absolute; left: -1px; top: 7px; bottom: 7px; width: 3px; border-radius: 3px; background: #ff8a1e; box-shadow: 0 0 8px rgba(255,138,30,.7); }
+  .g-node-lead .g-ico { display: none; }
+  .g-node-lead .g-title { color: #6a3d00; }
+  .g-node-lead .g-title::before { content: "🔎 "; }
+  .g-node-lead .g-lead-type { font-size: .58rem; text-transform: uppercase; letter-spacing: 1.5px; color: #a06a10; font-weight: 800; margin-top: 2px; }
+
   /* home hero eye: blinks and looks around */
   .hero-eye-inner { transform-box: fill-box; transform-origin: center; animation: blink 4.8s cubic-bezier(.6,0,.4,1) 1s infinite; }
   .hero-iris { transform-box: fill-box; transform-origin: center; animation: heroLook 7s ease-in-out infinite; }
@@ -632,6 +659,7 @@
         </select>
         <input type="text" id="invQuery" placeholder="value to search" autocomplete="off" spellcheck="false" required />
         <button type="submit" class="scan" id="invSubmitBtn">Search</button>
+        <button type="button" class="scan ultra" id="invUltraBtn"><svg class="ultra-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2L4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5z"/></svg><span>Ultra Search</span></button>
         <button type="button" class="scan g-cancel hidden" id="invCancelBtn">Cancel</button>
       </form>
 
@@ -1224,10 +1252,90 @@
     socialSummary.textContent = `${found} account(s) found, ${unknown} platform(s) couldn't be verified.`;
   }
 
+  // Shared records fetch (used by normal + ultra search)
+  async function nicFetch(query, type) {
+    try {
+      return await window.api.osintLookup(query, type);
+    } catch (_) {
+      return { ok: false, error: "Lookup failed." };
+    }
+  }
+  function parseNicResults(res) {
+    if (!res || !res.ok) return [];
+    const payload = res.data && res.data.data ? res.data.data : null;
+    return payload && Array.isArray(payload.results) ? payload.results : [];
+  }
+
+  /* ---------- ULTRA SEARCH — recursive pivoting ----------
+     Searches the seed, then automatically re-searches every new email /
+     username / password it turns up, and keeps following those leads
+     outward (bounded) — weaving the whole chain onto the board. */
+  const ULTRA_MAX_LOOKUPS = 40;   // total searches performed
+  const ULTRA_MAX_LEADS = 60;     // distinct pivot values queued
+  const ULTRA_MAX_DEPTH = 4;      // how many hops from the seed
+  const ULTRA_MAX_PER_LOOKUP = 40; // records mined per search
+  function ultraValid(v, t) {
+    if (!v) return false;
+    v = String(v).trim();
+    if (t === "email") return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && v.length <= 96;
+    if (t === "username") return v.length >= 3 && v.length <= 64 && !/[\s@]/.test(v);
+    if (t === "password") return v.length >= 6 && v.length <= 64;
+    return false;
+  }
+  async function runUltraSearch(query, type, myId) {
+    const scanLoaderText = document.querySelector(".scan-loader-text");
+    catRecords.classList.remove("hidden");
+    const visited = new Set([type + "|" + query.toLowerCase()]);
+    const queue = [{ value: query, type: type, depth: 0, pin: null, seed: true }];
+    let lookups = 0, recCount = 0, leadCount = 0;
+    const setStatus = () => {
+      if (scanLoaderText) scanLoaderText.textContent =
+        `Ultra · ${lookups} lead${lookups === 1 ? "" : "s"} traced · ${recCount} records`;
+    };
+    setStatus();
+    while (queue.length && lookups < ULTRA_MAX_LOOKUPS) {
+      if (myId !== curSearch) return;
+      const item = queue.shift();
+      lookups++;
+      setStatus();
+      const res = await nicFetch(item.value, item.type);
+      if (myId !== curSearch) return;
+      const results = parseNicResults(res).slice(0, ULTRA_MAX_PER_LOOKUP);
+      for (const rec of results) {
+        if (myId !== curSearch) return;
+        const recPin = graphAddRecord(rec, item.seed ? null : item.pin);
+        nicResults.appendChild(renderNicCard(rec, recCount));
+        recCount++;
+        // mine this record for fresh leads to chase
+        const cands = [];
+        if (rec.email) cands.push(["email", String(rec.email).trim()]);
+        if (rec.username) cands.push(["username", String(rec.username).trim()]);
+        if (rec.password) cands.push(["password", String(rec.password).trim()]);
+        for (const [t, v] of cands) {
+          const key = t + "|" + v.toLowerCase();
+          if (visited.has(key) || !ultraValid(v, t)) continue;
+          if (item.depth + 1 > ULTRA_MAX_DEPTH) continue;
+          if (t === "password" && item.depth + 1 > 2) continue; // passwords explode — keep them shallow
+          if (visited.size >= ULTRA_MAX_LEADS) continue;
+          visited.add(key);
+          const leadPin = graphAddLead(v, t, recPin);
+          leadCount++;
+          queue.push({ value: v, type: t, depth: item.depth + 1, pin: leadPin, seed: false });
+        }
+        setStatus();
+      }
+    }
+    if (myId !== curSearch) return;
+    nicSummary.textContent = recCount
+      ? `Ultra search complete · ${lookups} lead${lookups === 1 ? "" : "s"} traced · ${recCount} records found.`
+      : `No records found for "${query}".`;
+    if (scanLoaderText) scanLoaderText.textContent = "Searching…";
+  }
+
   // Records — nicotine.ws lookup (all types)
   async function runNicLookup(query, type) {
     const myId = curSearch;
-    const res = await window.api.osintLookup(query, type);
+    const res = await nicFetch(query, type);
     if (myId !== curSearch) return;
     catRecords.classList.remove("hidden");
     if (!res.ok) {
@@ -1362,9 +1470,10 @@
   }
   function graphEstSize(kind, fields) {
     if (kind === "record") return { w: 265, h: 46 + (fields ? fields.length : 0) * 21 };
+    if (kind === "lead") return { w: 190, h: 58 };
     return { w: 150, h: 46 };
   }
-  function graphAddNode(url, label, kind, groupKey, groupLabel, fields, parent) {
+  function graphAddNode(url, label, kind, groupKey, groupLabel, fields, parent, subLabel) {
     if (gCount >= GRAPH_CAP) return null;
     gCount++;
     const est = graphEstSize(kind, fields);
@@ -1390,6 +1499,7 @@
     const body = document.createElement("div"); body.className = "g-body";
     const title = document.createElement("div"); title.className = "g-title"; title.textContent = label;
     body.appendChild(title);
+    if (subLabel) { const sl = document.createElement("div"); sl.className = "g-lead-type"; sl.textContent = subLabel; body.appendChild(sl); }
     const copyLines = [label];
     if (fields && fields.length) {
       const fw = document.createElement("div"); fw.className = "g-fields";
@@ -1438,7 +1548,7 @@
     return { x: pinX, y: pinY };
   }
   function domainOf(url) { try { return new URL(url).hostname.replace(/^www\./, ""); } catch (_) { return ""; } }
-  function graphAddRecord(rec) {
+  function graphAddRecord(rec, parentPin) {
     const url = rec.url || "";
     const dom = domainOf(url) || "record";
     const fields = [];
@@ -1446,9 +1556,18 @@
     if (rec.email && rec.email !== rec.username) fields.push(["email", rec.email]);
     if (rec.password) fields.push(["pass", rec.password]);
     if (rec.source_date) fields.push(["date", rec.source_date]);
+    if (parentPin) {
+      // ultra pivot: chain this record straight off the lead it came from
+      return graphAddNode(url, dom, "record", "rec:" + dom, dom, fields, parentPin);
+    }
     const parent = gDomains[dom] || null;
     const pin = graphAddNode(url, dom, "record", "rec:" + dom, dom, fields, parent);
     if (pin) gDomains[dom] = pin;
+    return pin;
+  }
+  function graphAddLead(value, type, parentPin) {
+    // an amber "traced lead" paper — a value ultra search decided to pivot on
+    return graphAddNode("", value, "lead", "lead:" + type, type + " leads", null, parentPin || null, type);
   }
   function graphAddSocial(res) {
     graphAddNode(res.url || "", res.name, "social", "soc:" + res.name, res.name, null, null);
@@ -1501,20 +1620,24 @@
   applyRecordsView();
 
   const invCancelBtn = document.getElementById("invCancelBtn");
+  const invUltraBtn = document.getElementById("invUltraBtn");
+  function endSearchUI() {
+    graphSetScanning(false);
+    scanLoader.classList.add("hidden");
+    invSubmitBtn.disabled = false;
+    invUltraBtn.disabled = false;
+    invSubmitBtn.textContent = "Search";
+    invCancelBtn.classList.add("hidden");
+  }
   function cancelSearch() {
     curSearch++;
     if (curAbort) { try { curAbort.abort(); } catch (_) {} }
     if (curSource) { try { curSource.close(); } catch (_) {} }
-    graphSetScanning(false);
-    scanLoader.classList.add("hidden");
-    invSubmitBtn.disabled = false;
-    invSubmitBtn.textContent = "Search";
-    invCancelBtn.classList.add("hidden");
+    endSearchUI();
   }
   invCancelBtn.addEventListener("click", cancelSearch);
 
-  invForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  async function startSearch(ultra) {
     const query = invQuery.value.trim();
     const type = invType.value;
     if (!query) return;
@@ -1532,21 +1655,22 @@
     graphSetScanning(type === "username");
     applyRecordsView();
     invSubmitBtn.disabled = true;
-    invSubmitBtn.textContent = "Searching...";
+    invUltraBtn.disabled = true;
+    invSubmitBtn.textContent = ultra ? "Ultra…" : "Searching...";
     invCancelBtn.classList.remove("hidden");
     scanLoader.classList.remove("hidden");
 
-    const tasks = [runNicLookup(query, type)];
+    const tasks = [];
+    if (ultra) tasks.push(runUltraSearch(query, type, myId));
+    else tasks.push(runNicLookup(query, type));
     if (type === "username") tasks.push(runSocialScan(query));
     await Promise.allSettled(tasks);
 
-    if (myId !== curSearch) return;
-    graphSetScanning(false);
-    scanLoader.classList.add("hidden");
-    invSubmitBtn.disabled = false;
-    invSubmitBtn.textContent = "Search";
-    invCancelBtn.classList.add("hidden");
-  });
+    if (myId === curSearch) endSearchUI();
+  }
+
+  invForm.addEventListener("submit", (e) => { e.preventDefault(); startSearch(false); });
+  invUltraBtn.addEventListener("click", () => startSearch(true));
 
   /* ---------- database ---------- */
   const $ = (id) => document.getElementById(id);
