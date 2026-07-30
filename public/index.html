@@ -833,6 +833,68 @@ you cant run by your own footprints.
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
   .floaty-emblem svg { width: 33px; height: 33px; display: block; }
   .floaty-emblem .em-year { font-size: .58rem; letter-spacing: 1px; opacity: .92; }
+
+  /* ===== accounts: top-right wallet + auth ===== */
+  .content { margin: 0 auto; }
+  #page-investigate { max-width: 1080px; margin: 0 auto; }
+  .graph-stage { height: 82vh; min-height: 680px; }
+
+  .topbar { position: fixed; top: 14px; right: 18px; display: flex; align-items: center; gap: 10px; z-index: 60; }
+  .wallet { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px;
+    border: 1px solid var(--border); background: rgba(20,20,20,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    font-weight: 800; font-size: .84rem; color: var(--text); }
+  .wallet svg { width: 16px; height: 16px; color: var(--accent); }
+  .wallet .wk-n { color: var(--accent); min-width: 12px; text-align: center; }
+  .wallet.spend { animation: walletBump .4s ease; }
+  @keyframes walletBump { 0%,100%{transform:scale(1)} 40%{transform:scale(1.14)} }
+  .tb-btn { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 999px;
+    border: 1px solid var(--border); background: rgba(20,20,20,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    color: var(--text); font-weight: 700; font-size: .82rem; cursor: pointer; transition: border-color .15s, transform .15s; }
+  .tb-btn:hover { border-color: #666; transform: translateY(-1px); }
+  .tb-btn.login { padding: 8px 16px; }
+  .tb-ava { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; background: var(--panel2);
+    display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 800; color: var(--accent); overflow: hidden; }
+  .tb-ava img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* auth modal */
+  .modal-back { position: fixed; inset: 0; background: rgba(0,0,0,.66); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  .modal-back.show { display: flex; }
+  .modal { width: 100%; max-width: 380px; background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
+    padding: 26px 24px; box-shadow: 0 30px 90px rgba(0,0,0,.6); }
+  .modal h2 { margin: 0 0 4px; font-size: 1.3rem; }
+  .modal .m-sub { color: var(--muted); font-size: .85rem; margin: 0 0 18px; }
+  .auth-tabs { display: flex; gap: 4px; padding: 4px; background: var(--panel2); border: 1px solid var(--border); border-radius: 999px; margin-bottom: 18px; }
+  .auth-tab { flex: 1; border: none; background: transparent; color: var(--muted); font-weight: 700; font-size: .84rem; padding: 8px; border-radius: 999px; cursor: pointer; }
+  .auth-tab.active { background: var(--accent); color: #000; }
+  .modal label { display: block; font-size: .74rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 12px 0 6px; font-weight: 700; }
+  .modal input { width: 100%; box-sizing: border-box; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--panel2); color: var(--text); font-size: .9rem; }
+  .modal input:focus { outline: none; border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .08); }
+  .modal .m-submit { width: 100%; margin-top: 18px; padding: 12px; border-radius: 10px; border: none; background: var(--accent); color: #000; font-weight: 800; font-size: .92rem; cursor: pointer; }
+  .modal .m-submit:disabled { opacity: .6; cursor: not-allowed; }
+  .modal .m-err { color: #ff6b6b; font-size: .82rem; margin-top: 12px; min-height: 1em; }
+  .modal .m-close { position: absolute; }
+  .m-hint { color: var(--muted); font-size: .78rem; margin-top: 14px; text-align: center; }
+
+  /* login gate embedded in the intro splash */
+  .intro-auth { width: 100%; max-width: 300px; margin: 8px auto 0; position: relative; z-index: 1; }
+  .intro-auth .auth-tabs { margin-bottom: 14px; }
+  .intro-auth form { display: flex; flex-direction: column; gap: 10px; }
+  .intro-auth input { width: 100%; box-sizing: border-box; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--border);
+    background: rgba(255,255,255,.045); color: var(--text); font-size: .9rem; text-align: center; }
+  .intro-auth input:focus { outline: none; border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .10); }
+  .intro-auth .m-submit { margin-top: 4px; }
+  .intro-auth .m-err { text-align: center; }
+  .intro-hint { color: var(--muted); font-size: .76rem; margin-top: 12px; text-align: center; position: relative; z-index: 1; }
+
+  /* lightweight toast */
+  .toast-wrap { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 120; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .toast { background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 11px 18px; border-radius: 10px;
+    font-size: .86rem; font-weight: 600; box-shadow: 0 12px 40px rgba(0,0,0,.5); animation: toastIn .2s ease; }
+  .toast.err { border-color: #ff6b6b55; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } }
+  @media (max-width: 720px) { .topbar { top: 10px; right: 10px; } .wallet .wk-lbl { display: none; } }
 </style>
 </head>
 <body>
@@ -870,12 +932,38 @@ you cant run by your own footprints.
 
   <h1 class="intro-title">m3's investigation tool</h1>
   <p class="intro-sub">osint · username tracing</p>
-  <button class="enter-btn" id="enterBtn">ENTER</button>
+
+  <div class="intro-auth" id="introAuth">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" type="button">Log in</button>
+      <button class="auth-tab" id="tabRegister" type="button">Register</button>
+    </div>
+    <form id="authForm" autocomplete="on">
+      <input id="authUser" type="text" autocomplete="username" spellcheck="false" placeholder="username" />
+      <input id="authPass" type="password" autocomplete="current-password" placeholder="password" />
+      <button class="m-submit" id="authSubmit" type="submit">Log in</button>
+      <div class="m-err" id="authErr"></div>
+    </form>
+    <p class="intro-hint" id="authHint">Create an account to get free tokens and start investigating.</p>
+  </div>
+
+  <button class="enter-btn" id="enterBtn" style="display:none">ENTER</button>
   <p class="intro-credit">m3fxn — theres always a clue, find it.</p>
 </div>
 
 <!-- ===================== APP ===================== -->
 <div id="app">
+  <div class="topbar" id="topbar">
+    <div class="wallet" id="wallet" title="Search tokens" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2"/><path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3"/><path d="M16 12h5v4h-5a2 2 0 0 1 0-4z"/></svg>
+      <span class="wk-n" id="walletCount">0</span><span class="wk-lbl">tokens</span>
+    </div>
+    <button class="tb-btn login" id="loginBtn" type="button">Log in</button>
+    <button class="tb-btn" id="profileBtn" type="button" style="display:none">
+      <span class="tb-ava" id="tbAva">?</span><span id="tbName">user</span>
+    </button>
+  </div>
+
   <aside class="sidebar">
     <div class="brand">
       <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -1071,6 +1159,8 @@ you cant run by your own footprints.
   </main>
 </div>
 
+<div class="toast-wrap" id="toastWrap"></div>
+
 <script>
   /* ---------- settings (persisted in localStorage) ---------- */
   const SETTINGS_KEY = "m3-settings";
@@ -1241,6 +1331,8 @@ you cant run by your own footprints.
   }
   enterBtn.addEventListener("click", enterApp);
   document.addEventListener("keydown", (e) => {
+    if (!window.__authed) return;                                  // never let the gate be skipped
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
     if (!document.body.classList.contains("entered") && (e.key === "Enter" || e.key === " ")) {
       e.preventDefault();
       enterApp();
@@ -1442,7 +1534,7 @@ you cant run by your own footprints.
     catSocial.classList.remove("hidden");
     return new Promise((resolve) => {
       const results = [];
-      const source = new EventSource("/api/check?handle=" + encodeURIComponent(handle));
+      const source = new EventSource("/api/check?handle=" + encodeURIComponent(handle) + (curSearchToken ? "&st=" + encodeURIComponent(curSearchToken) : ""));
       curSource = source;
       source.addEventListener("result", (e) => {
         if (myId !== curSearch) { source.close(); resolve(); return; }
@@ -1604,7 +1696,10 @@ you cant run by your own footprints.
   // Shared records fetch (used by normal + ultra search)
   async function nicFetch(query, type) {
     try {
-      return await fetch(`/api/osint?q=${encodeURIComponent(query)}&type=${encodeURIComponent(type)}`, { signal: curAbort ? curAbort.signal : undefined }).then((r) => r.json());
+      return await fetch(`/api/osint?q=${encodeURIComponent(query)}&type=${encodeURIComponent(type)}`, {
+        headers: curSearchToken ? { "x-search-token": curSearchToken } : {},
+        signal: curAbort ? curAbort.signal : undefined,
+      }).then((r) => r.json());
     } catch (_) {
       return { ok: false, error: "Connection error." };
     }
@@ -1846,7 +1941,7 @@ you cant run by your own footprints.
   const GCX = 2000, GCY = 2000, GRAPH_CAP = 120;
   let gNodes = [], gCount = 0, gGroups = {}, gPanX = 0, gPanY = 0, gScale = 1, gBoxes = [], gDomains = {};
   let gCenterPin = null, gCenterPinX = GCX, gCenterPinY = GCY;
-  let curSearch = 0, curAbort = null, curSource = null;
+  let curSearch = 0, curAbort = null, curSource = null, curSearchToken = null;
   function gOverlaps(x, y, w, h) {
     for (const b of gBoxes) { if (Math.abs(x - b.x) < (w + b.w) / 2 + 20 && Math.abs(y - b.y) < (h + b.h) / 2 + 20) return true; }
     return false;
@@ -2204,6 +2299,130 @@ you cant run by your own footprints.
 
   const invCancelBtn = document.getElementById("invCancelBtn");
   const invUltraBtn = document.getElementById("invUltraBtn");
+  /* ================= accounts / tokens ================= */
+  let currentUser = null;
+  const walletEl = document.getElementById("wallet");
+  const walletCount = document.getElementById("walletCount");
+  const loginBtn = document.getElementById("loginBtn");
+  const profileBtn = document.getElementById("profileBtn");
+  const tbAva = document.getElementById("tbAva");
+  const tbName = document.getElementById("tbName");
+  const toastWrap = document.getElementById("toastWrap");
+
+  function toast(msg, kind) {
+    const t = document.createElement("div");
+    t.className = "toast" + (kind === "err" ? " err" : "");
+    t.textContent = msg;
+    toastWrap.appendChild(t);
+    setTimeout(() => { t.style.transition = "opacity .3s"; t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 2600);
+  }
+  const initials = (n) => (n || "?").slice(0, 2).toUpperCase();
+
+  function renderAccount() {
+    window.__authed = !!currentUser;
+    if (currentUser) {
+      walletEl.style.display = "";
+      walletCount.textContent = currentUser.tokens;
+      loginBtn.style.display = "none";
+      profileBtn.style.display = "";
+      tbName.textContent = currentUser.username;
+      if (currentUser.avatar) tbAva.innerHTML = '<img src="' + currentUser.avatar + '" alt="">';
+      else { tbAva.textContent = initials(currentUser.username); }
+    } else {
+      walletEl.style.display = "none";
+      loginBtn.style.display = "";
+      profileBtn.style.display = "none";
+    }
+  }
+  function setTokens(n) {
+    if (!currentUser) return;
+    currentUser.tokens = n;
+    walletCount.textContent = n;
+    walletEl.classList.remove("spend"); void walletEl.offsetWidth; walletEl.classList.add("spend");
+  }
+  async function refreshMe() {
+    try {
+      const r = await fetch("/api/auth/me").then((r) => r.json());
+      currentUser = (r && r.ok) ? r.user : null;
+    } catch (_) { currentUser = null; }
+    renderAccount();
+  }
+
+  /* auth — the login gate lives on the intro splash (animated eye) */
+  const introAuth = document.getElementById("introAuth");
+  const tabLogin = document.getElementById("tabLogin");
+  const tabRegister = document.getElementById("tabRegister");
+  const authForm = document.getElementById("authForm");
+  const authUser = document.getElementById("authUser");
+  const authPass = document.getElementById("authPass");
+  const authSubmit = document.getElementById("authSubmit");
+  const authErr = document.getElementById("authErr");
+  const authHint = document.getElementById("authHint");
+  let authMode = "login";
+
+  function setAuthMode(mode) {
+    authMode = mode;
+    tabLogin.classList.toggle("active", mode === "login");
+    tabRegister.classList.toggle("active", mode === "register");
+    authSubmit.textContent = mode === "login" ? "Log in" : "Create account";
+    authPass.setAttribute("autocomplete", mode === "login" ? "current-password" : "new-password");
+    authHint.textContent = mode === "login"
+      ? "New here? Switch to Register to make an account."
+      : "New accounts start with free tokens. Already have one? Log in.";
+    authErr.textContent = "";
+  }
+  tabLogin.addEventListener("click", () => setAuthMode("login"));
+  tabRegister.addEventListener("click", () => setAuthMode("register"));
+
+  // bring the login gate (intro) back to the front — used on load & logout
+  function showGate() {
+    intro.style.display = "";
+    intro.classList.remove("leaving");
+    document.body.classList.remove("entered");
+    app.classList.remove("show");
+    introAuth.style.display = "";
+    enterBtn.style.display = "none";
+    setTimeout(() => authUser.focus(), 60);
+  }
+  // gate the whole app behind sign-in
+  function applyAuthGate() {
+    renderAccount();
+    if (currentUser) {
+      introAuth.style.display = "none";
+      if (!document.body.classList.contains("entered")) enterApp();
+    } else {
+      showGate();
+    }
+  }
+
+  authForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const username = authUser.value.trim(), password = authPass.value;
+    if (!username || !password) { authErr.textContent = "Enter a username and password."; return; }
+    authSubmit.disabled = true;
+    try {
+      const r = await fetch("/api/auth/" + (authMode === "login" ? "login" : "register"), {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }),
+      }).then((r) => r.json());
+      if (!r.ok) { authErr.textContent = r.error || "Something went wrong."; authSubmit.disabled = false; return; }
+      currentUser = r.user; authForm.reset();
+      renderAccount();
+      introAuth.style.display = "none";
+      enterApp();
+      toast(authMode === "login" ? ("Welcome back, " + currentUser.username) : ("Account created — welcome, " + currentUser.username));
+    } catch (_) { authErr.textContent = "Connection error."; }
+    authSubmit.disabled = false;
+  });
+
+  // profile button — full profile section lands next; for now, log out
+  profileBtn.addEventListener("click", async () => {
+    if (!confirm("Log out of " + (currentUser ? currentUser.username : "") + "?")) return;
+    try { await fetch("/api/auth/logout", { method: "POST" }); } catch (_) {}
+    currentUser = null; setAuthMode("login"); applyAuthGate(); toast("Logged out.");
+  });
+
+  refreshMe().then(applyAuthGate);
+
   function endSearchUI() {
     graphSetScanning(false);
     scanLoader.classList.add("hidden");
@@ -2224,6 +2443,23 @@ you cant run by your own footprints.
     const query = invQuery.value.trim();
     const type = invType.value;
     if (!query) return;
+    if (!currentUser) { applyAuthGate(); toast("Log in to search."); return; }
+
+    // charge tokens up-front on the server; a paid search session covers this search
+    let charge;
+    try {
+      charge = await fetch("/api/search/start", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ultra: !!ultra, type, query }),
+      }).then((r) => r.json());
+    } catch (_) { toast("Connection error.", "err"); return; }
+    if (!charge || !charge.ok) {
+      if (charge && charge.need != null) toast("Not enough tokens — need " + charge.need + ", you have " + charge.have + ".", "err");
+      else { toast((charge && charge.error) || "Couldn't start search.", "err"); if (charge && /sign/i.test(charge.error || "")) { currentUser = null; applyAuthGate(); } }
+      return;
+    }
+    curSearchToken = charge.searchToken;
+    setTokens(charge.tokens);
 
     const myId = ++curSearch;
     curAbort = new AbortController();

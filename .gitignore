@@ -7,3 +7,6 @@ desktop/secret.js
 # stray runtime logs / build output
 server.log
 desktop/dist/
+
+# local JSON-store fallback (dev only; prod uses Postgres via DATABASE_URL)
+data/
