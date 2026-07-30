@@ -56,6 +56,20 @@ async function fetchJson(url) {
   return JSON.parse(body);
 }
 
+// hard deadline so a stalled connection can never leave the UI spinning forever
+function withTimeout(promise, ms, label) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error((label || "Operation") + " timed out")),
+      ms
+    );
+    promise.then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); }
+    );
+  });
+}
+
 // -1 / 0 / 1
 function compareVersions(a, b) {
   const pa = String(a).split(".").map((n) => parseInt(n, 10) || 0);
@@ -69,7 +83,9 @@ function compareVersions(a, b) {
 }
 
 async function check(currentVersion) {
-  const manifest = await fetchJson(MANIFEST_URL);
+  // cache-bust so a stale/hung CDN response can't wedge the check
+  const url = MANIFEST_URL + (MANIFEST_URL.indexOf("?") === -1 ? "?" : "&") + "t=" + Date.now();
+  const manifest = await withTimeout(fetchJson(url), 20000, "Update check");
   if (!manifest || !manifest.version || !manifest.url) {
     throw new Error("Malformed update manifest.");
   }

@@ -428,6 +428,15 @@
   /* ---------- investigation graph ---------- */
   .graph-filter { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 4px 0 12px; }
   .graph-filter:empty { display: none; }
+  /* results view switch (Board / List) — lives on the investigation tab */
+  .vt-wrap { display: flex; justify-content: center; margin: 0 0 14px; }
+  .view-toggle { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel2); }
+  .vt-btn { display: inline-flex; align-items: center; gap: 6px; border: none; background: transparent; color: var(--muted);
+    font-family: inherit; font-weight: 700; font-size: .78rem; letter-spacing: .3px; padding: 6px 16px; border-radius: 999px; cursor: pointer;
+    transition: background .15s ease, color .15s ease; }
+  .vt-btn svg { width: 14px; height: 14px; }
+  .vt-btn.active { background: var(--accent); color: #000; }
+  .vt-btn:not(.active):hover { color: var(--text); }
   .gf-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
     border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: .8rem; font-weight: 600;
     cursor: pointer; user-select: none; transition: opacity .15s ease, border-color .15s ease; }
@@ -757,6 +766,19 @@
         <button type="button" class="scan g-cancel hidden" id="invCancelBtn">Cancel</button>
       </form>
 
+      <div class="vt-wrap">
+        <div class="view-toggle" id="viewToggle" role="tablist" aria-label="Results view">
+          <button type="button" class="vt-btn" data-view="board" role="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M6.8 7.2 10.5 16m7-8.8L13.5 16"/></svg>
+            Board
+          </button>
+          <button type="button" class="vt-btn" data-view="list" role="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
+            List
+          </button>
+        </div>
+      </div>
+
       <div class="scan-loader hidden" id="scanLoader">
         <svg class="scan-eye-svg" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs><clipPath id="scanLensClip"><circle cx="150" cy="140" r="100"/></clipPath></defs>
@@ -885,14 +907,6 @@
           <div class="settings-desc">Monochrome look. Turn off for a colored theme.</div>
         </div>
         <label class="switch"><input type="checkbox" id="toggleBW"><span class="track"><span class="knob"></span></span></label>
-      </div>
-
-      <div class="settings-row">
-        <div>
-          <div class="settings-label">Classic records list</div>
-          <div class="settings-desc">Show the old list view instead of the new investigation graph.</div>
-        </div>
-        <label class="switch"><input type="checkbox" id="toggleClassic"><span class="track"><span class="knob"></span></span></label>
       </div>
 
       <div class="hidden" id="themesLabel">Themes ⚽</div>
@@ -1937,14 +1951,23 @@
     setTimeout(() => el.classList.remove("g-copied"), 850);
   }
 
-  const toggleClassic = document.getElementById("toggleClassic");
-  if (toggleClassic) {
-    toggleClassic.checked = !!settings.classicRecords;
-    toggleClassic.addEventListener("change", () => {
-      settings.classicRecords = toggleClassic.checked;
+  // Board / List view switch — moved from Settings onto the investigation tab
+  const viewToggle = document.getElementById("viewToggle");
+  if (viewToggle) {
+    const vtBtns = viewToggle.querySelectorAll(".vt-btn");
+    const syncViewToggle = () => {
+      const cur = settings.classicRecords ? "list" : "board";
+      vtBtns.forEach((b) => b.classList.toggle("active", b.dataset.view === cur));
+    };
+    syncViewToggle();
+    vtBtns.forEach((b) => b.addEventListener("click", () => {
+      const want = b.dataset.view === "list";
+      if (settings.classicRecords === want) return;
+      settings.classicRecords = want;
       saveSettings();
+      syncViewToggle();
       applyRecordsView();
-    });
+    }));
   }
   applyRecordsView();
 
@@ -2236,10 +2259,21 @@
 
   async function runCheck(manual) {
     if (manual) { checkUpdateBtn.disabled = true; checkUpdateBtn.textContent = "Checking…"; }
-    const res = await window.api.checkUpdate();
-    if (manual) { checkUpdateBtn.disabled = false; checkUpdateBtn.textContent = "Check for updates"; }
-    if (!res.ok) {
-      if (manual) updateStatus.textContent = "Couldn't check for updates: " + res.error;
+    let res;
+    try {
+      res = await window.api.checkUpdate();
+    } catch (e) {
+      res = { ok: false, error: (e && e.message) ? e.message : String(e) };
+    } finally {
+      if (manual) { checkUpdateBtn.disabled = false; checkUpdateBtn.textContent = "Check for updates"; }
+    }
+    if (!res || !res.ok) {
+      if (manual) {
+        const err = (res && res.error) || "no response";
+        updateStatus.textContent = /timed out/i.test(err)
+          ? "Update server didn't respond in time — it may have been asleep. Please click Check again."
+          : "Couldn't check for updates: " + err;
+      }
       return;
     }
     if (res.available) showUpdateAvailable(res);

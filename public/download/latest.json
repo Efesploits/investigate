@@ -1,5 +1,5 @@
 {
-  "version": "1.6.0",
+  "version": "1.7.0",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Easier copying + passwords everywhere in table mode. Records cards now have a copy button on every field and click-to-copy on each value (username / email / password highlighted). In Ultra table results the Usernames and Emails blocks now show the password linked to each account (🔑, click to copy), and Copy/Copy-all include those passwords."
+  "notes": "Update check no longer hangs on 'Checking…' — it now has a hard 20s deadline with cache-busting and always resets, showing a retry hint if the server was asleep. The Board / List results view switch moved out of Settings onto the Investigation tab as a segmented toggle."
 }
