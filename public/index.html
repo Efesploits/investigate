@@ -491,6 +491,23 @@ you cant run by your own footprints.
   .nic-copyall { padding: 5px 12px; font-size: .74rem; border-radius: 999px; }
   .nic-copy:hover, .nic-copyall:hover { border-color: #666; }
   .nic-copy.copied, .nic-copyall.copied { background: var(--accent); color: #000; border-color: var(--accent); }
+  /* per-field copy in the records card — grab one value without the whole record */
+  .nic-field { align-items: center; }
+  .nic-val-copy { cursor: pointer; border-radius: 5px; transition: color .15s, background .15s; }
+  .nic-val-copy:hover { color: #fff; background: rgb(var(--accent-rgb) / .10); box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / .10); }
+  .nic-val.copied, .nic-val-copy.copied { color: var(--accent); }
+  .nic-fieldcopy {
+    flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 24px; padding: 0; border-radius: 7px;
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    cursor: pointer; opacity: .45; transition: opacity .15s, border-color .15s, color .15s, background .15s;
+  }
+  .nic-field:hover .nic-fieldcopy { opacity: 1; }
+  .nic-fieldcopy:hover { border-color: var(--accent); color: var(--accent); }
+  .nic-fieldcopy.copied { opacity: 1; background: var(--accent); border-color: var(--accent); color: #000; }
+  .nic-fieldcopy svg { width: 13px; height: 13px; display: block; }
+  /* credential fields (username / email / password) get a subtle accent key */
+  .nic-field.is-cred .nic-key { color: var(--accent); }
   .nic-raw {
     white-space: pre-wrap; word-break: break-word; background: var(--panel); border: 1px solid var(--border);
     border-radius: 10px; padding: 14px; font-size: .82rem; user-select: text; margin-top: 10px;
@@ -742,6 +759,12 @@ you cant run by your own footprints.
   .cat-acct { display: inline-flex; align-items: center; gap: 5px; font-size: .73rem; color: var(--muted); }
   .cat-acct img, .cat-acct span.g-ico, .cat-acct span.g-ico svg { width: 14px; height: 14px; border-radius: 3px; }
   .cat-acct b { color: #cfcfcf; font-weight: 700; }
+  /* password linked to a username / email account — click to copy just the password */
+  .cat-acct-pw { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; color: #ff9a6b;
+    cursor: pointer; border-bottom: 1px dotted rgba(255,154,107,.55); }
+  .cat-acct-pw::before { content: "🔑 "; }
+  .cat-acct-pw:hover { color: #ffbf9c; }
+  .cat-acct-pw.copied { color: var(--accent); border-color: var(--accent); }
   .cat-row .nic-copy { flex-shrink: 0; }
 
   /* --- make text look written / typed on the paper --- */
@@ -1474,6 +1497,9 @@ you cant run by your own footprints.
     }
   }
 
+  const COPY_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>';
   // grey earth fallback shown when a site icon can't be fetched
   const GLOBE_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="#8a8a8a" stroke-width="1.6" stroke-linecap="round">' +
@@ -1493,10 +1519,12 @@ you cant run by your own footprints.
     return wrap;
   }
 
+  const CRED_LABELS = { Username: 1, Email: 1, Password: 1 };
+  function nicFlash(el) { el.classList.add("copied"); setTimeout(() => el.classList.remove("copied"), 950); }
   function nicFieldRow(label, value, opts) {
     opts = opts || {};
     const row = document.createElement("div");
-    row.className = "nic-field";
+    row.className = "nic-field" + (CRED_LABELS[label] ? " is-cred" : "");
     const k = document.createElement("div");
     k.className = "nic-key";
     k.textContent = label;
@@ -1511,8 +1539,20 @@ you cant run by your own footprints.
       v.appendChild(a);
     } else {
       v.textContent = value;
+      // click the value itself to copy just this variable
+      v.classList.add("nic-val-copy");
+      v.title = "click to copy";
+      v.addEventListener("click", () => { nicCopy(String(value)); nicFlash(v); });
     }
-    row.appendChild(k); row.appendChild(v);
+    // dedicated copy button — always available, grabs this one field
+    const cp = document.createElement("button");
+    cp.type = "button";
+    cp.className = "nic-fieldcopy";
+    cp.title = "Copy " + label.toLowerCase();
+    cp.setAttribute("aria-label", "Copy " + label.toLowerCase());
+    cp.innerHTML = COPY_ICON;
+    cp.addEventListener("click", () => { nicCopy(String(value)); nicFlash(cp); });
+    row.appendChild(k); row.appendChild(v); row.appendChild(cp);
     return row;
   }
 
@@ -1612,11 +1652,18 @@ you cant run by your own footprints.
           s.appendChild(nicFavicon(a.url || ""));
           const b = document.createElement("b"); b.textContent = a.domain; s.appendChild(b);
           if (a.ident) s.appendChild(document.createTextNode(" · " + a.ident));
+          // show the password tied to this account (username / email blocks) — click to copy it
+          if (def.key !== "password" && a.pass) {
+            s.appendChild(document.createTextNode(" · "));
+            const pw = document.createElement("span"); pw.className = "cat-acct-pw"; pw.textContent = a.pass; pw.title = "click to copy password";
+            pw.addEventListener("click", (ev) => { ev.stopPropagation(); nicCopy(a.pass); pw.classList.add("copied"); setTimeout(() => pw.classList.remove("copied"), 900); });
+            s.appendChild(pw);
+          }
           al.appendChild(s);
         });
         main.appendChild(al);
         const cp = document.createElement("button"); cp.type = "button"; cp.className = "nic-copy"; cp.textContent = "Copy";
-        const full = val + "\n" + accts.map((a) => "  " + a.domain + (a.ident ? " · " + a.ident : "")).join("\n");
+        const full = val + "\n" + accts.map((a) => "  " + a.domain + (a.ident ? " · " + a.ident : "") + (def.key !== "password" && a.pass ? " · " + a.pass : "")).join("\n");
         cp.addEventListener("click", () => nicCopy(full, cp));
         row.appendChild(main); row.appendChild(cp); rows.appendChild(row);
       });
@@ -1632,7 +1679,7 @@ you cant run by your own footprints.
     const addAcct = (map, val, acct) => {
       if (!map.has(val)) map.set(val, []);
       const arr = map.get(val);
-      if (arr.length < 14 && !arr.some((a) => a.domain === acct.domain && a.ident === acct.ident)) arr.push(acct);
+      if (arr.length < 14 && !arr.some((a) => a.domain === acct.domain && a.ident === acct.ident && (a.pass || "") === (acct.pass || ""))) arr.push(acct);
     };
 
     // ---- phase 1: recursive discovery (feeds the buckets + classic list) ----
@@ -1655,9 +1702,10 @@ you cant run by your own footprints.
       for (const rec of results) {
         const domain = domainOf(rec.url || "") || "record";
         const url = rec.url || "";
-        if (rec.password) addAcct(cats.password, String(rec.password).trim(), { domain: domain, ident: (rec.email || rec.username || "").trim(), url: url });
-        if (rec.username) addAcct(cats.username, String(rec.username).trim(), { domain: domain, ident: (rec.email || "").trim(), url: url });
-        if (rec.email) addAcct(cats.email, String(rec.email).trim(), { domain: domain, ident: (rec.username || "").trim(), url: url });
+        const recPw = (rec.password ? String(rec.password).trim() : "");
+        if (rec.password) addAcct(cats.password, recPw, { domain: domain, ident: (rec.email || rec.username || "").trim(), url: url });
+        if (rec.username) addAcct(cats.username, String(rec.username).trim(), { domain: domain, ident: (rec.email || "").trim(), url: url, pass: recPw });
+        if (rec.email) addAcct(cats.email, String(rec.email).trim(), { domain: domain, ident: (rec.username || "").trim(), url: url, pass: recPw });
         recCount++;
         // mine this record for fresh leads to chase
         const cands = [];

@@ -1,5 +1,5 @@
 {
-  "version": "1.5.0",
+  "version": "1.6.0",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Ultra Search redesigned: results are now organised into PASSWORDS, USERNAMES and EMAILS columns on the board, each value pinned to the accounts it is linked to — no more overlapping papers. Bigger board, centered search bar, category papers with handwritten labels, and the same breakdown in Records view with one-click copy (per value, per row, or copy-all)."
+  "notes": "Easier copying + passwords everywhere in table mode. Records cards now have a copy button on every field and click-to-copy on each value (username / email / password highlighted). In Ultra table results the Usernames and Emails blocks now show the password linked to each account (🔑, click to copy), and Copy/Copy-all include those passwords."
 }
