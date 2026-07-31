@@ -650,6 +650,38 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
   .floaty-emblem svg { width: 33px; height: 33px; display: block; }
   .floaty-emblem .em-year { font-size: .58rem; letter-spacing: 1px; opacity: .92; }
+
+  /* ===== account gate + wallet ===== */
+  .topbar { position: fixed; top: 12px; right: 16px; display: flex; align-items: center; gap: 10px; z-index: 60; -webkit-app-region: no-drag; }
+  .wallet { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px;
+    border: 1px solid var(--border); background: rgba(20,20,20,.72); font-weight: 800; font-size: .84rem; color: var(--text); }
+  .wallet svg { width: 16px; height: 16px; color: var(--accent); }
+  .wallet .wk-n { color: var(--accent); }
+  .wallet.spend { animation: walletBump .4s ease; }
+  @keyframes walletBump { 0%,100%{transform:scale(1)} 40%{transform:scale(1.14)} }
+  .tb-btn { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 999px;
+    border: 1px solid var(--border); background: rgba(20,20,20,.72); color: var(--text); font-weight: 700; font-size: .82rem; cursor: pointer; }
+  .tb-btn:hover { border-color: #ff6b6b; color: #ff6b6b; }
+  .tb-ava { width: 26px; height: 26px; border-radius: 50%; background: var(--panel2); display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 800; color: var(--accent); overflow: hidden; }
+  .tb-ava img { width: 100%; height: 100%; object-fit: cover; }
+
+  .intro-auth { width: 100%; max-width: 300px; margin: 8px auto 0; position: relative; z-index: 1; }
+  .auth-tabs { display: flex; gap: 4px; padding: 4px; background: var(--panel2); border: 1px solid var(--border); border-radius: 999px; margin-bottom: 14px; }
+  .auth-tab { flex: 1; border: none; background: transparent; color: var(--muted); font-weight: 700; font-size: .84rem; padding: 8px; border-radius: 999px; cursor: pointer; }
+  .auth-tab.active { background: var(--accent); color: #000; }
+  .intro-auth form { display: flex; flex-direction: column; gap: 10px; }
+  .intro-auth input { width: 100%; box-sizing: border-box; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--border);
+    background: rgba(255,255,255,.045); color: var(--text); font-size: .9rem; text-align: center; }
+  .intro-auth input:focus { outline: none; border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .10); }
+  .m-submit { margin-top: 4px; padding: 12px; border-radius: 10px; border: none; background: var(--accent); color: #000; font-weight: 800; font-size: .92rem; cursor: pointer; }
+  .m-submit:disabled { opacity: .6; cursor: not-allowed; }
+  .m-err { color: #ff6b6b; font-size: .82rem; min-height: 1em; text-align: center; }
+  .intro-hint { color: var(--muted); font-size: .76rem; margin-top: 12px; text-align: center; position: relative; z-index: 1; }
+
+  .toast-wrap { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 120; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .toast { background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 11px 18px; border-radius: 10px;
+    font-size: .86rem; font-weight: 600; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+  .toast.err { border-color: #ff6b6b55; }
 </style>
 </head>
 <body>
@@ -674,7 +706,22 @@
   </div>
   <h1 class="intro-title">m3's investigation tool</h1>
   <p class="intro-sub">osint · sql database client</p>
-  <button class="enter-btn" id="enterBtn">ENTER</button>
+
+  <div class="intro-auth" id="introAuth">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" type="button">Log in</button>
+      <button class="auth-tab" id="tabRegister" type="button">Register</button>
+    </div>
+    <form id="authForm" autocomplete="on">
+      <input id="authUser" type="text" autocomplete="username" spellcheck="false" placeholder="username" />
+      <input id="authPass" type="password" autocomplete="current-password" placeholder="password" />
+      <button class="m-submit" id="authSubmit" type="submit">Log in</button>
+      <div class="m-err" id="authErr"></div>
+    </form>
+    <p class="intro-hint" id="authHint">Create an account to get free tokens and start investigating.</p>
+  </div>
+
+  <button class="enter-btn" id="enterBtn" style="display:none">ENTER</button>
   <p class="intro-credit">m3fxn — theres always a clue, find it.</p>
 </div>
 
@@ -686,6 +733,15 @@
 </div>
 
 <div id="app">
+  <div class="topbar" id="topbar">
+    <div class="wallet" id="wallet" title="Search tokens" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2"/><path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3"/><path d="M16 12h5v4h-5a2 2 0 0 1 0-4z"/></svg>
+      <span class="wk-n" id="walletCount">0</span><span class="wk-lbl">tokens</span>
+    </div>
+    <button class="tb-btn" id="logoutBtn" type="button" style="display:none">
+      <span class="tb-ava" id="tbAva">?</span><span id="tbName">user</span>
+    </button>
+  </div>
   <aside class="sidebar">
     <div class="brand">
       <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -1038,8 +1094,90 @@
   }
   document.getElementById("enterBtn").addEventListener("click", enterApp);
   document.addEventListener("keydown", (e) => {
+    if (!window.__authed) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
     if (!document.body.classList.contains("entered") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); enterApp(); }
   });
+
+  /* ================= account gate + wallet (auth via hosted server) ================= */
+  let currentUser = null;
+  const walletEl = document.getElementById("wallet");
+  const walletCount = document.getElementById("walletCount");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const tbAva = document.getElementById("tbAva");
+  const tbName = document.getElementById("tbName");
+  function toast(msg, kind) {
+    const wrap = document.getElementById("toastWrap"); if (!wrap) return;
+    const t = document.createElement("div"); t.className = "toast" + (kind === "err" ? " err" : ""); t.textContent = msg;
+    wrap.appendChild(t);
+    setTimeout(() => { t.style.transition = "opacity .3s"; t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 2600);
+  }
+  const initials = (n) => (n || "?").slice(0, 2).toUpperCase();
+  function renderAccount() {
+    window.__authed = !!currentUser;
+    if (currentUser) {
+      walletEl.style.display = ""; walletCount.textContent = currentUser.tokens;
+      logoutBtn.style.display = ""; tbName.textContent = currentUser.username;
+      if (currentUser.avatar) tbAva.innerHTML = '<img src="' + currentUser.avatar + '" alt="">';
+      else tbAva.textContent = initials(currentUser.username);
+    } else { walletEl.style.display = "none"; logoutBtn.style.display = "none"; }
+  }
+  function setTokens(n) {
+    if (!currentUser) return;
+    currentUser.tokens = n; walletCount.textContent = n;
+    walletEl.classList.remove("spend"); void walletEl.offsetWidth; walletEl.classList.add("spend");
+  }
+  async function refreshMe() {
+    try { const r = await window.api.authMe(); currentUser = (r && r.ok) ? r.user : null; } catch (_) { currentUser = null; }
+    renderAccount();
+  }
+
+  const introAuth = document.getElementById("introAuth");
+  const tabLogin = document.getElementById("tabLogin"), tabRegister = document.getElementById("tabRegister");
+  const authForm = document.getElementById("authForm"), authUser = document.getElementById("authUser"), authPass = document.getElementById("authPass");
+  const authSubmit = document.getElementById("authSubmit"), authErr = document.getElementById("authErr"), authHint = document.getElementById("authHint");
+  let authMode = "login";
+  function setAuthMode(mode) {
+    authMode = mode;
+    tabLogin.classList.toggle("active", mode === "login");
+    tabRegister.classList.toggle("active", mode === "register");
+    authSubmit.textContent = mode === "login" ? "Log in" : "Create account";
+    authPass.setAttribute("autocomplete", mode === "login" ? "current-password" : "new-password");
+    authHint.textContent = mode === "login" ? "New here? Switch to Register to make an account." : "New accounts start with free tokens. Already have one? Log in.";
+    authErr.textContent = "";
+  }
+  tabLogin.addEventListener("click", () => setAuthMode("login"));
+  tabRegister.addEventListener("click", () => setAuthMode("register"));
+  function showGate() {
+    intro.style.display = ""; intro.classList.remove("leaving");
+    document.body.classList.remove("entered"); app.classList.remove("show");
+    introAuth.style.display = ""; document.getElementById("enterBtn").style.display = "none";
+    setTimeout(() => authUser.focus(), 60);
+  }
+  function applyAuthGate() {
+    renderAccount();
+    if (currentUser) { introAuth.style.display = "none"; if (!document.body.classList.contains("entered")) enterApp(); }
+    else showGate();
+  }
+  authForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const username = authUser.value.trim(), password = authPass.value;
+    if (!username || !password) { authErr.textContent = "Enter a username and password."; return; }
+    authSubmit.disabled = true;
+    try {
+      const r = authMode === "login" ? await window.api.authLogin(username, password) : await window.api.authRegister(username, password);
+      if (!r || !r.ok) { authErr.textContent = (r && r.error) || "Something went wrong."; authSubmit.disabled = false; return; }
+      currentUser = r.user; authForm.reset(); renderAccount(); introAuth.style.display = "none"; enterApp();
+      toast(authMode === "login" ? ("Welcome back, " + currentUser.username) : ("Account created — welcome, " + currentUser.username));
+    } catch (_) { authErr.textContent = "Connection error."; }
+    authSubmit.disabled = false;
+  });
+  logoutBtn.addEventListener("click", async () => {
+    if (!confirm("Log out of " + (currentUser ? currentUser.username : "") + "?")) return;
+    try { await window.api.authLogout(); } catch (_) {}
+    currentUser = null; setAuthMode("login"); applyAuthGate(); toast("Logged out.");
+  });
+  refreshMe().then(applyAuthGate);
 
   /* ---------- nav ---------- */
   const navItems = document.querySelectorAll(".nav-item");
@@ -1993,6 +2131,18 @@
     const query = invQuery.value.trim();
     const type = invType.value;
     if (!query) return;
+    if (!currentUser) { applyAuthGate(); toast("Log in to search."); return; }
+
+    // charge tokens on the hosted server before running the local search
+    let charge;
+    try { charge = await window.api.searchStart(!!ultra, type, query); }
+    catch (_) { toast("Connection error.", "err"); return; }
+    if (!charge || !charge.ok) {
+      if (charge && charge.need != null) toast("Not enough tokens — need " + charge.need + ", you have " + charge.have + ".", "err");
+      else { toast((charge && charge.error) || "Couldn't start search.", "err"); if (charge && /sign/i.test(charge.error || "")) { currentUser = null; applyAuthGate(); } }
+      return;
+    }
+    setTokens(charge.tokens);
 
     const myId = ++curSearch;
     curAbort = new AbortController();
@@ -2315,5 +2465,6 @@
   // quiet check shortly after launch
   setTimeout(() => runCheck(false), 2500);
 </script>
+<div class="toast-wrap" id="toastWrap"></div>
 </body>
 </html>

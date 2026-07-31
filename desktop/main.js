@@ -29,7 +29,31 @@ function createWindow() {
   win.loadFile(path.join(__dirname, "renderer", "index.html"));
 }
 
+/* ---------- account session (talks to the hosted server) ---------- */
+const SERVER = process.env.M3_SERVER || "https://investigate.onrender.com";
+let sessionToken = null;
+const sessionFile = () => path.join(app.getPath("userData"), "session.json");
+function loadSession() {
+  try { sessionToken = JSON.parse(fs.readFileSync(sessionFile(), "utf8")).token || null; } catch (_) { sessionToken = null; }
+}
+function saveSession(token) {
+  sessionToken = token || null;
+  try {
+    if (token) fs.writeFileSync(sessionFile(), JSON.stringify({ token }));
+    else if (fs.existsSync(sessionFile())) fs.unlinkSync(sessionFile());
+  } catch (_) {}
+}
+async function serverFetch(pathname, opts) {
+  opts = opts || {};
+  const headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
+  if (sessionToken) headers["Authorization"] = "Bearer " + sessionToken;
+  const r = await fetch(SERVER + pathname, { method: opts.method || "GET", headers, body: opts.body });
+  const text = await r.text();
+  try { return text ? JSON.parse(text) : {}; } catch (_) { return {}; }
+}
+
 app.whenReady().then(() => {
+  loadSession();
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -156,4 +180,29 @@ ipcMain.handle("osint:lookup", async (_e, { query, type }) => {
   } catch (err) {
     return { ok: false, error: err.message };
   }
+});
+
+/* ---------- account auth (via the hosted server) ---------- */
+ipcMain.handle("auth:me", async () => {
+  if (!sessionToken) return { ok: true, user: null };
+  try { return await serverFetch("/api/auth/me"); } catch (_) { return { ok: true, user: null }; }
+});
+ipcMain.handle("auth:register", async (_e, { username, password }) => {
+  try {
+    const r = await serverFetch("/api/auth/register", { method: "POST", body: JSON.stringify({ username, password }) });
+    if (r && r.ok && r.token) saveSession(r.token);
+    return r;
+  } catch (_) { return { ok: false, error: "Connection error." }; }
+});
+ipcMain.handle("auth:login", async (_e, { username, password }) => {
+  try {
+    const r = await serverFetch("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password }) });
+    if (r && r.ok && r.token) saveSession(r.token);
+    return r;
+  } catch (_) { return { ok: false, error: "Connection error." }; }
+});
+ipcMain.handle("auth:logout", async () => { saveSession(null); return { ok: true }; });
+ipcMain.handle("search:start", async (_e, { ultra, type, query }) => {
+  try { return await serverFetch("/api/search/start", { method: "POST", body: JSON.stringify({ ultra, type, query }) }); }
+  catch (_) { return { ok: false, error: "Connection error." }; }
 });

@@ -1,5 +1,5 @@
 {
-  "version": "1.7.0",
+  "version": "1.8.0",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Update check no longer hangs on 'Checking…' — it now has a hard 20s deadline with cache-busting and always resets, showing a retry hint if the server was asleep. The Board / List results view switch moved out of Settings onto the Investigation tab as a segmented toggle."
+  "notes": "The client now requires an account — log in or sign up on launch with the same account as the website. Your token wallet is shared: each search spends 1 token, each Ultra search 3. Sessions persist between launches."
 }
