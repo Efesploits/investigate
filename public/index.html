@@ -973,7 +973,8 @@ you cant run by your own footprints.
   .members-stat b { color: var(--text); }
   .dot-live { width: 8px; height: 8px; border-radius: 50%; background: #35d07f; box-shadow: 0 0 8px #35d07f; display: inline-block; }
   .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-  .member-card { border: 1px solid var(--border); border-radius: 13px; overflow: hidden; background: var(--panel); text-align: center; padding-bottom: 12px; }
+  .member-card { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--panel); text-align: center; padding-bottom: 12px; transition: border-color .2s ease, transform .2s ease; }
+  .member-card:hover { border-color: #4a4a4a; transform: translateY(-2px); }
   .mc-banner { height: 46px; background: linear-gradient(120deg, #1a1a1a, #2a2a2a); background-size: cover; background-position: center; }
   .mc-ava { width: 48px; height: 48px; border-radius: 50%; border: 3px solid var(--panel); background: var(--panel2); margin: -24px auto 0; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--accent); overflow: hidden; position: relative; }
   .mc-ava img { width: 100%; height: 100%; object-fit: cover; }
@@ -984,6 +985,7 @@ you cant run by your own footprints.
   .mc-activity { font-size: .68rem; color: var(--muted); margin-top: 5px; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .save-bar { display: flex; justify-content: center; margin: 2px 0 12px; }
+  .reset-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
   /* lightweight toast */
   .toast-wrap { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 120; display: flex; flex-direction: column; gap: 8px; align-items: center; }
@@ -1086,6 +1088,10 @@ you cant run by your own footprints.
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
       Investigate
     </div>
+    <div class="nav-item" data-page="bookmarks">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      Bookmarks
+    </div>
     <div class="nav-item" data-page="database">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
       Database
@@ -1093,6 +1099,10 @@ you cant run by your own footprints.
     <div class="nav-item" data-page="profile">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       Profile
+    </div>
+    <div class="nav-item admin-nav" data-page="admin" id="adminNav" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg>
+      Admin
     </div>
     <div class="footer-credit">m3fxn — theres always a clue, find it.</div>
   </aside>
@@ -1272,17 +1282,22 @@ you cant run by your own footprints.
 
       <div class="prof-tabs" id="profTabs">
         <button class="prof-tab active" data-tab="profile" type="button">Profile</button>
-        <button class="prof-tab" data-tab="bookmarks" type="button">Bookmarks</button>
         <button class="prof-tab" data-tab="connections" type="button">Connections</button>
-        <button class="prof-tab" data-tab="admin" id="adminTabBtn" type="button" style="display:none">Admin</button>
       </div>
 
-      <!-- Profile tab: bio + moved settings -->
+      <!-- Profile tab: bio + reset + settings -->
       <div class="prof-panel" id="tab-profile">
         <div class="prof-field">
           <label for="bioInput">Bio</label>
           <textarea id="bioInput" maxlength="300" rows="2" placeholder="Say something about yourself…"></textarea>
           <button class="btn-mini" id="saveBio" type="button">Save bio</button>
+        </div>
+        <div class="prof-field">
+          <label>Profile picture &amp; banner</label>
+          <div class="reset-row">
+            <button class="btn-mini" id="resetAva" type="button">Reset picture</button>
+            <button class="btn-mini" id="resetBanner" type="button">Reset banner</button>
+          </div>
         </div>
         <h3 class="prof-sub">Preferences</h3>
         <div class="settings-row">
@@ -1292,18 +1307,6 @@ you cant run by your own footprints.
           </div>
           <label class="switch"><input type="checkbox" id="toggleBW"><span class="track"><span class="knob"></span></span></label>
         </div>
-        <div class="hidden" id="themesLabel">Themes ⚽</div>
-        <div class="theme-picker hidden" id="themePicker">
-          <button class="theme-card" data-theme="default" type="button"><span>Default</span><span class="tc-swatch tc-default"></span></button>
-          <button class="theme-card" data-theme="cimbom" type="button"><span>Cimbom</span><span class="tc-swatch tc-cimbom"></span></button>
-          <button class="theme-card" data-theme="karakartal" type="button"><span>Karakartal</span><span class="tc-swatch tc-karakartal"></span></button>
-        </div>
-      </div>
-
-      <!-- Bookmarks tab -->
-      <div class="prof-panel hidden" id="tab-bookmarks">
-        <p class="sub" style="margin-top:4px">Saved investigations. Open one to reload the query.</p>
-        <div id="bookmarksList" class="bm-list"></div>
       </div>
 
       <!-- Connections tab -->
@@ -1314,14 +1317,23 @@ you cant run by your own footprints.
           <button class="btn-mini" id="discordConnect" type="button">Connect</button>
         </div>
       </div>
+    </section>
 
-      <!-- Admin tab -->
-      <div class="prof-panel hidden" id="tab-admin">
-        <h3 class="prof-sub">Members</h3>
-        <div id="adminUsers" class="admin-users"></div>
-        <h3 class="prof-sub" style="margin-top:22px">Search logs</h3>
-        <div id="adminLogs" class="admin-logs"></div>
-      </div>
+    <!-- BOOKMARKS -->
+    <section class="page" id="page-bookmarks">
+      <h1>Bookmarks</h1>
+      <p class="sub">Saved investigations — open one to reload the query.</p>
+      <div id="bookmarksList" class="bm-list"></div>
+    </section>
+
+    <!-- ADMIN (admins only) -->
+    <section class="page" id="page-admin">
+      <h1>Admin</h1>
+      <p class="sub">Manage members and review search activity.</p>
+      <h3 class="prof-sub">Members</h3>
+      <div id="adminUsers" class="admin-users"></div>
+      <h3 class="prof-sub" style="margin-top:22px">Search logs</h3>
+      <div id="adminLogs" class="admin-logs"></div>
     </section>
   </main>
 </div>
@@ -1519,109 +1531,10 @@ you cant run by your own footprints.
     document.getElementById("invQuery").focus();
   });
 
-  /* ---------- football easter-egg themes + ambient floaties ---------- */
-  const THEME_DATA = {
-    cimbom: { words: ["OSIMHEN", "METINBABA", "ICARDI", "MUSLERA"], year: "1905" },
-    karakartal: { words: ["QUARESMA", "KARAKARTAL", "ERSIN", "TINER"], year: "1903" },
-  };
-  const BALL_SVG =
-    '<svg viewBox="0 0 40 40" aria-hidden="true">' +
-    '<circle cx="20" cy="20" r="17" fill="none" stroke="currentColor" stroke-width="2.4"/>' +
-    '<polygon points="20,11 26,15.5 23.8,22.6 16.2,22.6 14,15.5" fill="currentColor"/>' +
-    '<line x1="20" y1="4" x2="20" y2="11" stroke="currentColor" stroke-width="1.8"/>' +
-    '<line x1="34" y1="15.5" x2="26" y2="15.5" stroke="currentColor" stroke-width="1.8"/>' +
-    '<line x1="29.5" y1="33.5" x2="23.8" y2="22.6" stroke="currentColor" stroke-width="1.8"/>' +
-    '<line x1="10.5" y1="33.5" x2="16.2" y2="22.6" stroke="currentColor" stroke-width="1.8"/>' +
-    '<line x1="6" y1="15.5" x2="14" y2="15.5" stroke="currentColor" stroke-width="1.8"/></svg>';
-
-  let floatyLayer = null, floaties = [], floatyRAF = null;
-  function stopFloaties() {
-    if (floatyRAF) cancelAnimationFrame(floatyRAF);
-    floatyRAF = null; floaties = [];
-    if (floatyLayer) { floatyLayer.remove(); floatyLayer = null; }
-  }
-  function startFloaties(theme) {
-    stopFloaties();
-    const data = THEME_DATA[theme];
-    if (!data) return;
-    floatyLayer = document.createElement("div");
-    floatyLayer.className = "floaties";
-    document.body.appendChild(floatyLayer);
-    const items = [];
-    for (let c = 0; c < 2; c++) for (const w of data.words) items.push({ text: w });
-    items.push({ emblem: true }, { emblem: true });
-    items.forEach((it, i) => {
-      const el = document.createElement("div");
-      el.className = "floaty floaty-" + theme + (it.emblem ? " floaty-emblem" : "");
-      if (it.emblem) el.innerHTML = BALL_SVG + '<span class="em-year">' + data.year + '</span>';
-      else el.textContent = it.text;
-      floatyLayer.appendChild(el);
-      const f = {
-        el,
-        x: 30 + ((i * 197) % Math.max(1, window.innerWidth - 220)),
-        y: 30 + ((i * 143) % Math.max(1, window.innerHeight - 170)),
-        vx: (((i % 5) - 2) * 0.34) || 0.4,
-        vy: (((i % 4) - 1.5) * 0.34) || -0.3,
-        rot: ((i * 53) % 30) - 15,
-        vrot: ((i % 3) - 1) * 0.1,
-        w: 150, h: 44,
-      };
-      floaties.push(f);
-      requestAnimationFrame(() => { f.w = el.offsetWidth; f.h = el.offsetHeight; });
-    });
-    function tick() {
-      const w = window.innerWidth, h = window.innerHeight;
-      for (const f of floaties) {
-        f.x += f.vx; f.y += f.vy; f.rot += f.vrot;
-        if (f.x < 0) { f.x = 0; f.vx = Math.abs(f.vx); }
-        if (f.x > w - f.w) { f.x = w - f.w; f.vx = -Math.abs(f.vx); }
-        if (f.y < 0) { f.y = 0; f.vy = Math.abs(f.vy); }
-        if (f.y > h - f.h) { f.y = h - f.h; f.vy = -Math.abs(f.vy); }
-        f.el.style.transform = "translate(" + f.x + "px," + f.y + "px) rotate(" + f.rot + "deg)";
-      }
-      floatyRAF = requestAnimationFrame(tick);
-    }
-    tick();
-  }
-
-  function applyThemeChoice(theme) {
-    const root = document.documentElement;
-    root.classList.remove("theme-cimbom", "theme-karakartal");
-    if (theme === "cimbom") root.classList.add("theme-cimbom");
-    else if (theme === "karakartal") root.classList.add("theme-karakartal");
-    startFloaties(theme === "cimbom" || theme === "karakartal" ? theme : null);
-  }
-
-  const themesLabel = document.getElementById("themesLabel");
-  const themePicker = document.getElementById("themePicker");
-  function updateThemeCards() {
-    themePicker.querySelectorAll(".theme-card").forEach((c) =>
-      c.classList.toggle("active", c.dataset.theme === (settings.theme || "default")));
-  }
-  function revealThemes() {
-    themesLabel.classList.remove("hidden");
-    themePicker.classList.remove("hidden");
-  }
-  themePicker.addEventListener("click", (e) => {
-    const card = e.target.closest(".theme-card");
-    if (!card) return;
-    settings.theme = card.dataset.theme;
-    saveSettings();
-    applyThemeChoice(settings.theme);
-    updateThemeCards();
-  });
-
-  // secret: click Settings 5x in a row to reveal the themes
-  let settingsClicks = 0;
-  navItems.forEach((n) => n.addEventListener("click", () => {
-    if (n.dataset.page === "settings") {
-      settingsClicks++;
-      if (settingsClicks >= 5) revealThemes();
-    } else settingsClicks = 0;
-  }));
-
-  applyThemeChoice(settings.theme || "default");
-  updateThemeCards();
+  // Football themes (Cimbom / Karakartal) removed — force the default theme,
+  // dropping any previously-persisted choice.
+  if (settings.theme && settings.theme !== "default") { settings.theme = "default"; saveSettings(); }
+  document.documentElement.classList.remove("theme-cimbom", "theme-karakartal");
 
   /* wire hover + click sounds onto every interactive control */
   document.querySelectorAll(".enter-btn, .nav-item, .cta, button.scan, .switch").forEach(attachSounds);
@@ -2485,6 +2398,7 @@ you cant run by your own footprints.
   }
   const initials = (n) => (n || "?").slice(0, 2).toUpperCase();
 
+  const adminNav = document.getElementById("adminNav");
   function renderAccount() {
     window.__authed = !!currentUser;
     if (currentUser) {
@@ -2495,10 +2409,12 @@ you cant run by your own footprints.
       tbName.textContent = currentUser.username;
       if (currentUser.avatar) tbAva.innerHTML = '<img src="' + currentUser.avatar + '" alt="">';
       else { tbAva.textContent = initials(currentUser.username); }
+      adminNav.style.display = currentUser.is_admin ? "" : "none"; // admin sidebar item
     } else {
       walletEl.style.display = "none";
       loginBtn.style.display = "";
       profileBtn.style.display = "none";
+      adminNav.style.display = "none";
     }
   }
   function setTokens(n) {
@@ -2613,7 +2529,6 @@ you cant run by your own footprints.
   const phRole = document.getElementById("phRole");
   const phTokens = document.getElementById("phTokens");
   const bioInput = document.getElementById("bioInput");
-  const adminTabBtn = document.getElementById("adminTabBtn");
 
   function renderProfile() {
     if (!currentUser) return;
@@ -2625,19 +2540,16 @@ you cant run by your own footprints.
     phRole.classList.toggle("admin", !!currentUser.is_admin);
     phTokens.textContent = currentUser.tokens;
     bioInput.value = currentUser.bio || "";
-    adminTabBtn.style.display = currentUser.is_admin ? "" : "none";
   }
   function openProfile() { renderProfile(); }
 
-  // profile tabs
+  // profile tabs (Profile / Connections)
   const profTabs = document.querySelectorAll(".prof-tab");
   profTabs.forEach((t) => t.addEventListener("click", () => {
     profTabs.forEach((x) => x.classList.remove("active"));
     t.classList.add("active");
-    document.querySelectorAll(".prof-panel").forEach((p) => p.classList.add("hidden"));
+    document.querySelectorAll("#page-profile .prof-panel").forEach((p) => p.classList.add("hidden"));
     document.getElementById("tab-" + t.dataset.tab).classList.remove("hidden");
-    if (t.dataset.tab === "bookmarks") loadBookmarks();
-    if (t.dataset.tab === "admin") loadAdmin();
   }));
 
   // banner / avatar upload
@@ -2658,6 +2570,16 @@ you cant run by your own footprints.
     if (r && r.ok) { currentUser = r.user; renderProfile(); renderAccount(); toast((field === "banner" ? "Banner" : "Picture") + " updated."); }
     else toast((r && r.error) || "Update failed.", "err");
   }
+
+  // reset picture / banner back to the default
+  async function resetImage(field, label) {
+    const body = {}; body[field] = "";
+    const r = await fetch("/api/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json()).catch(() => null);
+    if (r && r.ok) { currentUser = r.user; renderProfile(); renderAccount(); toast(label + " reset."); }
+    else toast("Couldn't reset.", "err");
+  }
+  document.getElementById("resetAva").addEventListener("click", () => resetImage("avatar", "Picture"));
+  document.getElementById("resetBanner").addEventListener("click", () => resetImage("banner", "Banner"));
 
   document.getElementById("saveBio").addEventListener("click", async () => {
     const r = await fetch("/api/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bio: bioInput.value }) }).then((r) => r.json()).catch(() => null);
@@ -2790,6 +2712,8 @@ you cant run by your own footprints.
   navItems.forEach((n) => n.addEventListener("click", () => {
     if (n.dataset.page === "home") loadMembers();
     if (n.dataset.page === "profile") openProfile();
+    if (n.dataset.page === "bookmarks") loadBookmarks();
+    if (n.dataset.page === "admin") loadAdmin();
   }));
 
   refreshMe().then(() => { applyAuthGate(); if (currentUser) { renderProfile(); loadMembers(); } });
