@@ -5,6 +5,10 @@ const { checkHandle } = require("./checker");
 const store = require("./store");
 const auth = require("./auth");
 
+// Never let a stray async error take the whole server down (Render restart loop).
+process.on("unhandledRejection", (e) => console.error("[unhandledRejection]", e && e.stack ? e.stack : e));
+process.on("uncaughtException", (e) => console.error("[uncaughtException]", e && e.stack ? e.stack : e));
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const PROD = process.env.NODE_ENV === "production";

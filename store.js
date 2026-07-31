@@ -225,9 +225,12 @@ async function fbInit() {
       initializeApp({ credential: sa ? cert(sa) : applicationDefault(), projectId: sa ? sa.project_id : undefined });
     }
   }
+  if (sa) console.log("[store] Firebase credential loaded — project: " + sa.project_id + ", client_email: " + sa.client_email);
   fbdb = getFirestore();
   try { fbdb.settings({ ignoreUndefinedProperties: true }); } catch (_) {}
 }
+// a tiny read that surfaces auth/permission problems at startup, not mid-request
+async function fbSelfTest() { await fbUsers().limit(1).get(); }
 
 const fbUsers = () => fbdb.collection("users");
 const fbLogs = () => fbdb.collection("search_logs");
@@ -431,20 +434,40 @@ const jsonStore = {
   },
 };
 
-/* ================================================================ */
-const backend = HAS_FB ? fbStore : HAS_PG ? pgStore : jsonStore;
+/* ================================================================
+ * Backend selection with graceful fallback — a broken database must
+ * never crash the site; it falls back to JSON and logs why.
+ * ============================================================== */
+const METHODS = [
+  "createUser", "getUserByUsername", "getUserById", "getUserByDiscordId", "updateUser",
+  "addTokens", "spendTokens", "deleteUser", "listUsers", "touchLastSeen", "countUsers",
+  "countActiveUsers", "addSearchLog", "listLogs", "addBookmark", "listBookmarks", "deleteBookmark",
+];
+let activeBackend = jsonStore; // real backend is chosen in init()
+const api = {};
+for (const m of METHODS) api[m] = (...args) => activeBackend[m](...args);
 
 async function init() {
   if (HAS_FB) {
-    await fbInit();
-    console.log("[store] Firebase (Firestore) backend ready.");
-  } else if (HAS_PG) {
-    await pgInit();
-    console.log("[store] Postgres backend ready.");
-  } else {
-    jsonLoad();
-    console.warn("[store] No FIREBASE_SERVICE_ACCOUNT / DATABASE_URL — using JSON file at " + DATA_FILE + ". This is WIPED on every Render redeploy; set one for production.");
+    try {
+      await fbInit();
+      await fbSelfTest();
+      activeBackend = fbStore;
+      console.log("[store] Firebase (Firestore) backend ready.");
+      return;
+    } catch (e) {
+      console.error("\n[store] ⚠️  FIRESTORE UNAVAILABLE — falling back to an EPHEMERAL JSON store (data resets on redeploy).");
+      console.error("[store]     Firestore said: " + (e && e.message ? e.message : e));
+      console.error("[store]     Fix: (1) Firestore must be in NATIVE mode, not Datastore. (2) FIREBASE_SERVICE_ACCOUNT must be the FULL service-account JSON for THIS project. (3) If pasting raw JSON mangles the private key, paste its base64 instead (base64 -w0 key.json).\n");
+      jsonLoad(); activeBackend = jsonStore; return;
+    }
   }
+  if (HAS_PG) {
+    try { await pgInit(); activeBackend = pgStore; console.log("[store] Postgres backend ready."); return; }
+    catch (e) { console.error("[store] Postgres unavailable, falling back to JSON: " + e.message); }
+  }
+  jsonLoad(); activeBackend = jsonStore;
+  console.warn("[store] Using JSON file at " + DATA_FILE + " (WIPED on every Render redeploy). Set FIREBASE_SERVICE_ACCOUNT for durable storage.");
 }
 
-module.exports = Object.assign({ init, publicUser, START_TOKENS, HAS_FB, HAS_PG }, backend);
+module.exports = Object.assign({ init, publicUser, START_TOKENS, HAS_FB, HAS_PG }, api);
