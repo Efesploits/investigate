@@ -8,5 +8,11 @@ desktop/secret.js
 server.log
 desktop/dist/
 
-# local JSON-store fallback (dev only; prod uses Postgres via DATABASE_URL)
+# local JSON-store fallback (dev only; prod uses Firestore/Postgres)
 data/
+
+# firebase emulator debug logs
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebase/

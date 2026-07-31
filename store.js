@@ -16,6 +16,7 @@ const path = require("path");
 
 const START_TOKENS = parseInt(process.env.START_TOKENS || "10", 10);
 const ACTIVE_WINDOW_MS = 5 * 60 * 1000; // "active" = seen in the last 5 minutes
+const HAS_FB = !!(process.env.FIREBASE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS);
 const HAS_PG = !!process.env.DATABASE_URL;
 
 const uid = () => crypto.randomUUID();
@@ -194,6 +195,148 @@ const pgStore = {
 };
 
 /* ================================================================
+ * Firestore backend (Firebase) — used when FIREBASE_SERVICE_ACCOUNT set
+ *   users doc id = lowercased username (guarantees unique usernames);
+ *   our user.id === that key, so getUserById / getUserByUsername are the
+ *   same direct doc read. Usernames are immutable in the app, so this is safe.
+ * ============================================================== */
+let fbdb = null;
+
+function loadServiceAccount() {
+  let raw = (process.env.FIREBASE_SERVICE_ACCOUNT || "").trim();
+  if (!raw) return null;
+  if (raw[0] !== "{") { // allow base64-encoded JSON (avoids env-var newline issues)
+    try { raw = Buffer.from(raw, "base64").toString("utf8"); } catch (_) {}
+  }
+  const sa = JSON.parse(raw);
+  if (sa.private_key && sa.private_key.indexOf("\\n") !== -1) sa.private_key = sa.private_key.replace(/\\n/g, "\n");
+  return sa;
+}
+
+async function fbInit() {
+  const { initializeApp, getApps, cert, applicationDefault } = require("firebase-admin/app");
+  const { getFirestore } = require("firebase-admin/firestore");
+  const sa = loadServiceAccount();
+  if (!getApps().length) {
+    if (process.env.FIRESTORE_EMULATOR_HOST) {
+      // local emulator ignores credentials — just need a project id
+      initializeApp({ projectId: (sa && sa.project_id) || process.env.GCLOUD_PROJECT || "demo-app" });
+    } else {
+      initializeApp({ credential: sa ? cert(sa) : applicationDefault(), projectId: sa ? sa.project_id : undefined });
+    }
+  }
+  fbdb = getFirestore();
+  try { fbdb.settings({ ignoreUndefinedProperties: true }); } catch (_) {}
+}
+
+const fbUsers = () => fbdb.collection("users");
+const fbLogs = () => fbdb.collection("search_logs");
+const fbBookmarks = () => fbdb.collection("bookmarks");
+const FB_USER_FIELDS = ["username", "password_hash", "role", "tokens", "banner", "avatar", "bio", "discord_id", "discord_username", "discord_avatar"];
+
+const fbStore = {
+  async createUser({ username, password_hash, role }) {
+    const key = username.toLowerCase();
+    const u = {
+      id: key, username, password_hash, role: role || "user", tokens: START_TOKENS,
+      banner: null, avatar: null, bio: null,
+      discord_id: null, discord_username: null, discord_avatar: null,
+      created_at: now(), last_seen: now(),
+    };
+    await fbUsers().doc(key).create(u); // throws if the username already exists
+    return u;
+  },
+  async getUserByUsername(username) {
+    const s = await fbUsers().doc(String(username).toLowerCase()).get();
+    return s.exists ? s.data() : null;
+  },
+  async getUserById(id) {
+    const s = await fbUsers().doc(String(id)).get();
+    return s.exists ? s.data() : null;
+  },
+  async getUserByDiscordId(did) {
+    const q = await fbUsers().where("discord_id", "==", did).limit(1).get();
+    return q.empty ? null : q.docs[0].data();
+  },
+  async updateUser(id, patch) {
+    const ref = fbUsers().doc(String(id));
+    const clean = {};
+    for (const k of FB_USER_FIELDS) if (k in patch) clean[k] = patch[k];
+    if (Object.keys(clean).length) await ref.update(clean);
+    const s = await ref.get();
+    return s.exists ? s.data() : null;
+  },
+  async addTokens(id, delta) {
+    const ref = fbUsers().doc(String(id));
+    return fbdb.runTransaction(async (t) => {
+      const s = await t.get(ref);
+      if (!s.exists) return null;
+      const tokens = Math.max(0, (s.data().tokens || 0) + delta);
+      t.update(ref, { tokens });
+      return { ...s.data(), tokens };
+    });
+  },
+  async spendTokens(id, cost) {
+    const ref = fbUsers().doc(String(id));
+    return fbdb.runTransaction(async (t) => {
+      const s = await t.get(ref);
+      if (!s.exists) return null;
+      const tokens = s.data().tokens || 0;
+      if (tokens < cost) return null;
+      t.update(ref, { tokens: tokens - cost });
+      return { ...s.data(), tokens: tokens - cost };
+    });
+  },
+  async deleteUser(id) {
+    const bms = await fbBookmarks().where("user_id", "==", id).get();
+    const batch = fbdb.batch();
+    bms.forEach((d) => batch.delete(d.ref));
+    batch.delete(fbUsers().doc(String(id)));
+    await batch.commit();
+    return true;
+  },
+  async listUsers() {
+    const q = await fbUsers().get();
+    return q.docs.map((d) => d.data()).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+  },
+  async touchLastSeen(id) {
+    await fbUsers().doc(String(id)).update({ last_seen: now() }).catch(() => {});
+  },
+  async countUsers() { return (await fbUsers().get()).size; },
+  async countActiveUsers() {
+    const cut = Date.now() - ACTIVE_WINDOW_MS;
+    const q = await fbUsers().get();
+    return q.docs.filter((d) => new Date(d.data().last_seen).getTime() > cut).length;
+  },
+  async addSearchLog(log) {
+    const ref = await fbLogs().add({
+      user_id: log.user_id, username: log.username, type: log.type, query: log.query,
+      ultra: !!log.ultra, cost: log.cost || 1, created_at: now(),
+    });
+    return ref.id;
+  },
+  async listLogs(limit = 200) {
+    const q = await fbLogs().orderBy("created_at", "desc").limit(limit).get();
+    return q.docs.map((d) => ({ id: d.id, ...d.data() }));
+  },
+  async addBookmark(bm) {
+    const doc = { user_id: bm.user_id, label: bm.label, type: bm.type, query: bm.query, data: bm.data || null, created_at: now() };
+    const ref = await fbBookmarks().add(doc);
+    return { id: ref.id, ...doc };
+  },
+  async listBookmarks(userId) {
+    const q = await fbBookmarks().where("user_id", "==", userId).get();
+    return q.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  },
+  async deleteBookmark(userId, id) {
+    const ref = fbBookmarks().doc(String(id));
+    const s = await ref.get();
+    if (s.exists && s.data().user_id === userId) await ref.delete();
+    return true;
+  },
+};
+
+/* ================================================================
  * JSON-file backend (dev / fallback)
  * ============================================================== */
 const DATA_DIR = path.join(__dirname, "data");
@@ -289,16 +432,19 @@ const jsonStore = {
 };
 
 /* ================================================================ */
-const backend = HAS_PG ? pgStore : jsonStore;
+const backend = HAS_FB ? fbStore : HAS_PG ? pgStore : jsonStore;
 
 async function init() {
-  if (HAS_PG) {
+  if (HAS_FB) {
+    await fbInit();
+    console.log("[store] Firebase (Firestore) backend ready.");
+  } else if (HAS_PG) {
     await pgInit();
     console.log("[store] Postgres backend ready.");
   } else {
     jsonLoad();
-    console.warn("[store] No DATABASE_URL — using JSON file at " + DATA_FILE + ". This is WIPED on every Render redeploy; set DATABASE_URL for production.");
+    console.warn("[store] No FIREBASE_SERVICE_ACCOUNT / DATABASE_URL — using JSON file at " + DATA_FILE + ". This is WIPED on every Render redeploy; set one for production.");
   }
 }
 
-module.exports = Object.assign({ init, publicUser, START_TOKENS, HAS_PG }, backend);
+module.exports = Object.assign({ init, publicUser, START_TOKENS, HAS_FB, HAS_PG }, backend);

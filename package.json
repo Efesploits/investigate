@@ -11,6 +11,7 @@
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "express": "^4.19.2",
+    "firebase-admin": "^14.2.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.22.0",
     "puppeteer": "^22.10.0"
