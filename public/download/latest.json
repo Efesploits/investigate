@@ -1,5 +1,5 @@
 {
-  "version": "1.8.0",
+  "version": "1.9.0",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "The client now requires an account — log in or sign up on launch with the same account as the website. Your token wallet is shared: each search spends 1 token, each Ultra search 3. Sessions persist between launches."
+  "notes": "The client now has a full Profile (banner, picture, bio, reset buttons) and a Bookmarks tab — save any investigation and reload it later. Everything syncs with your website account and shared token wallet. Also: a wider, shorter investigation board."
 }

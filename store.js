@@ -444,30 +444,46 @@ const METHODS = [
   "countActiveUsers", "addSearchLog", "listLogs", "addBookmark", "listBookmarks", "deleteBookmark",
 ];
 let activeBackend = jsonStore; // real backend is chosen in init()
+// diagnostics so the app can SHOW whether storage is durable (accounts survive
+// Render's free-plan spin-down only when this is "firestore" or "postgres").
+let backendName = "json";
+let backendError = null;
 const api = {};
 for (const m of METHODS) api[m] = (...args) => activeBackend[m](...args);
+
+// backend === "json" means data lives on Render's ephemeral disk and is WIPED
+// on every spin-down / redeploy. Only firestore/postgres are durable.
+function backendInfo() {
+  return {
+    backend: backendName,
+    durable: backendName === "firestore" || backendName === "postgres",
+    error: backendError,
+    configured: HAS_FB ? "firebase" : HAS_PG ? "postgres" : "none",
+  };
+}
 
 async function init() {
   if (HAS_FB) {
     try {
       await fbInit();
       await fbSelfTest();
-      activeBackend = fbStore;
-      console.log("[store] Firebase (Firestore) backend ready.");
+      activeBackend = fbStore; backendName = "firestore"; backendError = null;
+      console.log("[store] Firebase (Firestore) backend ready — accounts are DURABLE.");
       return;
     } catch (e) {
-      console.error("\n[store] ⚠️  FIRESTORE UNAVAILABLE — falling back to an EPHEMERAL JSON store (data resets on redeploy).");
-      console.error("[store]     Firestore said: " + (e && e.message ? e.message : e));
+      backendError = e && e.message ? e.message : String(e);
+      console.error("\n[store] ⚠️  FIRESTORE UNAVAILABLE — falling back to an EPHEMERAL JSON store (data resets on redeploy / spin-down).");
+      console.error("[store]     Firestore said: " + backendError);
       console.error("[store]     Fix: (1) Firestore must be in NATIVE mode, not Datastore. (2) FIREBASE_SERVICE_ACCOUNT must be the FULL service-account JSON for THIS project. (3) If pasting raw JSON mangles the private key, paste its base64 instead (base64 -w0 key.json).\n");
-      jsonLoad(); activeBackend = jsonStore; return;
+      jsonLoad(); activeBackend = jsonStore; backendName = "json"; return;
     }
   }
   if (HAS_PG) {
-    try { await pgInit(); activeBackend = pgStore; console.log("[store] Postgres backend ready."); return; }
-    catch (e) { console.error("[store] Postgres unavailable, falling back to JSON: " + e.message); }
+    try { await pgInit(); activeBackend = pgStore; backendName = "postgres"; console.log("[store] Postgres backend ready — accounts are DURABLE."); return; }
+    catch (e) { backendError = e.message; console.error("[store] Postgres unavailable, falling back to JSON: " + e.message); }
   }
-  jsonLoad(); activeBackend = jsonStore;
-  console.warn("[store] Using JSON file at " + DATA_FILE + " (WIPED on every Render redeploy). Set FIREBASE_SERVICE_ACCOUNT for durable storage.");
+  jsonLoad(); activeBackend = jsonStore; backendName = "json";
+  console.warn("[store] Using JSON file at " + DATA_FILE + " (WIPED on every Render redeploy / spin-down). Set FIREBASE_SERVICE_ACCOUNT for durable storage.");
 }
 
-module.exports = Object.assign({ init, publicUser, START_TOKENS, HAS_FB, HAS_PG }, api);
+module.exports = Object.assign({ init, publicUser, backendInfo, START_TOKENS, HAS_FB, HAS_PG }, api);

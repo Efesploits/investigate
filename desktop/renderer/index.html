@@ -442,9 +442,12 @@
     cursor: pointer; user-select: none; transition: opacity .15s ease, border-color .15s ease; }
   .gf-chip:hover { border-color: #666; }
   .gf-chip.off { opacity: .4; text-decoration: line-through; }
-  .graph-stage { position: relative; height: 76vh; min-height: 620px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+  .graph-stage { position: relative; height: 68vh; min-height: 540px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
     background: color-mix(in srgb, var(--panel) 55%, #000);
     cursor: grab; touch-action: none; user-select: none; }
+  /* the investigation board breaks out wider than the rest of the app */
+  .content:has(#page-investigate.show) { max-width: 1240px; }
+  #page-investigate { max-width: 1240px; margin: 0 auto; }
   .graph-stage.grabbing { cursor: grabbing; }
   .graph-canvas { position: absolute; top: 0; left: 0; width: 4000px; height: 4000px; transform-origin: 0 0; }
   .graph-edges { position: absolute; top: 0; left: 0; overflow: visible; pointer-events: none; }
@@ -682,6 +685,50 @@
   .toast { background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 11px 18px; border-radius: 10px;
     font-size: .86rem; font-weight: 600; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
   .toast.err { border-color: #ff6b6b55; }
+
+  /* ===== profile + bookmarks (parity with the website) ===== */
+  .btn-mini { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 9px; border: 1px solid var(--border);
+    background: var(--panel2); color: var(--text); font-weight: 700; font-size: .8rem; cursor: pointer; transition: border-color .15s, background .15s; }
+  .btn-mini:hover { border-color: #666; }
+  .btn-mini.danger:hover { border-color: #ff6b6b; color: #ff6b6b; }
+  .profile-hero { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--panel); margin-bottom: 18px; }
+  .ph-banner { position: relative; height: 150px; background: linear-gradient(120deg, #1a1a1a, #262626); background-size: cover; background-position: center; }
+  .ph-edit { position: absolute; border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.55); color: #fff; cursor: pointer;
+    font-size: .72rem; font-weight: 700; border-radius: 8px; backdrop-filter: blur(4px); }
+  .ph-edit-banner { top: 10px; right: 10px; padding: 6px 11px; }
+  .ph-row { display: flex; align-items: flex-end; gap: 16px; padding: 0 20px 18px; margin-top: -34px; }
+  .ph-ava-wrap { position: relative; flex-shrink: 0; }
+  .ph-ava { width: 84px; height: 84px; border-radius: 50%; border: 4px solid var(--panel); background: var(--panel2);
+    display: flex; align-items: center; justify-content: center; font-size: 1.9rem; font-weight: 800; color: var(--accent); overflow: hidden; }
+  .ph-ava img { width: 100%; height: 100%; object-fit: cover; }
+  .ph-edit-ava { bottom: 2px; right: 2px; width: 26px; height: 26px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .ph-meta { flex: 1; min-width: 0; padding-bottom: 4px; }
+  .ph-name { display: flex; align-items: center; gap: 10px; font-size: 1.35rem; font-weight: 800; }
+  .ph-role { font-size: .64rem; text-transform: uppercase; letter-spacing: .6px; padding: 3px 9px; border-radius: 999px; background: var(--panel2); border: 1px solid var(--border); color: var(--muted); font-weight: 800; }
+  .ph-role.admin { background: var(--accent); color: #000; border-color: var(--accent); }
+  .ph-tokens { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .85rem; margin-top: 5px; }
+  .ph-tokens svg { width: 15px; height: 15px; color: var(--accent); }
+  .ph-tokens b { color: var(--accent); }
+  .ph-logout { align-self: center; padding: 8px 15px; border-radius: 9px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-weight: 700; font-size: .8rem; cursor: pointer; }
+  .ph-logout:hover { border-color: #ff6b6b; color: #ff6b6b; }
+  .prof-panel { animation: fadeIn .2s ease; }
+  @keyframes fadeIn { from { opacity: 0; } }
+  .prof-sub { font-size: .95rem; margin: 18px 0 10px; }
+  .prof-field { margin-bottom: 16px; }
+  .prof-field label { display: block; font-size: .74rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; font-weight: 700; }
+  .prof-field textarea { width: 100%; box-sizing: border-box; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--panel2); color: var(--text); font-size: .9rem; resize: vertical; font-family: inherit; margin-bottom: 8px; }
+  .prof-field textarea:focus { outline: none; border-color: #666; }
+  .reset-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* bookmarks */
+  .bm-list { display: flex; flex-direction: column; gap: 10px; }
+  .bm-item { display: flex; align-items: center; gap: 12px; padding: 13px 15px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
+  .bm-main { flex: 1; min-width: 0; }
+  .bm-q { font-weight: 800; font-size: .95rem; }
+  .bm-meta { color: var(--muted); font-size: .76rem; margin-top: 3px; }
+  .bm-tag { font-size: .62rem; text-transform: uppercase; letter-spacing: .5px; padding: 2px 7px; border-radius: 6px; background: var(--panel2); border: 1px solid var(--border); color: var(--muted); font-weight: 800; margin-right: 6px; }
+  .bm-empty { color: var(--muted); font-size: .88rem; padding: 20px; text-align: center; }
+  .save-bar { display: flex; justify-content: center; margin: 2px 0 12px; }
 </style>
 </head>
 <body>
@@ -762,13 +809,17 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
       Investigate
     </div>
+    <div class="nav-item" data-page="bookmarks">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      Bookmarks
+    </div>
     <div class="nav-item" data-page="database">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
       Database
     </div>
-    <div class="nav-item" data-page="settings">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      Settings
+    <div class="nav-item" data-page="profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+      Profile
     </div>
     <div class="footer-credit">m3fxn — theres always a clue, find it.</div>
   </aside>
@@ -853,6 +904,13 @@
       </div>
 
       <div id="invError"></div>
+
+      <div class="save-bar" id="saveBar" style="display:none">
+        <button class="btn-mini" id="saveSearchBtn" type="button">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          Save to bookmarks
+        </button>
+      </div>
 
       <div id="graphView">
         <div class="graph-filter" id="graphFilter"></div>
@@ -952,37 +1010,70 @@
       </div>
     </section>
 
-    <!-- SETTINGS -->
-    <section class="page" id="page-settings">
-      <h1>Settings</h1>
-      <p class="sub">Preferences are saved on this device and stay set the next time you open the app.</p>
-
-      <div class="settings-row">
-        <div>
-          <div class="settings-label">Black &amp; white mode</div>
-          <div class="settings-desc">Monochrome look. Turn off for a colored theme.</div>
+    <!-- PROFILE (settings live here now) -->
+    <section class="page" id="page-profile">
+      <div class="profile-hero">
+        <div class="ph-banner" id="phBanner">
+          <button class="ph-edit ph-edit-banner" id="editBanner" type="button">✎ Change banner</button>
         </div>
-        <label class="switch"><input type="checkbox" id="toggleBW"><span class="track"><span class="knob"></span></span></label>
-      </div>
-
-      <div class="hidden" id="themesLabel">Themes ⚽</div>
-      <div class="theme-picker hidden" id="themePicker">
-        <button class="theme-card" data-theme="default" type="button"><span>Default</span><span class="tc-swatch tc-default"></span></button>
-        <button class="theme-card" data-theme="cimbom" type="button"><span>Cimbom</span><span class="tc-swatch tc-cimbom"></span></button>
-        <button class="theme-card" data-theme="karakartal" type="button"><span>Karakartal</span><span class="tc-swatch tc-karakartal"></span></button>
-      </div>
-
-      <div class="section-label">Updates</div>
-      <div class="settings-row">
-        <div>
-          <div class="settings-label">Client version <span id="appVersion" style="color:var(--muted);font-weight:600"></span></div>
-          <div class="settings-desc" id="updateStatus">Check whether a newer client is available.</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-shrink:0">
-          <button class="btn ghost" id="checkUpdateBtn" type="button">Check for updates</button>
-          <button class="btn hidden" id="installUpdateBtn" type="button">Update now</button>
+        <div class="ph-row">
+          <div class="ph-ava-wrap">
+            <div class="ph-ava" id="phAva">?</div>
+            <button class="ph-edit ph-edit-ava" id="editAva" type="button" title="Change picture">✎</button>
+          </div>
+          <div class="ph-meta">
+            <div class="ph-name"><span id="phName">user</span><span class="ph-role" id="phRole">user</span></div>
+            <div class="ph-tokens"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2"/><path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3"/><path d="M16 12h5v4h-5a2 2 0 0 1 0-4z"/></svg> <b id="phTokens">0</b> tokens</div>
+          </div>
+          <button class="ph-logout" id="phLogout" type="button">Log out</button>
         </div>
       </div>
+
+      <input type="file" id="bannerFile" accept="image/*" hidden>
+      <input type="file" id="avaFile" accept="image/*" hidden>
+
+      <div class="prof-panel">
+        <div class="prof-field">
+          <label for="bioInput">Bio</label>
+          <textarea id="bioInput" maxlength="300" rows="2" placeholder="Say something about yourself…"></textarea>
+          <button class="btn-mini" id="saveBio" type="button">Save bio</button>
+        </div>
+        <div class="prof-field">
+          <label>Profile picture &amp; banner</label>
+          <div class="reset-row">
+            <button class="btn-mini" id="resetAva" type="button">Reset picture</button>
+            <button class="btn-mini" id="resetBanner" type="button">Reset banner</button>
+          </div>
+        </div>
+
+        <h3 class="prof-sub">Preferences</h3>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Black &amp; white mode</div>
+            <div class="settings-desc">Monochrome look. Turn off for a colored theme.</div>
+          </div>
+          <label class="switch"><input type="checkbox" id="toggleBW"><span class="track"><span class="knob"></span></span></label>
+        </div>
+
+        <h3 class="prof-sub">Updates</h3>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Client version <span id="appVersion" style="color:var(--muted);font-weight:600"></span></div>
+            <div class="settings-desc" id="updateStatus">Check whether a newer client is available.</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0">
+            <button class="btn ghost" id="checkUpdateBtn" type="button">Check for updates</button>
+            <button class="btn hidden" id="installUpdateBtn" type="button">Update now</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BOOKMARKS -->
+    <section class="page" id="page-bookmarks">
+      <h1>Bookmarks</h1>
+      <p class="sub">Saved investigations — open one to reload the query.</p>
+      <div id="bookmarksList" class="bm-list"></div>
     </section>
   </main>
 </div>
@@ -1120,6 +1211,7 @@
       logoutBtn.style.display = ""; tbName.textContent = currentUser.username;
       if (currentUser.avatar) tbAva.innerHTML = '<img src="' + currentUser.avatar + '" alt="">';
       else tbAva.textContent = initials(currentUser.username);
+      if (typeof renderProfile === "function") renderProfile();
     } else { walletEl.style.display = "none"; logoutBtn.style.display = "none"; }
   }
   function setTokens(n) {
@@ -1193,109 +1285,125 @@
     document.getElementById("invQuery").focus();
   });
 
-  /* ---------- football easter-egg themes + ambient floaties ---------- */
-  const THEME_DATA = {
-    cimbom: { words: ["OSIMHEN", "METINBABA", "ICARDI", "MUSLERA"], year: "1905" },
-    karakartal: { words: ["QUARESMA", "KARAKARTAL", "ERSIN", "TINER"], year: "1903" },
-  };
-  const BALL_SVG =
-    '<svg viewBox="0 0 40 40" aria-hidden="true">' +
-    '<circle cx="20" cy="20" r="17" fill="none" stroke="currentColor" stroke-width="2.4"/>' +
-    '<polygon points="20,11 26,15.5 23.8,22.6 16.2,22.6 14,15.5" fill="currentColor"/>' +
-    '<line x1="20" y1="4" x2="20" y2="11" stroke="currentColor" stroke-width="1.8"/>' +
-    '<line x1="34" y1="15.5" x2="26" y2="15.5" stroke="currentColor" stroke-width="1.8"/>' +
-    '<line x1="29.5" y1="33.5" x2="23.8" y2="22.6" stroke="currentColor" stroke-width="1.8"/>' +
-    '<line x1="10.5" y1="33.5" x2="16.2" y2="22.6" stroke="currentColor" stroke-width="1.8"/>' +
-    '<line x1="6" y1="15.5" x2="14" y2="15.5" stroke="currentColor" stroke-width="1.8"/></svg>';
+  // themes were retired — make sure any stale saved choice reverts to default
+  document.documentElement.classList.remove("theme-cimbom", "theme-karakartal");
+  if (settings.theme && settings.theme !== "default") { settings.theme = "default"; saveSettings(); }
 
-  let floatyLayer = null, floaties = [], floatyRAF = null;
-  function stopFloaties() {
-    if (floatyRAF) cancelAnimationFrame(floatyRAF);
-    floatyRAF = null; floaties = [];
-    if (floatyLayer) { floatyLayer.remove(); floatyLayer = null; }
+  /* ---------- profile ---------- */
+  const phBanner = document.getElementById("phBanner");
+  const phAva = document.getElementById("phAva");
+  const phName = document.getElementById("phName");
+  const phRole = document.getElementById("phRole");
+  const phTokens = document.getElementById("phTokens");
+  const bioInput = document.getElementById("bioInput");
+  const bannerFile = document.getElementById("bannerFile");
+  const avaFile = document.getElementById("avaFile");
+
+  function renderProfile() {
+    if (!currentUser) return;
+    phBanner.style.backgroundImage = currentUser.banner ? "url('" + currentUser.banner + "')" : "";
+    if (currentUser.avatar) phAva.innerHTML = '<img src="' + currentUser.avatar + '" alt="">';
+    else phAva.textContent = initials(currentUser.username);
+    phName.textContent = currentUser.username;
+    phRole.textContent = currentUser.is_admin ? "admin" : (currentUser.role || "user");
+    phRole.classList.toggle("admin", !!currentUser.is_admin);
+    phTokens.textContent = currentUser.tokens;
+    bioInput.value = currentUser.bio || "";
   }
-  function startFloaties(theme) {
-    stopFloaties();
-    const data = THEME_DATA[theme];
-    if (!data) return;
-    floatyLayer = document.createElement("div");
-    floatyLayer.className = "floaties";
-    document.body.appendChild(floatyLayer);
-    const items = [];
-    for (let c = 0; c < 2; c++) for (const w of data.words) items.push({ text: w });
-    items.push({ emblem: true }, { emblem: true });
-    items.forEach((it, i) => {
-      const el = document.createElement("div");
-      el.className = "floaty floaty-" + theme + (it.emblem ? " floaty-emblem" : "");
-      if (it.emblem) el.innerHTML = BALL_SVG + '<span class="em-year">' + data.year + '</span>';
-      else el.textContent = it.text;
-      floatyLayer.appendChild(el);
-      const f = {
-        el,
-        x: 30 + ((i * 197) % Math.max(1, window.innerWidth - 220)),
-        y: 30 + ((i * 143) % Math.max(1, window.innerHeight - 170)),
-        vx: (((i % 5) - 2) * 0.34) || 0.4,
-        vy: (((i % 4) - 1.5) * 0.34) || -0.3,
-        rot: ((i * 53) % 30) - 15,
-        vrot: ((i % 3) - 1) * 0.1,
-        w: 150, h: 44,
+
+  function fileToDataURL(file, maxDim, quality) {
+    return new Promise((resolve, reject) => {
+      const rd = new FileReader();
+      rd.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width, h = img.height;
+          const scale = Math.min(1, maxDim / Math.max(w, h));
+          w = Math.round(w * scale); h = Math.round(h * scale);
+          const c = document.createElement("canvas"); c.width = w; c.height = h;
+          c.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(c.toDataURL("image/jpeg", quality || 0.85));
+        };
+        img.onerror = reject; img.src = rd.result;
       };
-      floaties.push(f);
-      requestAnimationFrame(() => { f.w = el.offsetWidth; f.h = el.offsetHeight; });
+      rd.onerror = reject; rd.readAsDataURL(file);
     });
-    function tick() {
-      const w = window.innerWidth, h = window.innerHeight;
-      for (const f of floaties) {
-        f.x += f.vx; f.y += f.vy; f.rot += f.vrot;
-        if (f.x < 0) { f.x = 0; f.vx = Math.abs(f.vx); }
-        if (f.x > w - f.w) { f.x = w - f.w; f.vx = -Math.abs(f.vx); }
-        if (f.y < 0) { f.y = 0; f.vy = Math.abs(f.vy); }
-        if (f.y > h - f.h) { f.y = h - f.h; f.vy = -Math.abs(f.vy); }
-        f.el.style.transform = "translate(" + f.x + "px," + f.y + "px) rotate(" + f.rot + "deg)";
-      }
-      floatyRAF = requestAnimationFrame(tick);
-    }
-    tick();
   }
 
-  function applyThemeChoice(theme) {
-    const root = document.documentElement;
-    root.classList.remove("theme-cimbom", "theme-karakartal");
-    if (theme === "cimbom") root.classList.add("theme-cimbom");
-    else if (theme === "karakartal") root.classList.add("theme-karakartal");
-    startFloaties(theme === "cimbom" || theme === "karakartal" ? theme : null);
+  document.getElementById("editBanner").addEventListener("click", () => bannerFile.click());
+  document.getElementById("editAva").addEventListener("click", () => avaFile.click());
+  bannerFile.addEventListener("change", () => uploadImage(bannerFile, "banner", 1280, 0.82));
+  avaFile.addEventListener("change", () => uploadImage(avaFile, "avatar", 256, 0.9));
+  async function uploadImage(input, field, maxDim, q) {
+    const file = input.files && input.files[0]; input.value = "";
+    if (!file) return;
+    if (file.size > 12 * 1024 * 1024) { toast("Image too large (max 12MB).", "err"); return; }
+    let dataUrl;
+    try { dataUrl = await fileToDataURL(file, maxDim, q); } catch (_) { toast("Couldn't read that image.", "err"); return; }
+    const body = {}; body[field] = dataUrl;
+    const r = await window.api.meUpdate(body).catch(() => null);
+    if (r && r.ok) { currentUser = r.user; renderProfile(); renderAccount(); toast((field === "banner" ? "Banner" : "Picture") + " updated."); }
+    else toast((r && r.error) || "Update failed.", "err");
   }
-
-  const themesLabel = document.getElementById("themesLabel");
-  const themePicker = document.getElementById("themePicker");
-  function updateThemeCards() {
-    themePicker.querySelectorAll(".theme-card").forEach((c) =>
-      c.classList.toggle("active", c.dataset.theme === (settings.theme || "default")));
+  async function resetImage(field, label) {
+    const body = {}; body[field] = "";
+    const r = await window.api.meUpdate(body).catch(() => null);
+    if (r && r.ok) { currentUser = r.user; renderProfile(); renderAccount(); toast(label + " reset."); }
+    else toast("Couldn't reset.", "err");
   }
-  function revealThemes() {
-    themesLabel.classList.remove("hidden");
-    themePicker.classList.remove("hidden");
-  }
-  themePicker.addEventListener("click", (e) => {
-    const card = e.target.closest(".theme-card");
-    if (!card) return;
-    settings.theme = card.dataset.theme;
-    saveSettings();
-    applyThemeChoice(settings.theme);
-    updateThemeCards();
+  document.getElementById("resetAva").addEventListener("click", () => resetImage("avatar", "Picture"));
+  document.getElementById("resetBanner").addEventListener("click", () => resetImage("banner", "Banner"));
+  document.getElementById("saveBio").addEventListener("click", async () => {
+    const r = await window.api.meUpdate({ bio: bioInput.value }).catch(() => null);
+    if (r && r.ok) { currentUser = r.user; toast("Bio saved."); } else toast("Couldn't save bio.", "err");
   });
+  document.getElementById("phLogout").addEventListener("click", () => logoutBtn.click());
 
-  // secret: click Settings 5x in a row to reveal the themes
-  let settingsClicks = 0;
+  /* ---------- bookmarks ---------- */
+  const bookmarksList = document.getElementById("bookmarksList");
+  const saveBar = document.getElementById("saveBar");
+  let lastSearch = null; // {type, query, ultra, summary}
+  document.getElementById("saveSearchBtn").addEventListener("click", async () => {
+    if (!lastSearch) return;
+    const r = await window.api.bookmarksAdd({
+      label: lastSearch.query, type: lastSearch.type, query: lastSearch.query,
+      data: { ultra: lastSearch.ultra, summary: lastSearch.summary },
+    }).catch(() => null);
+    if (r && r.ok) toast("Saved to bookmarks."); else toast((r && r.error) || "Couldn't save.", "err");
+  });
+  async function loadBookmarks() {
+    if (!currentUser) { bookmarksList.innerHTML = '<div class="bm-empty">Log in to see your bookmarks.</div>'; return; }
+    bookmarksList.innerHTML = '<div class="bm-empty">Loading…</div>';
+    const r = await window.api.bookmarksList().catch(() => null);
+    if (!r || !r.ok) { bookmarksList.innerHTML = '<div class="bm-empty">Couldn\'t load bookmarks.</div>'; return; }
+    if (!r.bookmarks.length) { bookmarksList.innerHTML = '<div class="bm-empty">No bookmarks yet — run a search and press “Save to bookmarks”.</div>'; return; }
+    bookmarksList.innerHTML = "";
+    r.bookmarks.forEach((bm) => {
+      const row = document.createElement("div"); row.className = "bm-item";
+      const main = document.createElement("div"); main.className = "bm-main";
+      const q = document.createElement("div"); q.className = "bm-q";
+      const tag = document.createElement("span"); tag.className = "bm-tag"; tag.textContent = (bm.data && bm.data.ultra) ? "ultra" : (bm.type || "search");
+      q.appendChild(tag); q.appendChild(document.createTextNode(bm.query || bm.label));
+      const meta = document.createElement("div"); meta.className = "bm-meta";
+      meta.textContent = (bm.data && bm.data.summary ? bm.data.summary + " · " : "") + new Date(bm.created_at).toLocaleString();
+      main.appendChild(q); main.appendChild(meta);
+      const open = document.createElement("button"); open.className = "btn-mini"; open.textContent = "Open";
+      open.addEventListener("click", () => {
+        invType.value = bm.type || "username"; invQuery.value = bm.query || "";
+        showPage("investigate"); toast("Loaded — press Search to run it.");
+      });
+      const del = document.createElement("button"); del.className = "btn-mini danger"; del.textContent = "Delete";
+      del.addEventListener("click", async () => { await window.api.bookmarksDelete(bm.id).catch(() => {}); loadBookmarks(); });
+      row.appendChild(main); row.appendChild(open); row.appendChild(del);
+      bookmarksList.appendChild(row);
+    });
+  }
+
+  // load profile / bookmarks when their tab opens
   navItems.forEach((n) => n.addEventListener("click", () => {
-    if (n.dataset.page === "settings") {
-      settingsClicks++;
-      if (settingsClicks >= 5) revealThemes();
-    } else settingsClicks = 0;
+    if (n.dataset.page === "profile") renderProfile();
+    else if (n.dataset.page === "bookmarks") loadBookmarks();
   }));
-
-  applyThemeChoice(settings.theme || "default");
-  updateThemeCards();
 
   /* ---------- unified investigation (social scan + nicotine records) ---------- */
   const invForm = document.getElementById("invForm");
@@ -2149,6 +2257,7 @@
     curSource = null;
 
     invError.textContent = "";
+    saveBar.style.display = "none"; lastSearch = null;
     socialResults.innerHTML = ""; socialSummary.textContent = ""; socialCount.textContent = "";
     nicResults.innerHTML = ""; nicSummary.innerHTML = "";
     catSocial.classList.add("hidden");
@@ -2168,7 +2277,12 @@
     if (type === "username") tasks.push(runSocialScan(query));
     await Promise.allSettled(tasks);
 
-    if (myId === curSearch) endSearchUI();
+    if (myId === curSearch) {
+      endSearchUI();
+      // offer to bookmark this search
+      lastSearch = { type, query, ultra: !!ultra, summary: (nicSummary.textContent || "").slice(0, 120) };
+      saveBar.style.display = "flex";
+    }
   }
 
   invForm.addEventListener("submit", (e) => { e.preventDefault(); startSearch(false); });

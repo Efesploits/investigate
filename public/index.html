@@ -836,8 +836,10 @@ you cant run by your own footprints.
 
   /* ===== accounts: top-right wallet + auth ===== */
   .content { margin: 0 auto; }
-  #page-investigate { max-width: 1080px; margin: 0 auto; }
-  .graph-stage { height: 82vh; min-height: 680px; }
+  /* the investigation board breaks out wider than the rest of the app */
+  .content:has(#page-investigate.show) { max-width: 1300px; }
+  #page-investigate { max-width: 1300px; margin: 0 auto; }
+  .graph-stage { height: 74vh; min-height: 600px; }
 
   .topbar { position: fixed; top: 14px; right: 18px; display: flex; align-items: center; gap: 10px; z-index: 60; }
   .wallet { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px;
@@ -920,6 +922,12 @@ you cant run by your own footprints.
   .prof-panel { animation: fadeIn .2s ease; }
   @keyframes fadeIn { from { opacity: 0; } }
   .prof-sub { font-size: .95rem; margin: 18px 0 10px; }
+  .storage-status { padding: 12px 16px; border-radius: 12px; font-size: .84rem; line-height: 1.5; margin: 4px 0 18px; border: 1px solid var(--border); }
+  .storage-status.ok { background: rgba(30,150,70,.12); border-color: rgba(60,190,110,.4); color: #bff0cf; }
+  .storage-status.warn { background: rgba(200,60,40,.12); border-color: rgba(255,90,70,.45); color: #ffd0c8; }
+  .storage-status code { font-family: ui-monospace, Consolas, monospace; background: rgba(0,0,0,.3); padding: 1px 6px; border-radius: 5px; }
+  .storage-status .ss-hint { color: #ffe0b0; font-size: .8rem; }
+  .storage-status .ss-err { color: #ff9a8a; font-size: .76rem; font-family: ui-monospace, Consolas, monospace; }
   .prof-field label { display: block; font-size: .74rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; font-weight: 700; }
   .prof-field textarea { width: 100%; box-sizing: border-box; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--border);
     background: var(--panel2); color: var(--text); font-size: .9rem; resize: vertical; font-family: inherit; margin-bottom: 8px; }
@@ -1330,6 +1338,7 @@ you cant run by your own footprints.
     <section class="page" id="page-admin">
       <h1>Admin</h1>
       <p class="sub">Manage members and review search activity.</p>
+      <div id="storageStatus" class="storage-status" style="display:none"></div>
       <h3 class="prof-sub">Members</h3>
       <div id="adminUsers" class="admin-users"></div>
       <h3 class="prof-sub" style="margin-top:22px">Search logs</h3>
@@ -2632,6 +2641,20 @@ you cant run by your own footprints.
   const adminLogs = document.getElementById("adminLogs");
   async function loadAdmin() {
     if (!currentUser || !currentUser.is_admin) return;
+    // storage health — warns loudly if accounts are on the ephemeral store
+    const ss = document.getElementById("storageStatus");
+    if (ss) {
+      const h = await fetch("/api/health").then((r) => r.json()).catch(() => null);
+      if (h && h.durable) {
+        ss.className = "storage-status ok"; ss.style.display = "";
+        ss.innerHTML = '<b>✓ Durable storage</b> — accounts are saved in <code>' + (h.backend || "db") + '</code> and survive restarts.';
+      } else if (h) {
+        ss.className = "storage-status warn"; ss.style.display = "";
+        ss.innerHTML = '<b>⚠ Accounts are NOT durable</b> — storage is <code>' + (h.backend || "json") + '</code>, which Render wipes on every spin-down.'
+          + (h.hint ? '<br><span class="ss-hint">' + h.hint + '</span>' : '')
+          + (h.error ? '<br><span class="ss-err">Firestore said: ' + String(h.error).replace(/</g, "&lt;") + '</span>' : '');
+      }
+    }
     adminUsers.innerHTML = '<div class="bm-empty">Loading…</div>';
     const r = await fetch("/api/admin/users").then((r) => r.json()).catch(() => null);
     if (!r || !r.ok) { adminUsers.innerHTML = '<div class="bm-empty">Couldn\'t load users.</div>'; return; }

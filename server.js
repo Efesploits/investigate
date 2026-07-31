@@ -171,6 +171,23 @@ function requireSearch(req, res, next) {
   next();
 }
 
+/* ============================= health / storage ============================= */
+// Tells the UI whether accounts are stored durably. When durable is false the
+// app is on the ephemeral JSON store and accounts vanish on Render spin-down —
+// admins get the underlying error + fix hint so it can be corrected.
+app.get("/api/health", (req, res) => {
+  const info = store.backendInfo();
+  const out = { ok: true, durable: info.durable, backend: info.backend };
+  if (req.user && auth.isAdmin(req.user)) {
+    out.configured = info.configured;
+    out.error = info.error;
+    if (!info.durable) {
+      out.hint = "Set FIREBASE_SERVICE_ACCOUNT on Render (full service-account JSON, or its base64). Firestore must be in NATIVE mode. Until then accounts reset on every spin-down.";
+    }
+  }
+  res.json(out);
+});
+
 /* ============================= stats / users ============================= */
 app.get("/api/stats", async (_req, res) => {
   const users = await store.listUsers();

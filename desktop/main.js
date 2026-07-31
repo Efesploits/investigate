@@ -206,3 +206,21 @@ ipcMain.handle("search:start", async (_e, { ultra, type, query }) => {
   try { return await serverFetch("/api/search/start", { method: "POST", body: JSON.stringify({ ultra, type, query }) }); }
   catch (_) { return { ok: false, error: "Connection error." }; }
 });
+
+/* ---------- profile + bookmarks (via the hosted server) ---------- */
+ipcMain.handle("me:update", async (_e, patch) => {
+  try { return await serverFetch("/api/me", { method: "PATCH", body: JSON.stringify(patch || {}) }); }
+  catch (_) { return { ok: false, error: "Connection error." }; }
+});
+ipcMain.handle("bookmarks:list", async () => {
+  try { return await serverFetch("/api/bookmarks"); }
+  catch (_) { return { ok: false, error: "Connection error." }; }
+});
+ipcMain.handle("bookmarks:add", async (_e, bm) => {
+  try { return await serverFetch("/api/bookmarks", { method: "POST", body: JSON.stringify(bm || {}) }); }
+  catch (_) { return { ok: false, error: "Connection error." }; }
+});
+ipcMain.handle("bookmarks:delete", async (_e, id) => {
+  try { return await serverFetch("/api/bookmarks/" + encodeURIComponent(id), { method: "DELETE" }); }
+  catch (_) { return { ok: false, error: "Connection error." }; }
+});
