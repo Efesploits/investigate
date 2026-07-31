@@ -888,6 +888,103 @@ you cant run by your own footprints.
   .intro-auth .m-err { text-align: center; }
   .intro-hint { color: var(--muted); font-size: .76rem; margin-top: 12px; text-align: center; position: relative; z-index: 1; }
 
+  /* ===== profile page ===== */
+  .btn-mini { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 9px; border: 1px solid var(--border);
+    background: var(--panel2); color: var(--text); font-weight: 700; font-size: .8rem; cursor: pointer; transition: border-color .15s, background .15s; }
+  .btn-mini:hover { border-color: #666; }
+  .btn-mini.danger:hover { border-color: #ff6b6b; color: #ff6b6b; }
+  .profile-hero { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--panel); margin-bottom: 18px; }
+  .ph-banner { position: relative; height: 150px; background: linear-gradient(120deg, #1a1a1a, #262626); background-size: cover; background-position: center; }
+  .ph-edit { position: absolute; border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.55); color: #fff; cursor: pointer;
+    font-size: .72rem; font-weight: 700; border-radius: 8px; backdrop-filter: blur(4px); }
+  .ph-edit-banner { top: 10px; right: 10px; padding: 6px 11px; }
+  .ph-row { display: flex; align-items: flex-end; gap: 16px; padding: 0 20px 18px; margin-top: -34px; }
+  .ph-ava-wrap { position: relative; flex-shrink: 0; }
+  .ph-ava { width: 84px; height: 84px; border-radius: 50%; border: 4px solid var(--panel); background: var(--panel2);
+    display: flex; align-items: center; justify-content: center; font-size: 1.9rem; font-weight: 800; color: var(--accent); overflow: hidden; }
+  .ph-ava img { width: 100%; height: 100%; object-fit: cover; }
+  .ph-edit-ava { bottom: 2px; right: 2px; width: 26px; height: 26px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .ph-meta { flex: 1; min-width: 0; padding-bottom: 4px; }
+  .ph-name { display: flex; align-items: center; gap: 10px; font-size: 1.35rem; font-weight: 800; }
+  .ph-role { font-size: .64rem; text-transform: uppercase; letter-spacing: .6px; padding: 3px 9px; border-radius: 999px; background: var(--panel2); border: 1px solid var(--border); color: var(--muted); font-weight: 800; }
+  .ph-role.admin { background: var(--accent); color: #000; border-color: var(--accent); }
+  .ph-tokens { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .85rem; margin-top: 5px; }
+  .ph-tokens svg { width: 15px; height: 15px; color: var(--accent); }
+  .ph-tokens b { color: var(--accent); }
+  .ph-logout { align-self: center; padding: 8px 15px; border-radius: 9px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-weight: 700; font-size: .8rem; cursor: pointer; }
+  .ph-logout:hover { border-color: #ff6b6b; color: #ff6b6b; }
+
+  .prof-tabs { display: flex; gap: 4px; padding: 4px; background: var(--panel2); border: 1px solid var(--border); border-radius: 999px; margin-bottom: 20px; width: fit-content; }
+  .prof-tab { border: none; background: transparent; color: var(--muted); font-weight: 700; font-size: .84rem; padding: 8px 18px; border-radius: 999px; cursor: pointer; }
+  .prof-tab.active { background: var(--accent); color: #000; }
+  .prof-panel { animation: fadeIn .2s ease; }
+  @keyframes fadeIn { from { opacity: 0; } }
+  .prof-sub { font-size: .95rem; margin: 18px 0 10px; }
+  .prof-field label { display: block; font-size: .74rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; font-weight: 700; }
+  .prof-field textarea { width: 100%; box-sizing: border-box; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--panel2); color: var(--text); font-size: .9rem; resize: vertical; font-family: inherit; margin-bottom: 8px; }
+  .prof-field textarea:focus { outline: none; border-color: #666; }
+
+  /* bookmarks */
+  .bm-list { display: flex; flex-direction: column; gap: 10px; }
+  .bm-item { display: flex; align-items: center; gap: 12px; padding: 13px 15px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
+  .bm-main { flex: 1; min-width: 0; }
+  .bm-q { font-weight: 800; font-size: .95rem; }
+  .bm-meta { color: var(--muted); font-size: .76rem; margin-top: 3px; }
+  .bm-tag { font-size: .62rem; text-transform: uppercase; letter-spacing: .5px; padding: 2px 7px; border-radius: 6px; background: var(--panel2); border: 1px solid var(--border); color: var(--muted); font-weight: 800; margin-right: 6px; }
+  .bm-empty { color: var(--muted); font-size: .88rem; padding: 20px; text-align: center; }
+
+  /* connections */
+  .conn-card { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); max-width: 520px; }
+  .conn-ico { width: 44px; height: 44px; border-radius: 11px; background: #5865F2; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .conn-ico svg { width: 26px; height: 26px; color: #fff; }
+  .conn-meta { flex: 1; min-width: 0; }
+  .conn-name { font-weight: 800; }
+  .conn-sub { color: var(--muted); font-size: .8rem; margin-top: 2px; }
+  .conn-sub.linked { color: var(--accent); }
+
+  /* admin */
+  .admin-users { display: flex; flex-direction: column; gap: 8px; }
+  .admin-user { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border: 1px solid var(--border); border-radius: 11px; background: var(--panel); flex-wrap: wrap; }
+  .au-ava { width: 34px; height: 34px; border-radius: 50%; background: var(--panel2); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--accent); overflow: hidden; flex-shrink: 0; }
+  .au-ava img { width: 100%; height: 100%; object-fit: cover; }
+  .au-name { font-weight: 800; font-size: .9rem; }
+  .au-name .you { color: var(--muted); font-weight: 600; font-size: .74rem; }
+  .au-spacer { flex: 1; }
+  .au-ctrl { display: flex; align-items: center; gap: 6px; }
+  .au-ctrl select, .au-ctrl input { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel2); color: var(--text); font-size: .78rem; font-weight: 700; }
+  .au-ctrl input { width: 62px; text-align: center; }
+  .au-tok { color: var(--accent); font-weight: 800; font-size: .8rem; min-width: 30px; text-align: right; }
+  .admin-logs { display: flex; flex-direction: column; gap: 4px; max-height: 320px; overflow-y: auto; border: 1px solid var(--border); border-radius: 11px; padding: 8px; }
+  .log-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 7px; font-size: .8rem; }
+  .log-row:hover { background: var(--panel2); }
+  .log-user { font-weight: 800; min-width: 90px; }
+  .log-kind { font-size: .6rem; text-transform: uppercase; letter-spacing: .5px; padding: 2px 6px; border-radius: 5px; font-weight: 800; }
+  .log-kind.ultra { background: #e0561f22; color: #ff7a4d; border: 1px solid #ff7a4d55; }
+  .log-kind.search { background: var(--panel2); color: var(--muted); border: 1px solid var(--border); }
+  .log-q { color: var(--text); font-family: ui-monospace, Consolas, monospace; }
+  .log-time { color: var(--muted); font-size: .72rem; margin-left: auto; }
+
+  /* home members */
+  .members { margin-top: 40px; }
+  .members-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+  .members-head h2 { margin: 0; font-size: 1.15rem; }
+  .members-stat { color: var(--muted); font-size: .84rem; display: flex; align-items: center; gap: 6px; }
+  .members-stat b { color: var(--text); }
+  .dot-live { width: 8px; height: 8px; border-radius: 50%; background: #35d07f; box-shadow: 0 0 8px #35d07f; display: inline-block; }
+  .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .member-card { border: 1px solid var(--border); border-radius: 13px; overflow: hidden; background: var(--panel); text-align: center; padding-bottom: 12px; }
+  .mc-banner { height: 46px; background: linear-gradient(120deg, #1a1a1a, #2a2a2a); background-size: cover; background-position: center; }
+  .mc-ava { width: 48px; height: 48px; border-radius: 50%; border: 3px solid var(--panel); background: var(--panel2); margin: -24px auto 0; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--accent); overflow: hidden; position: relative; }
+  .mc-ava img { width: 100%; height: 100%; object-fit: cover; }
+  .mc-online { position: absolute; bottom: 1px; right: 1px; width: 12px; height: 12px; border-radius: 50%; background: #35d07f; border: 2px solid var(--panel); }
+  .mc-name { font-weight: 800; font-size: .86rem; margin-top: 8px; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mc-role { font-size: .6rem; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 800; }
+  .mc-role.admin { color: var(--accent); }
+  .mc-activity { font-size: .68rem; color: var(--muted); margin-top: 5px; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .save-bar { display: flex; justify-content: center; margin: 2px 0 12px; }
+
   /* lightweight toast */
   .toast-wrap { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 120; display: flex; flex-direction: column; gap: 8px; align-items: center; }
   .toast { background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 11px 18px; border-radius: 10px;
@@ -993,9 +1090,9 @@ you cant run by your own footprints.
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
       Database
     </div>
-    <div class="nav-item" data-page="settings">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      Settings
+    <div class="nav-item" data-page="profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Profile
     </div>
     <div class="footer-credit">m3fxn — theres always a clue, find it.</div>
   </aside>
@@ -1032,6 +1129,14 @@ you cant run by your own footprints.
         Start investigating
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </button>
+
+      <div class="members">
+        <div class="members-head">
+          <h2>Members</h2>
+          <div class="members-stat"><span class="dot-live"></span><b id="statActive">0</b> online · <b id="statTotal">0</b> total</div>
+        </div>
+        <div class="member-grid" id="memberGrid"></div>
+      </div>
     </section>
 
     <!-- INVESTIGATE -->
@@ -1083,6 +1188,13 @@ you cant run by your own footprints.
       </div>
 
       <div id="invError"></div>
+
+      <div class="save-bar" id="saveBar" style="display:none">
+        <button class="btn-mini" id="saveSearchBtn" type="button">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          Save to bookmarks
+        </button>
+      </div>
 
       <div id="graphView">
         <div class="graph-filter" id="graphFilter"></div>
@@ -1136,24 +1248,79 @@ you cant run by your own footprints.
       <p class="db-note">Windows · standalone desktop app · connects to your local or remote SQL database</p>
     </section>
 
-    <!-- SETTINGS -->
-    <section class="page" id="page-settings">
-      <h1>Settings</h1>
-      <p class="sub">Preferences are saved on this device and stay set the next time you open the site.</p>
-
-      <div class="settings-row">
-        <div>
-          <div class="settings-label">Black &amp; white mode</div>
-          <div class="settings-desc">Monochrome look. Turn off for a colored theme.</div>
+    <!-- PROFILE (settings live here now) -->
+    <section class="page" id="page-profile">
+      <div class="profile-hero">
+        <div class="ph-banner" id="phBanner">
+          <button class="ph-edit ph-edit-banner" id="editBanner" type="button">✎ Change banner</button>
         </div>
-        <label class="switch"><input type="checkbox" id="toggleBW"><span class="track"><span class="knob"></span></span></label>
+        <div class="ph-row">
+          <div class="ph-ava-wrap">
+            <div class="ph-ava" id="phAva">?</div>
+            <button class="ph-edit ph-edit-ava" id="editAva" type="button" title="Change picture">✎</button>
+          </div>
+          <div class="ph-meta">
+            <div class="ph-name"><span id="phName">user</span><span class="ph-role" id="phRole">user</span></div>
+            <div class="ph-tokens"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2"/><path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3"/><path d="M16 12h5v4h-5a2 2 0 0 1 0-4z"/></svg> <b id="phTokens">0</b> tokens</div>
+          </div>
+          <button class="ph-logout" id="phLogout" type="button">Log out</button>
+        </div>
       </div>
 
-      <div class="hidden" id="themesLabel">Themes ⚽</div>
-      <div class="theme-picker hidden" id="themePicker">
-        <button class="theme-card" data-theme="default" type="button"><span>Default</span><span class="tc-swatch tc-default"></span></button>
-        <button class="theme-card" data-theme="cimbom" type="button"><span>Cimbom</span><span class="tc-swatch tc-cimbom"></span></button>
-        <button class="theme-card" data-theme="karakartal" type="button"><span>Karakartal</span><span class="tc-swatch tc-karakartal"></span></button>
+      <input type="file" id="bannerFile" accept="image/*" hidden>
+      <input type="file" id="avaFile" accept="image/*" hidden>
+
+      <div class="prof-tabs" id="profTabs">
+        <button class="prof-tab active" data-tab="profile" type="button">Profile</button>
+        <button class="prof-tab" data-tab="bookmarks" type="button">Bookmarks</button>
+        <button class="prof-tab" data-tab="connections" type="button">Connections</button>
+        <button class="prof-tab" data-tab="admin" id="adminTabBtn" type="button" style="display:none">Admin</button>
+      </div>
+
+      <!-- Profile tab: bio + moved settings -->
+      <div class="prof-panel" id="tab-profile">
+        <div class="prof-field">
+          <label for="bioInput">Bio</label>
+          <textarea id="bioInput" maxlength="300" rows="2" placeholder="Say something about yourself…"></textarea>
+          <button class="btn-mini" id="saveBio" type="button">Save bio</button>
+        </div>
+        <h3 class="prof-sub">Preferences</h3>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Black &amp; white mode</div>
+            <div class="settings-desc">Monochrome look. Turn off for a colored theme.</div>
+          </div>
+          <label class="switch"><input type="checkbox" id="toggleBW"><span class="track"><span class="knob"></span></span></label>
+        </div>
+        <div class="hidden" id="themesLabel">Themes ⚽</div>
+        <div class="theme-picker hidden" id="themePicker">
+          <button class="theme-card" data-theme="default" type="button"><span>Default</span><span class="tc-swatch tc-default"></span></button>
+          <button class="theme-card" data-theme="cimbom" type="button"><span>Cimbom</span><span class="tc-swatch tc-cimbom"></span></button>
+          <button class="theme-card" data-theme="karakartal" type="button"><span>Karakartal</span><span class="tc-swatch tc-karakartal"></span></button>
+        </div>
+      </div>
+
+      <!-- Bookmarks tab -->
+      <div class="prof-panel hidden" id="tab-bookmarks">
+        <p class="sub" style="margin-top:4px">Saved investigations. Open one to reload the query.</p>
+        <div id="bookmarksList" class="bm-list"></div>
+      </div>
+
+      <!-- Connections tab -->
+      <div class="prof-panel hidden" id="tab-connections">
+        <div class="conn-card">
+          <div class="conn-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4.4A19 19 0 0 0 15.4 3l-.2.5a13 13 0 0 1 4 2 12.7 12.7 0 0 0-10.4 0 13 13 0 0 1 4-2L12.6 3A19 19 0 0 0 8 4.4C5 8.9 4.2 13.2 4.6 17.4A19 19 0 0 0 9.9 20l.6-1a12.6 12.6 0 0 1-2-1l.5-.4a9 9 0 0 0 8 0l.5.4c-.6.4-1.3.7-2 1l.6 1a19 19 0 0 0 5.3-2.6c.5-4.9-.7-9.1-3.4-12.9ZM9.7 15c-.9 0-1.6-.8-1.6-1.8s.7-1.8 1.6-1.8 1.7.8 1.6 1.8c0 1-.7 1.8-1.6 1.8Zm4.6 0c-.9 0-1.6-.8-1.6-1.8s.7-1.8 1.6-1.8 1.7.8 1.6 1.8c0 1-.7 1.8-1.6 1.8Z"/></svg></div>
+          <div class="conn-meta"><div class="conn-name">Discord</div><div class="conn-sub" id="discordSub">Show your live activity (music &amp; games) on the home page.</div></div>
+          <button class="btn-mini" id="discordConnect" type="button">Connect</button>
+        </div>
+      </div>
+
+      <!-- Admin tab -->
+      <div class="prof-panel hidden" id="tab-admin">
+        <h3 class="prof-sub">Members</h3>
+        <div id="adminUsers" class="admin-users"></div>
+        <h3 class="prof-sub" style="margin-top:22px">Search logs</h3>
+        <div id="adminLogs" class="admin-logs"></div>
       </div>
     </section>
   </main>
@@ -2406,7 +2573,7 @@ you cant run by your own footprints.
       }).then((r) => r.json());
       if (!r.ok) { authErr.textContent = r.error || "Something went wrong."; authSubmit.disabled = false; return; }
       currentUser = r.user; authForm.reset();
-      renderAccount();
+      renderAccount(); renderProfile(); loadMembers();
       introAuth.style.display = "none";
       enterApp();
       toast(authMode === "login" ? ("Welcome back, " + currentUser.username) : ("Account created — welcome, " + currentUser.username));
@@ -2414,14 +2581,218 @@ you cant run by your own footprints.
     authSubmit.disabled = false;
   });
 
-  // profile button — full profile section lands next; for now, log out
-  profileBtn.addEventListener("click", async () => {
-    if (!confirm("Log out of " + (currentUser ? currentUser.username : "") + "?")) return;
+  /* ================= profile / bookmarks / connections / admin / members ================= */
+  async function doLogout() {
     try { await fetch("/api/auth/logout", { method: "POST" }); } catch (_) {}
     currentUser = null; setAuthMode("login"); applyAuthGate(); toast("Logged out.");
-  });
+  }
 
-  refreshMe().then(applyAuthGate);
+  // read an image file and downscale it to a compact dataURL
+  function fileToDataURL(file, maxDim, quality) {
+    return new Promise((resolve, reject) => {
+      const rd = new FileReader();
+      rd.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width, h = img.height;
+          const scale = Math.min(1, maxDim / Math.max(w, h));
+          w = Math.round(w * scale); h = Math.round(h * scale);
+          const c = document.createElement("canvas"); c.width = w; c.height = h;
+          c.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(c.toDataURL("image/jpeg", quality || 0.85));
+        };
+        img.onerror = reject; img.src = rd.result;
+      };
+      rd.onerror = reject; rd.readAsDataURL(file);
+    });
+  }
+
+  const phBanner = document.getElementById("phBanner");
+  const phAva = document.getElementById("phAva");
+  const phName = document.getElementById("phName");
+  const phRole = document.getElementById("phRole");
+  const phTokens = document.getElementById("phTokens");
+  const bioInput = document.getElementById("bioInput");
+  const adminTabBtn = document.getElementById("adminTabBtn");
+
+  function renderProfile() {
+    if (!currentUser) return;
+    phBanner.style.backgroundImage = currentUser.banner ? "url('" + currentUser.banner + "')" : "";
+    if (currentUser.avatar) phAva.innerHTML = '<img src="' + currentUser.avatar + '" alt="">';
+    else phAva.textContent = initials(currentUser.username);
+    phName.textContent = currentUser.username;
+    phRole.textContent = currentUser.is_admin ? "admin" : (currentUser.role || "user");
+    phRole.classList.toggle("admin", !!currentUser.is_admin);
+    phTokens.textContent = currentUser.tokens;
+    bioInput.value = currentUser.bio || "";
+    adminTabBtn.style.display = currentUser.is_admin ? "" : "none";
+  }
+  function openProfile() { renderProfile(); }
+
+  // profile tabs
+  const profTabs = document.querySelectorAll(".prof-tab");
+  profTabs.forEach((t) => t.addEventListener("click", () => {
+    profTabs.forEach((x) => x.classList.remove("active"));
+    t.classList.add("active");
+    document.querySelectorAll(".prof-panel").forEach((p) => p.classList.add("hidden"));
+    document.getElementById("tab-" + t.dataset.tab).classList.remove("hidden");
+    if (t.dataset.tab === "bookmarks") loadBookmarks();
+    if (t.dataset.tab === "admin") loadAdmin();
+  }));
+
+  // banner / avatar upload
+  const bannerFile = document.getElementById("bannerFile");
+  const avaFile = document.getElementById("avaFile");
+  document.getElementById("editBanner").addEventListener("click", () => bannerFile.click());
+  document.getElementById("editAva").addEventListener("click", () => avaFile.click());
+  bannerFile.addEventListener("change", () => uploadImage(bannerFile, "banner", 1280, 0.82));
+  avaFile.addEventListener("change", () => uploadImage(avaFile, "avatar", 256, 0.9));
+  async function uploadImage(input, field, maxDim, q) {
+    const file = input.files && input.files[0]; input.value = "";
+    if (!file) return;
+    if (file.size > 12 * 1024 * 1024) { toast("Image too large (max 12MB).", "err"); return; }
+    let dataUrl;
+    try { dataUrl = await fileToDataURL(file, maxDim, q); } catch (_) { toast("Couldn't read that image.", "err"); return; }
+    const body = {}; body[field] = dataUrl;
+    const r = await fetch("/api/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json()).catch(() => null);
+    if (r && r.ok) { currentUser = r.user; renderProfile(); renderAccount(); toast((field === "banner" ? "Banner" : "Picture") + " updated."); }
+    else toast((r && r.error) || "Update failed.", "err");
+  }
+
+  document.getElementById("saveBio").addEventListener("click", async () => {
+    const r = await fetch("/api/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bio: bioInput.value }) }).then((r) => r.json()).catch(() => null);
+    if (r && r.ok) { currentUser = r.user; toast("Bio saved."); } else toast("Couldn't save bio.", "err");
+  });
+  document.getElementById("phLogout").addEventListener("click", doLogout);
+  document.getElementById("discordConnect").addEventListener("click", () => toast("Discord connection is coming in the next update."));
+
+  /* bookmarks */
+  const bookmarksList = document.getElementById("bookmarksList");
+  const saveBar = document.getElementById("saveBar");
+  let lastSearch = null; // {type, query, ultra, summary}
+  document.getElementById("saveSearchBtn").addEventListener("click", async () => {
+    if (!lastSearch) return;
+    const r = await fetch("/api/bookmarks", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ label: lastSearch.query, type: lastSearch.type, query: lastSearch.query, data: { ultra: lastSearch.ultra, summary: lastSearch.summary } }),
+    }).then((r) => r.json()).catch(() => null);
+    if (r && r.ok) toast("Saved to bookmarks."); else toast("Couldn't save.", "err");
+  });
+  async function loadBookmarks() {
+    bookmarksList.innerHTML = '<div class="bm-empty">Loading…</div>';
+    const r = await fetch("/api/bookmarks").then((r) => r.json()).catch(() => null);
+    if (!r || !r.ok) { bookmarksList.innerHTML = '<div class="bm-empty">Couldn\'t load bookmarks.</div>'; return; }
+    if (!r.bookmarks.length) { bookmarksList.innerHTML = '<div class="bm-empty">No bookmarks yet — run a search and press “Save to bookmarks”.</div>'; return; }
+    bookmarksList.innerHTML = "";
+    r.bookmarks.forEach((bm) => {
+      const row = document.createElement("div"); row.className = "bm-item";
+      const main = document.createElement("div"); main.className = "bm-main";
+      const q = document.createElement("div"); q.className = "bm-q";
+      const tag = document.createElement("span"); tag.className = "bm-tag"; tag.textContent = (bm.data && bm.data.ultra) ? "ultra" : (bm.type || "search");
+      q.appendChild(tag); q.appendChild(document.createTextNode(bm.query || bm.label));
+      const meta = document.createElement("div"); meta.className = "bm-meta";
+      meta.textContent = (bm.data && bm.data.summary ? bm.data.summary + " · " : "") + new Date(bm.created_at).toLocaleString();
+      main.appendChild(q); main.appendChild(meta);
+      const open = document.createElement("button"); open.className = "btn-mini"; open.textContent = "Open";
+      open.addEventListener("click", () => {
+        invType.value = bm.type || "username"; invQuery.value = bm.query || "";
+        showPage("investigate"); toast("Loaded — press Search to run it.");
+      });
+      const del = document.createElement("button"); del.className = "btn-mini danger"; del.textContent = "Delete";
+      del.addEventListener("click", async () => { await fetch("/api/bookmarks/" + bm.id, { method: "DELETE" }); loadBookmarks(); });
+      row.appendChild(main); row.appendChild(open); row.appendChild(del);
+      bookmarksList.appendChild(row);
+    });
+  }
+
+  /* admin */
+  const adminUsers = document.getElementById("adminUsers");
+  const adminLogs = document.getElementById("adminLogs");
+  async function loadAdmin() {
+    if (!currentUser || !currentUser.is_admin) return;
+    adminUsers.innerHTML = '<div class="bm-empty">Loading…</div>';
+    const r = await fetch("/api/admin/users").then((r) => r.json()).catch(() => null);
+    if (!r || !r.ok) { adminUsers.innerHTML = '<div class="bm-empty">Couldn\'t load users.</div>'; return; }
+    adminUsers.innerHTML = "";
+    r.users.forEach((u) => adminUsers.appendChild(adminUserRow(u)));
+    const lr = await fetch("/api/admin/logs?limit=200").then((r) => r.json()).catch(() => null);
+    adminLogs.innerHTML = "";
+    if (lr && lr.ok && lr.logs.length) {
+      lr.logs.forEach((l) => {
+        const row = document.createElement("div"); row.className = "log-row";
+        const user = document.createElement("span"); user.className = "log-user"; user.textContent = l.username || "—";
+        const kind = document.createElement("span"); kind.className = "log-kind " + (l.ultra ? "ultra" : "search"); kind.textContent = l.ultra ? "ultra" : "search";
+        const q = document.createElement("span"); q.className = "log-q"; q.textContent = (l.type ? l.type + ":" : "") + (l.query || "");
+        const time = document.createElement("span"); time.className = "log-time"; time.textContent = new Date(l.created_at).toLocaleString();
+        row.appendChild(user); row.appendChild(kind); row.appendChild(q); row.appendChild(time);
+        adminLogs.appendChild(row);
+      });
+    } else adminLogs.innerHTML = '<div class="bm-empty">No searches logged yet.</div>';
+  }
+  function adminUserRow(u) {
+    const row = document.createElement("div"); row.className = "admin-user";
+    const ava = document.createElement("div"); ava.className = "au-ava";
+    if (u.avatar) ava.innerHTML = '<img src="' + u.avatar + '" alt="">'; else ava.textContent = initials(u.username);
+    const name = document.createElement("div"); name.className = "au-name"; name.textContent = u.username;
+    if (u.id === currentUser.id) { const y = document.createElement("span"); y.className = "you"; y.textContent = " (you)"; name.appendChild(y); }
+    const spacer = document.createElement("div"); spacer.className = "au-spacer";
+    const tok = document.createElement("span"); tok.className = "au-tok"; tok.textContent = u.tokens;
+    const ctrl = document.createElement("div"); ctrl.className = "au-ctrl";
+    const role = document.createElement("select");
+    ["user", "admin"].forEach((rv) => { const o = document.createElement("option"); o.value = rv; o.textContent = rv; if (u.role === rv) o.selected = true; role.appendChild(o); });
+    role.addEventListener("change", async () => {
+      const r = await fetch("/api/admin/users/" + u.id, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: role.value }) }).then((r) => r.json()).catch(() => null);
+      if (r && r.ok) toast(u.username + " is now " + role.value + "."); else toast("Couldn't change role.", "err");
+    });
+    const amt = document.createElement("input"); amt.type = "number"; amt.value = "10"; amt.title = "amount";
+    const give = document.createElement("button"); give.className = "btn-mini"; give.textContent = "Grant";
+    give.addEventListener("click", async () => {
+      const delta = parseInt(amt.value, 10) || 0;
+      const r = await fetch("/api/admin/users/" + u.id + "/tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ delta }) }).then((r) => r.json()).catch(() => null);
+      if (r && r.ok) { tok.textContent = r.user.tokens; if (u.id === currentUser.id) { currentUser.tokens = r.user.tokens; renderAccount(); renderProfile(); } toast("Granted " + delta + " to " + u.username + "."); }
+    });
+    const del = document.createElement("button"); del.className = "btn-mini danger"; del.textContent = "Delete"; del.disabled = u.id === currentUser.id;
+    del.addEventListener("click", async () => {
+      if (!confirm("Delete " + u.username + "'s account? This can't be undone.")) return;
+      const r = await fetch("/api/admin/users/" + u.id, { method: "DELETE" }).then((r) => r.json()).catch(() => null);
+      if (r && r.ok) { row.remove(); toast("Deleted " + u.username + "."); } else toast((r && r.error) || "Couldn't delete.", "err");
+    });
+    ctrl.appendChild(role); ctrl.appendChild(amt); ctrl.appendChild(give); ctrl.appendChild(del);
+    row.appendChild(ava); row.appendChild(name); row.appendChild(spacer); row.appendChild(tok); row.appendChild(ctrl);
+    return row;
+  }
+
+  /* home members */
+  const memberGrid = document.getElementById("memberGrid");
+  const statActive = document.getElementById("statActive");
+  const statTotal = document.getElementById("statTotal");
+  async function loadMembers() {
+    const r = await fetch("/api/stats").then((r) => r.json()).catch(() => null);
+    if (!r || !r.ok) return;
+    statActive.textContent = r.activeUsers; statTotal.textContent = r.totalUsers;
+    memberGrid.innerHTML = "";
+    r.users.forEach((u) => {
+      const card = document.createElement("div"); card.className = "member-card";
+      const ban = document.createElement("div"); ban.className = "mc-banner"; if (u.banner) ban.style.backgroundImage = "url('" + u.banner + "')";
+      const ava = document.createElement("div"); ava.className = "mc-ava";
+      if (u.avatar) ava.innerHTML = '<img src="' + u.avatar + '" alt="">'; else ava.textContent = initials(u.username);
+      if (u.online) { const d = document.createElement("span"); d.className = "mc-online"; ava.appendChild(d); }
+      const name = document.createElement("div"); name.className = "mc-name"; name.textContent = u.username;
+      const role = document.createElement("div"); role.className = "mc-role" + (u.role === "admin" ? " admin" : ""); role.textContent = u.role === "admin" ? "admin" : "member";
+      card.appendChild(ban); card.appendChild(ava); card.appendChild(name); card.appendChild(role);
+      if (u.activity) { const act = document.createElement("div"); act.className = "mc-activity"; act.textContent = u.activity; card.appendChild(act); }
+      memberGrid.appendChild(card);
+    });
+  }
+
+  // navigation hooks
+  profileBtn.addEventListener("click", () => { showPage("profile"); openProfile(); });
+  navItems.forEach((n) => n.addEventListener("click", () => {
+    if (n.dataset.page === "home") loadMembers();
+    if (n.dataset.page === "profile") openProfile();
+  }));
+
+  refreshMe().then(() => { applyAuthGate(); if (currentUser) { renderProfile(); loadMembers(); } });
 
   function endSearchUI() {
     graphSetScanning(false);
@@ -2479,13 +2850,19 @@ you cant run by your own footprints.
     invCancelBtn.classList.remove("hidden");
     scanLoader.classList.remove("hidden");
 
+    saveBar.style.display = "none"; lastSearch = null;
+
     const tasks = [];
     if (ultra) tasks.push(runUltraSearch(query, type, myId));
     else tasks.push(runNicLookup(query, type));
     if (type === "username") tasks.push(runSocialScan(query));
     await Promise.allSettled(tasks);
 
-    if (myId === curSearch) endSearchUI();
+    if (myId === curSearch) {
+      endSearchUI();
+      lastSearch = { type, query, ultra: !!ultra, summary: (nicSummary.textContent || "").slice(0, 120) };
+      saveBar.style.display = "flex";
+    }
   }
 
   invForm.addEventListener("submit", (e) => { e.preventDefault(); startSearch(false); });
