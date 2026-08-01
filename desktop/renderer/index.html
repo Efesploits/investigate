@@ -1285,6 +1285,22 @@
   </main>
 </div>
 
+<!-- member profile viewer (must stay ABOVE the script — it queries these ids at load) -->
+<div class="modal-back" id="memberModal">
+  <div class="mp-modal">
+    <button class="mp-close" id="mpClose" type="button" aria-label="Close">✕</button>
+    <div class="mp-banner" id="mpBanner"></div>
+    <div class="mp-body">
+      <div class="mp-ava" id="mpAva">?</div>
+      <div class="mp-name"><span id="mpName">user</span><span class="mp-role" id="mpRole">member</span></div>
+      <div class="mp-status" id="mpStatus"></div>
+      <div class="mp-bio" id="mpBio"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
 <script>
   /* ---------- settings (persisted in localStorage) ---------- */
   const SETTINGS_KEY = "m3-settings";
@@ -1817,6 +1833,7 @@
   const mpStatus = document.getElementById("mpStatus");
   const mpBio = document.getElementById("mpBio");
   function openMemberModal(u) {
+    if (!memberModal) return;
     mpBanner.style.backgroundImage = u.banner ? "url('" + u.banner + "')" : "";
     mpAva.innerHTML = "";
     if (u.avatar) { const im = document.createElement("img"); im.src = u.avatar; im.alt = ""; mpAva.appendChild(im); }
@@ -1834,10 +1851,13 @@
     mpBio.classList.toggle("empty", !u.bio);
     memberModal.classList.add("show");
   }
-  const closeMemberModal = () => memberModal.classList.remove("show");
-  document.getElementById("mpClose").addEventListener("click", closeMemberModal);
-  memberModal.addEventListener("click", (e) => { if (e.target === memberModal) closeMemberModal(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && memberModal.classList.contains("show")) closeMemberModal(); });
+  const closeMemberModal = () => memberModal && memberModal.classList.remove("show");
+  const mpCloseBtn = document.getElementById("mpClose");
+  if (mpCloseBtn) mpCloseBtn.addEventListener("click", closeMemberModal);
+  if (memberModal) {
+    memberModal.addEventListener("click", (e) => { if (e.target === memberModal) closeMemberModal(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && memberModal.classList.contains("show")) closeMemberModal(); });
+  }
 
   /* ---------- admin ---------- */
   const adminUsers = document.getElementById("adminUsers");
@@ -3104,20 +3124,5 @@
   // quiet check shortly after launch
   setTimeout(() => runCheck(false), 2500);
 </script>
-<!-- member profile viewer -->
-<div class="modal-back" id="memberModal">
-  <div class="mp-modal">
-    <button class="mp-close" id="mpClose" type="button" aria-label="Close">✕</button>
-    <div class="mp-banner" id="mpBanner"></div>
-    <div class="mp-body">
-      <div class="mp-ava" id="mpAva">?</div>
-      <div class="mp-name"><span id="mpName">user</span><span class="mp-role" id="mpRole">member</span></div>
-      <div class="mp-status" id="mpStatus"></div>
-      <div class="mp-bio" id="mpBio"></div>
-    </div>
-  </div>
-</div>
-
-<div class="toast-wrap" id="toastWrap"></div>
 </body>
 </html>

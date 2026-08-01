@@ -1,5 +1,5 @@
 {
-  "version": "1.10.0",
+  "version": "1.10.1",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Bookmarks are now the Table — it saves the actual results, so you can reopen an investigation without spending a token (10 slots each). New Users and Admin tabs, announcements from the team on the home page, hover a search button to see what it costs, and a proper update notification that no longer covers your wallet."
+  "notes": "Fixes search being unresponsive in 1.10.0. The social scan no longer opens a browser for each site — it now checks every platform in parallel over plain HTTP, so a scan finishes in seconds instead of minutes."
 }

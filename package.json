@@ -13,10 +13,6 @@
     "express": "^4.19.2",
     "firebase-admin": "^14.2.0",
     "jsonwebtoken": "^9.0.3",
-    "pg": "^8.22.0",
-    "puppeteer": "^22.10.0"
-  },
-  "allowScripts": {
-    "puppeteer@22.15.0": true
+    "pg": "^8.22.0"
   }
 }
