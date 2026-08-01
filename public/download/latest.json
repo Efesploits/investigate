@@ -1,5 +1,5 @@
 {
-  "version": "1.10.2",
+  "version": "1.10.3",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Ultra Search now chases its leads in parallel, so it finishes in seconds instead of stalling. Saving to the Table confirms on the button, the Table's found-accounts list is styled again, the online dot no longer hides behind avatars, and the intro tagline sits clear of the magnifying glass. Users and Profile viewing included."
+  "notes": "The intro tagline now sits clear of the magnifying glass, and the Log in / Register selector moves like liquid glass — the pill stretches, trails and springs into place. Plus the parallel Ultra search and the earlier search fix."
 }

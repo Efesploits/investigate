@@ -1,6 +1,6 @@
 {
   "name": "investigate-client",
-  "version": "1.10.2",
+  "version": "1.10.3",
   "description": "m3's investigation tool — desktop SQL database client",
   "main": "main.js",
   "author": "m3",

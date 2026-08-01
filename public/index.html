@@ -99,7 +99,11 @@ you cant run by your own footprints.
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    /* reserve a top band for the absolute tagline; `safe` keeps the centered
+       stack from clipping/rising into it when the window is short */
+    justify-content: safe center;
+    padding-top: 92px;
+    box-sizing: border-box;
     gap: 26px;
     z-index: 50;
     background: radial-gradient(760px 620px at 50% 34%, var(--intro-bg-inner) 0%, var(--intro-bg-outer) 72%);
@@ -108,7 +112,9 @@ you cant run by your own footprints.
   #intro.leaving { opacity: 0; transform: scale(1.08); pointer-events: none; }
 
   .glass-wrap {
-    width: min(320px, 72vw);
+    /* the 46vh cap shrinks the glass on short windows so it never rises into
+       the tagline above it */
+    width: min(320px, 72vw, 46vh);
     filter: drop-shadow(0 0 34px rgb(var(--accent-rgb) / 0.10));
     animation: glassIn 1s cubic-bezier(.2,.8,.2,1) both,
                float 6s ease-in-out 1s infinite;
@@ -186,9 +192,9 @@ you cant run by your own footprints.
 
   .print-tag {
     position: absolute;
-    top: clamp(24px, 8vh, 92px);
+    top: clamp(10px, 4vh, 58px);
     margin: 0;
-    /* sits on top of the lens instead of being painted over by it */
+    /* sits above the lens (raised + z-index) so the glass never covers it */
     z-index: 3;
     color: var(--muted);
     font-size: clamp(.9rem, 2.4vw, 1.15rem);
@@ -887,9 +893,37 @@ you cant run by your own footprints.
     border: 1px solid var(--border); border-radius: 999px; margin-bottom: 18px; }
   /* the white pill physically slides between the two tabs */
   .auth-slider { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 6px); border-radius: 999px;
-    background: var(--accent); box-shadow: 0 2px 10px -2px rgb(var(--accent-rgb) / .45);
-    transition: left .34s cubic-bezier(.65,.05,.25,1.15); pointer-events: none; }
+    /* liquid-glass gel: a soft vertical sheen over the accent fill, a bright top
+       specular line and a faint inner floor shadow give it a domed, glassy body */
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 100%, #fff) 0%, var(--accent) 44%, color-mix(in srgb, var(--accent) 90%, #000) 100%);
+    box-shadow: 0 3px 12px -3px rgb(var(--accent-rgb) / .5),
+                inset 0 1.5px 0 rgba(255,255,255,.7),
+                inset 0 -2px 5px -2px rgba(0,0,0,.28);
+    /* springy travel: a touch of overshoot so it settles like a liquid blob */
+    transition: left .52s cubic-bezier(.34,1.32,.5,1);
+    pointer-events: none; will-change: left, transform; }
+  /* a small specular glint that brightens and slides as the blob moves */
+  .auth-slider::before { content: ""; position: absolute; top: 14%; left: 16%; width: 42%; height: 34%;
+    border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,.85), rgba(255,255,255,0));
+    opacity: .5; pointer-events: none; transition: opacity .3s ease; }
+  .auth-slider.go-right::before, .auth-slider.go-left::before { animation: liquidGlint .52s ease both; }
+  @keyframes liquidGlint { 0%{opacity:.5} 35%{opacity:.95} 100%{opacity:.5} }
   .auth-tabs.on-register .auth-slider { left: calc(50% + 2px); }
+  /* the tail forms on the side it came from, so the origin flips per direction */
+  .auth-slider.go-right { transform-origin: 100% 50%; animation: liquidSquash .52s cubic-bezier(.4,.7,.3,1) both; }
+  .auth-slider.go-left  { transform-origin: 0% 50%;   animation: liquidSquash .52s cubic-bezier(.4,.7,.3,1) both; }
+  @keyframes liquidSquash {
+    0%   { transform: scaleX(1)    scaleY(1); }
+    22%  { transform: scaleX(1.24) scaleY(.83); }
+    48%  { transform: scaleX(1.13) scaleY(.91); }
+    70%  { transform: scaleX(.92)  scaleY(1.07); }
+    86%  { transform: scaleX(1.03) scaleY(.98); }
+    100% { transform: scaleX(1)    scaleY(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .auth-slider { transition: left .18s linear; }
+    .auth-slider.go-right, .auth-slider.go-left { animation: none; }
+  }
   .auth-tab { position: relative; z-index: 1; flex: 1; border: none; background: transparent; color: var(--muted);
     font-family: inherit; font-weight: 700; font-size: .84rem; padding: 9px 8px; border-radius: 999px; cursor: pointer;
     transition: color .22s ease; }
@@ -2635,11 +2669,25 @@ you cant run by your own footprints.
   let authMode = "login";
 
   const authTabs = document.getElementById("authTabs");
+  // Liquid-glass selector: the pill stretches along its direction of travel,
+  // trails behind, then rebounds and settles — origin flips so the tail always
+  // forms on the side it came from.
+  function animateSlider(dir) {
+    if (!authTabs) return;
+    const s = authTabs.querySelector(".auth-slider");
+    if (!s || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    s.classList.remove("go-left", "go-right");
+    void s.offsetWidth; // restart the keyframes on rapid re-clicks
+    s.classList.add(dir === "right" ? "go-right" : "go-left");
+    s.addEventListener("animationend", () => s.classList.remove("go-left", "go-right"), { once: true });
+  }
   function setAuthMode(mode) {
+    const prev = authMode;
     authMode = mode;
     tabLogin.classList.toggle("active", mode === "login");
     tabRegister.classList.toggle("active", mode === "register");
     if (authTabs) authTabs.classList.toggle("on-register", mode === "register");
+    if (prev && prev !== mode) animateSlider(mode === "register" ? "right" : "left");
     authSubmit.textContent = mode === "login" ? "Log in" : "Create account";
     authPass.setAttribute("autocomplete", mode === "login" ? "current-password" : "new-password");
     authHint.textContent = mode === "login"
