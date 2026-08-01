@@ -1,5 +1,5 @@
 {
-  "version": "1.11.0",
+  "version": "1.11.1",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "The Playbook. A Rules tab that clears the screen and brings up a real 3D book — it rises off the bottom, turns over, and opens itself. Page one is the title, page two holds the five rules, a pencil tick and the Agree button. Turn pages with the buttons or by dragging a corner. New members meet it on the way in."
+  "notes": "The Playbook. A Rules tab that clears the screen and brings up a real 3D book — it rises off the bottom, turns over, and opens itself. Page one is the title, page two holds the five rules, a pencil tick and the Agree button. Turn pages with the buttons or by dragging a corner. New members meet it on the way in. 1.11.1 fixes the Agree button, which could not be clicked."
 }

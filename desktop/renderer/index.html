@@ -1164,14 +1164,20 @@
   .tickbox.on .x2 { animation: drawX .3s cubic-bezier(.5,.1,.4,1) .22s forwards; }
   @keyframes drawX { to { stroke-dashoffset: 0; } }
   .agree-lbl { font-family: var(--paper-hand); font-size: calc(var(--pw) * .044); color: #2a241d; line-height: 1.25; }
+  /* The button itself must stay untransformed. Inside the book's 3D context a
+     rotated control is skipped by hit-testing and the click is handed to its
+     container instead — which left Agree completely unpressable. The hand-drawn
+     tilt lives on the label inside it, where it costs nothing. */
   .agree-btn {
     align-self: flex-start; font-family: var(--paper-hand); font-size: calc(var(--pw) * .055);
     background: transparent; color: #241f19; border: 2.6px solid #241f19;
-    border-radius: 7px 11px 6px 10px; padding: .3em 1.15em; cursor: pointer; transform: rotate(-1deg);
-    transition: transform .2s cubic-bezier(.34,1.4,.5,1), background .2s ease, opacity .25s ease;
+    border-radius: 7px 11px 6px 10px; padding: .3em 1.15em; cursor: pointer;
+    transition: background .2s ease, opacity .25s ease;
   }
+  .agree-btn > span { display: inline-block; transform: rotate(-1.2deg); transition: transform .2s cubic-bezier(.34,1.4,.5,1); }
   .agree-btn[disabled] { opacity: .3; cursor: not-allowed; }
-  .agree-btn:not([disabled]):hover { background: rgba(36,31,25,.1); transform: rotate(-1deg) scale(1.05); }
+  .agree-btn:not([disabled]):hover { background: rgba(36,31,25,.1); }
+  .agree-btn:not([disabled]):hover > span { transform: rotate(-1.2deg) scale(1.06); }
 
   /* the corner you can grab */
   .pg-curl {
@@ -1732,7 +1738,7 @@
                 </span>
                 <span class="agree-lbl">i have read the rules</span>
               </div>
-              <button class="agree-btn" id="bkAgree" type="button" disabled>Agree</button>
+              <button class="agree-btn" id="bkAgree" type="button" disabled><span>Agree</span></button>
             </div>
           </div>
           <div class="pg-curl"></div>
@@ -3889,7 +3895,7 @@
     }
   }
 
-  bkAgree.addEventListener("click", () => {
+  function bkDoAgree() {
     if (bkAgree.disabled || bkBusy) return;
     markRulesAccepted();
     const first = bkFirstRun;
@@ -3897,6 +3903,14 @@
       showPage("home");
       toast(first ? "Rules signed. Welcome to the board." : "Rules re-read. Suit up.");
     });
+  }
+  bkAgree.addEventListener("click", bkDoAgree);
+  // Safety net for the same 3D hit-testing quirk: if the click was handed to the
+  // wrapper but actually landed on the button, honour it anyway.
+  document.querySelector(".agree-wrap").addEventListener("click", (e) => {
+    if (e.target === bkAgree || bkAgree.contains(e.target)) return;   // already handled
+    const r = bkAgree.getBoundingClientRect();
+    if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) bkDoAgree();
   });
   bkExit.addEventListener("click", () => { if (!bkFirstRun && !bkBusy) closePlaybook(() => showPage("home")); });
   document.addEventListener("keydown", (e) => {
