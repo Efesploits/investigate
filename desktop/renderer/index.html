@@ -44,11 +44,20 @@
     position: fixed; inset: 0; display: flex; flex-direction: column;
     /* reserve a top band for the absolute tagline; `safe` keeps the centered
        stack from clipping/rising into it when the window is short */
-    align-items: center; justify-content: safe center; padding-top: 84px; box-sizing: border-box; gap: 26px; z-index: 50;
+    align-items: center; justify-content: safe center; padding: 84px 16px 24px; box-sizing: border-box; gap: 26px; z-index: 50;
+    /* on a short window the login form must stay reachable — scroll rather than
+       clip it off the bottom edge */
+    overflow-y: auto; overflow-x: hidden;
     background: radial-gradient(760px 620px at 50% 34%, var(--intro-bg-inner) 0%, var(--intro-bg-outer) 72%);
     transition: opacity .7s ease, transform .7s ease;
   }
   #intro.leaving { opacity: 0; transform: scale(1.08); pointer-events: none; }
+  /* short windows: shrink the glass and tighten gaps so the sign-in stack fits
+     without scrolling; a smaller glass only widens its clearance from the tagline */
+  @media (max-height: 820px) {
+    #intro { gap: 14px; }
+    .glass-wrap { width: min(300px, 60vw, 26vh) !important; }
+  }
   .glass-wrap {
     /* the 42vh cap shrinks the glass on short windows (the client is ~720px
        tall) so it never rises into the tagline above it */
@@ -3798,6 +3807,24 @@
   bookStage.addEventListener("pointerup", bkEndDrag);
   bookStage.addEventListener("pointercancel", bkEndDrag);
 
+  // The in-page controls (the tick, the Agree button) live INSIDE the book's 3D
+  // context, where Chromium's per-element hit-testing is unreliable: a click on a
+  // transformed child gets handed to an ancestor, so listeners bound directly to
+  // those elements silently miss (this is exactly what left Agree dead). Clicks
+  // still BUBBLE up the DOM to the stage regardless of transforms, so both are
+  // resolved here by geometry against each control's on-screen box. This is the
+  // single source of truth for them — they carry no direct click listeners.
+  bookStage.addEventListener("click", (e) => {
+    if (bkBusy || !bookStage.classList.contains("ready")) return;
+    if (e.target.closest && e.target.closest(".book-ctl")) return;   // the nav bar handles itself
+    const inBox = (el) => {
+      const r = el.getBoundingClientRect();
+      return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    };
+    if (!bkAgree.disabled && inBox(bkAgree)) { bkDoAgree(); return; }
+    if (inBox(bkTickRow)) { bkToggleTick(); }
+  });
+
   bkPrev.addEventListener("click", () => bkTurn(-1));
   bkNext.addEventListener("click", () => bkTurn(1));
   [bkPrev, bkNext, bkExit, bkAgree].forEach(attachSounds);
@@ -3810,7 +3837,8 @@
     bkAgree.disabled = !on;
     if (on) knock({ dur: 0.05, gain: 0.1, tone: 2200 });
   }
-  bkTickRow.addEventListener("click", () => bkToggleTick());
+  // click handling for the tick is delegated to the stage (see above); this is
+  // just the keyboard path
   bkTick.addEventListener("keydown", (e) => {
     if (e.key === " " || e.key === "Enter") { e.preventDefault(); bkToggleTick(); }
   });
@@ -3904,14 +3932,8 @@
       toast(first ? "Rules signed. Welcome to the board." : "Rules re-read. Suit up.");
     });
   }
-  bkAgree.addEventListener("click", bkDoAgree);
-  // Safety net for the same 3D hit-testing quirk: if the click was handed to the
-  // wrapper but actually landed on the button, honour it anyway.
-  document.querySelector(".agree-wrap").addEventListener("click", (e) => {
-    if (e.target === bkAgree || bkAgree.contains(e.target)) return;   // already handled
-    const r = bkAgree.getBoundingClientRect();
-    if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) bkDoAgree();
-  });
+  // Agree is fired by the stage's geometry handler (see above), not a direct
+  // listener — the button sits inside the 3D book where direct clicks miss.
   bkExit.addEventListener("click", () => { if (!bkFirstRun && !bkBusy) closePlaybook(() => showPage("home")); });
   document.addEventListener("keydown", (e) => {
     if (!bookStage.classList.contains("show")) return;

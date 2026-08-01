@@ -1,5 +1,5 @@
 {
-  "version": "1.11.1",
+  "version": "1.11.2",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "The Playbook. A Rules tab that clears the screen and brings up a real 3D book — it rises off the bottom, turns over, and opens itself. Page one is the title, page two holds the five rules, a pencil tick and the Agree button. Turn pages with the buttons or by dragging a corner. New members meet it on the way in. 1.11.1 fixes the Agree button, which could not be clicked."
+  "notes": "The Playbook, plus fixes: the \"i have read the rules\" tick and the Agree button now respond to clicks on the desktop client (both live inside the 3D book, where clicks were being mis-routed), and the login / register form no longer gets cut off the bottom on a short window."
 }
