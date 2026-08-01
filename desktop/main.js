@@ -224,3 +224,18 @@ ipcMain.handle("bookmarks:delete", async (_e, id) => {
   try { return await serverFetch("/api/bookmarks/" + encodeURIComponent(id), { method: "DELETE" }); }
   catch (_) { return { ok: false, error: "Connection error." }; }
 });
+
+/* ---------- members, announcements, admin (via the hosted server) ---------- */
+const relay = (name, fn) => ipcMain.handle(name, async (_e, arg) => {
+  try { return await fn(arg); } catch (_) { return { ok: false, error: "Connection error." }; }
+});
+
+relay("stats:get", () => serverFetch("/api/stats"));
+relay("ann:list", () => serverFetch("/api/announcements"));
+relay("ann:post", ({ title, body }) => serverFetch("/api/announcements", { method: "POST", body: JSON.stringify({ title, body }) }));
+relay("ann:delete", (id) => serverFetch("/api/announcements/" + encodeURIComponent(id), { method: "DELETE" }));
+relay("admin:users", () => serverFetch("/api/admin/users"));
+relay("admin:patchUser", ({ id, patch }) => serverFetch("/api/admin/users/" + encodeURIComponent(id), { method: "PATCH", body: JSON.stringify(patch || {}) }));
+relay("admin:grantTokens", ({ id, delta }) => serverFetch("/api/admin/users/" + encodeURIComponent(id) + "/tokens", { method: "POST", body: JSON.stringify({ delta }) }));
+relay("admin:deleteUser", (id) => serverFetch("/api/admin/users/" + encodeURIComponent(id), { method: "DELETE" }));
+relay("admin:logs", (limit) => serverFetch("/api/admin/logs?limit=" + (parseInt(limit, 10) || 200)));

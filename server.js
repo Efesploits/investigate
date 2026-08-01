@@ -208,23 +208,62 @@ app.get("/api/stats", async (_req, res) => {
   });
 });
 
-/* ============================= bookmarks ============================= */
+/* ============================= table (saved results) ============================= */
+// Everyone gets the same allowance; a saved entry carries the whole result
+// snapshot, so we also cap its size to stay well under Firestore's 1MB doc limit.
+const TABLE_LIMIT = parseInt(process.env.TABLE_LIMIT || "10", 10);
+const TABLE_MAX_BYTES = 600 * 1024;
+
 app.get("/api/bookmarks", requireAuth, async (req, res) => {
-  res.json({ ok: true, bookmarks: await store.listBookmarks(req.user.id) });
+  const bookmarks = await store.listBookmarks(req.user.id);
+  res.json({ ok: true, bookmarks, limit: TABLE_LIMIT, used: bookmarks.length });
 });
 app.post("/api/bookmarks", requireAuth, async (req, res) => {
   const b = req.body || {};
+  const existing = await store.listBookmarks(req.user.id);
+  if (existing.length >= TABLE_LIMIT) {
+    return res.status(409).json({
+      ok: false,
+      error: `Your table is full (${TABLE_LIMIT} saved max) — delete one to make room.`,
+      limit: TABLE_LIMIT, used: existing.length,
+    });
+  }
+  const data = b.data || null;
+  if (data && JSON.stringify(data).length > TABLE_MAX_BYTES) {
+    return res.status(413).json({ ok: false, error: "That result set is too large to save." });
+  }
   const bm = await store.addBookmark({
     user_id: req.user.id,
     label: String(b.label || "").slice(0, 120) || "Investigation",
     type: String(b.type || "").slice(0, 20),
     query: String(b.query || "").slice(0, 200),
-    data: b.data || null,
+    data,
   });
-  res.json({ ok: true, bookmark: bm });
+  res.json({ ok: true, bookmark: bm, limit: TABLE_LIMIT, used: existing.length + 1 });
 });
 app.delete("/api/bookmarks/:id", requireAuth, async (req, res) => {
   await store.deleteBookmark(req.user.id, req.params.id);
+  res.json({ ok: true });
+});
+
+/* ============================= announcements ============================= */
+// Everyone signed in can read them; only admins post or remove.
+app.get("/api/announcements", requireAuth, async (_req, res) => {
+  res.json({ ok: true, announcements: await store.listAnnouncements(20) });
+});
+app.post("/api/announcements", requireAuth, requireAdmin, async (req, res) => {
+  const b = req.body || {};
+  const title = String(b.title || "").trim().slice(0, 120);
+  const body = String(b.body || "").trim().slice(0, 2000);
+  if (!title && !body) return res.status(400).json({ ok: false, error: "Write something first." });
+  const ann = await store.addAnnouncement({
+    author_id: req.user.id, author: req.user.username,
+    title: title || "Announcement", body,
+  });
+  res.json({ ok: true, announcement: ann });
+});
+app.delete("/api/announcements/:id", requireAuth, requireAdmin, async (req, res) => {
+  await store.deleteAnnouncement(req.params.id);
   res.json({ ok: true });
 });
 

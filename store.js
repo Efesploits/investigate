@@ -93,6 +93,16 @@ async function pgInit() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS bm_user ON bookmarks (user_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS announcements (
+      id         TEXT PRIMARY KEY,
+      author_id  TEXT,
+      author     TEXT,
+      title      TEXT,
+      body       TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS ann_created ON announcements (created_at DESC);
   `);
 }
 
@@ -192,6 +202,22 @@ const pgStore = {
     await pool.query(`DELETE FROM bookmarks WHERE id=$1 AND user_id=$2`, [id, userId]);
     return true;
   },
+  async addAnnouncement(a) {
+    const id = uid();
+    const { rows } = await pool.query(
+      `INSERT INTO announcements (id,author_id,author,title,body) VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+      [id, a.author_id, a.author, a.title, a.body]
+    );
+    return rows[0];
+  },
+  async listAnnouncements(limit = 20) {
+    const { rows } = await pool.query(`SELECT * FROM announcements ORDER BY created_at DESC LIMIT $1`, [limit]);
+    return rows;
+  },
+  async deleteAnnouncement(id) {
+    await pool.query(`DELETE FROM announcements WHERE id=$1`, [id]);
+    return true;
+  },
 };
 
 /* ================================================================
@@ -235,6 +261,7 @@ async function fbSelfTest() { await fbUsers().limit(1).get(); }
 const fbUsers = () => fbdb.collection("users");
 const fbLogs = () => fbdb.collection("search_logs");
 const fbBookmarks = () => fbdb.collection("bookmarks");
+const fbAnnouncements = () => fbdb.collection("announcements");
 const FB_USER_FIELDS = ["username", "password_hash", "role", "tokens", "banner", "avatar", "bio", "discord_id", "discord_username", "discord_avatar"];
 
 const fbStore = {
@@ -337,6 +364,19 @@ const fbStore = {
     if (s.exists && s.data().user_id === userId) await ref.delete();
     return true;
   },
+  async addAnnouncement(a) {
+    const doc = { author_id: a.author_id, author: a.author, title: a.title, body: a.body, created_at: now() };
+    const ref = await fbAnnouncements().add(doc);
+    return { id: ref.id, ...doc };
+  },
+  async listAnnouncements(limit = 20) {
+    const q = await fbAnnouncements().orderBy("created_at", "desc").limit(limit).get();
+    return q.docs.map((d) => ({ id: d.id, ...d.data() }));
+  },
+  async deleteAnnouncement(id) {
+    await fbAnnouncements().doc(String(id)).delete();
+    return true;
+  },
 };
 
 /* ================================================================
@@ -344,7 +384,7 @@ const fbStore = {
  * ============================================================== */
 const DATA_DIR = path.join(__dirname, "data");
 const DATA_FILE = path.join(DATA_DIR, "store.json");
-let mem = { users: [], logs: [], bookmarks: [] };
+let mem = { users: [], logs: [], bookmarks: [], announcements: [] };
 
 function jsonLoad() {
   try {
@@ -353,6 +393,7 @@ function jsonLoad() {
   mem.users = mem.users || [];
   mem.logs = mem.logs || [];
   mem.bookmarks = mem.bookmarks || [];
+  mem.announcements = mem.announcements || [];
 }
 let saveTimer = null;
 function jsonSave() {
@@ -432,6 +473,17 @@ const jsonStore = {
     mem.bookmarks = mem.bookmarks.filter((b) => !(b.id === id && b.user_id === userId));
     jsonSave(); return true;
   },
+  async addAnnouncement(a) {
+    const an = { id: uid(), author_id: a.author_id, author: a.author, title: a.title, body: a.body, created_at: now() };
+    mem.announcements.push(an); jsonSave(); return an;
+  },
+  async listAnnouncements(limit = 20) {
+    return mem.announcements.slice().sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, limit);
+  },
+  async deleteAnnouncement(id) {
+    mem.announcements = mem.announcements.filter((a) => a.id !== id);
+    jsonSave(); return true;
+  },
 };
 
 /* ================================================================
@@ -442,6 +494,7 @@ const METHODS = [
   "createUser", "getUserByUsername", "getUserById", "getUserByDiscordId", "updateUser",
   "addTokens", "spendTokens", "deleteUser", "listUsers", "touchLastSeen", "countUsers",
   "countActiveUsers", "addSearchLog", "listLogs", "addBookmark", "listBookmarks", "deleteBookmark",
+  "addAnnouncement", "listAnnouncements", "deleteAnnouncement",
 ];
 let activeBackend = jsonStore; // real backend is chosen in init()
 // diagnostics so the app can SHOW whether storage is durable (accounts survive

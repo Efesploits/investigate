@@ -424,6 +424,19 @@ you cant run by your own footprints.
   }
   button.scan:disabled { opacity: .55; cursor: not-allowed; }
 
+  /* hovering a search button reveals what it costs (::after is the shine sweep) */
+  button.scan[data-cost] { transition: padding-right .22s cubic-bezier(.3,.9,.4,1.1); }
+  button.scan[data-cost]::before {
+    content: attr(data-cost); position: absolute; right: 11px; top: 50%; z-index: 2;
+    transform: translateY(-50%) scale(.82); opacity: 0; pointer-events: none;
+    font-size: .62rem; font-weight: 800; letter-spacing: .5px; white-space: nowrap;
+    padding: 3px 8px; border-radius: 999px; background: rgba(0,0,0,.2); color: inherit;
+    transition: opacity .18s ease, transform .18s cubic-bezier(.3,.9,.4,1.3);
+  }
+  button.scan[data-cost]:hover:not(:disabled) { padding-right: 82px; }
+  button.scan[data-cost]:hover:not(:disabled)::before { opacity: 1; transform: translateY(-50%) scale(1); }
+  button.scan.ultra[data-cost]::before { background: rgb(var(--accent-rgb) / .16); }
+
   .row {
     display: flex;
     align-items: center;
@@ -868,16 +881,31 @@ you cant run by your own footprints.
     padding: 26px 24px; box-shadow: 0 30px 90px rgba(0,0,0,.6); }
   .modal h2 { margin: 0 0 4px; font-size: 1.3rem; }
   .modal .m-sub { color: var(--muted); font-size: .85rem; margin: 0 0 18px; }
-  .auth-tabs { display: flex; gap: 4px; padding: 4px; background: var(--panel2); border: 1px solid var(--border); border-radius: 999px; margin-bottom: 18px; }
-  .auth-tab { flex: 1; border: none; background: transparent; color: var(--muted); font-weight: 700; font-size: .84rem; padding: 8px; border-radius: 999px; cursor: pointer; }
-  .auth-tab.active { background: var(--accent); color: #000; }
+  .auth-tabs { position: relative; display: flex; gap: 4px; padding: 4px; background: var(--panel2);
+    border: 1px solid var(--border); border-radius: 999px; margin-bottom: 18px; }
+  /* the white pill physically slides between the two tabs */
+  .auth-slider { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 6px); border-radius: 999px;
+    background: var(--accent); box-shadow: 0 2px 10px -2px rgb(var(--accent-rgb) / .45);
+    transition: left .34s cubic-bezier(.65,.05,.25,1.15); pointer-events: none; }
+  .auth-tabs.on-register .auth-slider { left: calc(50% + 2px); }
+  .auth-tab { position: relative; z-index: 1; flex: 1; border: none; background: transparent; color: var(--muted);
+    font-family: inherit; font-weight: 700; font-size: .84rem; padding: 9px 8px; border-radius: 999px; cursor: pointer;
+    transition: color .22s ease; }
+  .auth-tab:not(.active):hover { color: var(--text); }
+  .auth-tab.active { color: #000; }
   .modal label { display: block; font-size: .74rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 12px 0 6px; font-weight: 700; }
   .modal input { width: 100%; box-sizing: border-box; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--border);
     background: var(--panel2); color: var(--text); font-size: .9rem; }
   .modal input:focus { outline: none; border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .08); }
-  .modal .m-submit { width: 100%; margin-top: 18px; padding: 12px; border-radius: 10px; border: none; background: var(--accent); color: #000; font-weight: 800; font-size: .92rem; cursor: pointer; }
-  .modal .m-submit:disabled { opacity: .6; cursor: not-allowed; }
-  .modal .m-err { color: #ff6b6b; font-size: .82rem; margin-top: 12px; min-height: 1em; }
+  /* NOTE: unscoped on purpose — the login gate reuses these outside .modal */
+  .m-submit { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--accent); color: #000;
+    font-family: inherit; font-weight: 800; font-size: .92rem; letter-spacing: .2px; cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease; }
+  .m-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 22px -8px rgb(var(--accent-rgb) / .6); filter: brightness(1.06); }
+  .m-submit:active:not(:disabled) { transform: translateY(0); }
+  .m-submit:disabled { opacity: .55; cursor: not-allowed; }
+  .modal .m-submit { margin-top: 18px; }
+  .m-err { color: #ff6b6b; font-size: .82rem; margin-top: 12px; min-height: 1em; }
   .modal .m-close { position: absolute; }
   .m-hint { color: var(--muted); font-size: .78rem; margin-top: 14px; text-align: center; }
 
@@ -891,6 +919,21 @@ you cant run by your own footprints.
   .intro-auth .m-submit { margin-top: 4px; }
   .intro-auth .m-err { text-align: center; }
   .intro-hint { color: var(--muted); font-size: .76rem; margin-top: 12px; text-align: center; position: relative; z-index: 1; }
+
+  /* welcome beat: the form drops away, the eye recenters, the title becomes "Hello <user>" */
+  .intro-auth, .intro-credit { transition: opacity .5s ease, transform .5s cubic-bezier(.5,0,.75,0); }
+  #intro.greeting .intro-auth { opacity: 0; transform: translateY(90px); pointer-events: none; }
+  #intro.greeting .intro-credit { opacity: 0; }
+  #intro.greeting .glass-wrap { animation: eyeSettle .9s cubic-bezier(.2,.9,.3,1.05) both; }
+  @keyframes eyeSettle { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(26px) scale(1.1); } }
+  /* the intro title's entrance animation is forwards-filled, so it must be cleared
+     before opacity/transform from these swap classes can take effect */
+  .intro-title.swap-out { animation: none; opacity: 0; transform: translateY(-14px);
+    transition: opacity .38s ease, transform .38s ease; }
+  .intro-title.swap-in { animation: titleIn .62s cubic-bezier(.2,.9,.3,1.1) both; }
+  @keyframes titleIn { 0% { opacity: 0; transform: translateY(18px) scale(.94); } 100% { opacity: 1; transform: none; } }
+  #intro.greeting .intro-sub { animation: subIn .6s ease .12s both; }
+  @keyframes subIn { from { opacity: 0; } to { opacity: 1; } }
 
   /* ===== profile page ===== */
   .btn-mini { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 9px; border: 1px solid var(--border);
@@ -943,6 +986,35 @@ you cant run by your own footprints.
   .bm-meta { color: var(--muted); font-size: .76rem; margin-top: 3px; }
   .bm-tag { font-size: .62rem; text-transform: uppercase; letter-spacing: .5px; padding: 2px 7px; border-radius: 6px; background: var(--panel2); border: 1px solid var(--border); color: var(--muted); font-weight: 800; margin-right: 6px; }
   .bm-empty { color: var(--muted); font-size: .88rem; padding: 20px; text-align: center; }
+  .bm-entry { display: flex; flex-direction: column; }
+  .bm-results { margin: 10px 0 4px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px;
+    background: color-mix(in srgb, var(--panel) 60%, #000); max-height: 460px; overflow-y: auto; }
+  .bm-sec { font-size: .7rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); font-weight: 800; margin: 14px 0 8px; }
+  .bm-results > .bm-sec:first-child { margin-top: 0; }
+  .table-meter { color: var(--muted); font-size: .78rem; margin: -10px 0 16px; letter-spacing: .3px; }
+  .table-meter span { color: var(--accent); font-weight: 800; }
+
+  /* member profile modal */
+  .mp-modal { width: 100%; max-width: 520px; background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
+    overflow: hidden; box-shadow: 0 30px 90px rgba(0,0,0,.65); position: relative; animation: mpIn .22s cubic-bezier(.2,.9,.3,1.1); }
+  @keyframes mpIn { from { opacity: 0; transform: translateY(12px) scale(.97); } }
+  .mp-banner { height: 168px; background: linear-gradient(120deg, #1a1a1a, #262626); background-size: cover; background-position: center; }
+  .mp-close { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.55); color: #fff; font-size: 1rem; line-height: 1;
+    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .mp-body { padding: 0 24px 24px; margin-top: -44px; }
+  .mp-ava { width: 104px; height: 104px; border-radius: 50%; border: 4px solid var(--panel); background: var(--panel2);
+    display: flex; align-items: center; justify-content: center; font-size: 2.3rem; font-weight: 800; color: var(--accent);
+    overflow: hidden; position: relative; }
+  .mp-ava img { width: 100%; height: 100%; object-fit: cover; }
+  .mp-online { position: absolute; bottom: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: #35d07f; border: 3px solid var(--panel); }
+  .mp-name { display: flex; align-items: center; gap: 10px; font-size: 1.5rem; font-weight: 800; margin-top: 12px; }
+  .mp-role { font-size: .62rem; text-transform: uppercase; letter-spacing: .6px; padding: 3px 9px; border-radius: 999px;
+    background: var(--panel2); border: 1px solid var(--border); color: var(--muted); font-weight: 800; }
+  .mp-role.admin { background: var(--accent); color: #000; border-color: var(--accent); }
+  .mp-status { color: var(--muted); font-size: .82rem; margin-top: 6px; display: flex; align-items: center; gap: 7px; }
+  .mp-bio { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--text); font-size: .9rem; line-height: 1.6; white-space: pre-wrap; }
+  .mp-bio.empty { color: var(--muted); font-style: italic; }
 
   /* connections */
   .conn-card { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); max-width: 520px; }
@@ -974,6 +1046,37 @@ you cant run by your own footprints.
   .log-kind.search { background: var(--panel2); color: var(--muted); border: 1px solid var(--border); }
   .log-q { color: var(--text); font-family: ui-monospace, Consolas, monospace; }
   .log-time { color: var(--muted); font-size: .72rem; margin-left: auto; }
+
+  /* home greeting — a quiet eyebrow above everything else on the page */
+  .hero-greet { display: none; align-items: center; gap: 11px; margin: 0 0 22px; padding-bottom: 16px;
+    border-bottom: 1px solid var(--border); animation: greetIn .45s ease both; }
+  .hero-greet.show { display: flex; }
+  .hero-greet .hg-ava { width: 36px; height: 36px; border-radius: 50%; background: var(--panel2); overflow: hidden; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 800; color: var(--accent); }
+  .hero-greet .hg-ava img { width: 100%; height: 100%; object-fit: cover; }
+  .hero-greet .hg-text { color: var(--text); font-size: 1.32rem; font-weight: 300; letter-spacing: .2px; }
+  .hero-greet .hg-text b { color: var(--muted); font-weight: 300; }
+  @keyframes greetIn { from { opacity: 0; transform: translateY(-6px); } }
+
+  /* announcements */
+  .ann-list { display: flex; flex-direction: column; gap: 10px; margin: 0 0 22px; }
+  .ann-list:empty { display: none; }
+  .ann-card { position: relative; padding: 15px 17px; border: 1px solid var(--border); border-radius: 14px;
+    background: linear-gradient(140deg, color-mix(in srgb, var(--accent) 7%, var(--panel)), var(--panel));
+    border-left: 3px solid var(--accent); }
+  .ann-head { display: flex; align-items: center; gap: 9px; }
+  .ann-pin { width: 15px; height: 15px; color: var(--accent); flex-shrink: 0; }
+  .ann-title { font-weight: 800; font-size: .96rem; }
+  .ann-body { color: var(--text); font-size: .88rem; line-height: 1.6; margin-top: 7px; white-space: pre-wrap; }
+  .ann-meta { color: var(--muted); font-size: .73rem; margin-top: 9px; }
+  .ann-del { position: absolute; top: 10px; right: 10px; border: 1px solid var(--border); background: var(--panel2);
+    color: var(--muted); border-radius: 7px; width: 24px; height: 24px; cursor: pointer; font-size: .78rem; line-height: 1;
+    display: flex; align-items: center; justify-content: center; }
+  .ann-del:hover { border-color: #ff6b6b; color: #ff6b6b; }
+  .ann-compose { display: flex; flex-direction: column; gap: 9px; align-items: flex-start; margin-bottom: 6px; }
+  .ann-compose input, .ann-compose textarea { width: 100%; box-sizing: border-box; padding: 11px 13px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--panel2); color: var(--text); font-size: .9rem; font-family: inherit; resize: vertical; }
+  .ann-compose input:focus, .ann-compose textarea:focus { outline: none; border-color: #666; }
 
   /* home members */
   .members { margin-top: 40px; }
@@ -1043,7 +1146,8 @@ you cant run by your own footprints.
   <p class="intro-sub">osint · username tracing</p>
 
   <div class="intro-auth" id="introAuth">
-    <div class="auth-tabs">
+    <div class="auth-tabs" id="authTabs">
+      <span class="auth-slider" aria-hidden="true"></span>
       <button class="auth-tab active" id="tabLogin" type="button">Log in</button>
       <button class="auth-tab" id="tabRegister" type="button">Register</button>
     </div>
@@ -1099,8 +1203,8 @@ you cant run by your own footprints.
       Investigate
     </div>
     <div class="nav-item" data-page="bookmarks">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-      Bookmarks
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v4H3zM3 8v12h18V8M9 8v12M15 8v12"/></svg>
+      Table
     </div>
     <div class="nav-item" data-page="database">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
@@ -1120,6 +1224,7 @@ you cant run by your own footprints.
   <main class="content">
     <!-- HOME -->
     <section class="page show" id="page-home">
+      <div class="hero-greet" id="heroGreet"></div>
       <div class="home-hero">
         <svg class="hero-eye" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <line x1="221" y1="211" x2="286" y2="276" stroke="var(--accent)" stroke-width="16" stroke-linecap="round"/>
@@ -1139,10 +1244,12 @@ you cant run by your own footprints.
         </div>
       </div>
 
+      <div id="annList" class="ann-list"></div>
+
       <div class="cards">
-        <div class="card"><div class="big">10+</div><p>Platforms scanned per username, from Instagram to Linktree.</p></div>
-        <div class="card"><h3>Real checks</h3><p>Pages are actually loaded in a headless browser — not guessed.</p></div>
-        <div class="card"><h3>Honest results</h3><p>Login walls and bot protection are flagged as UNKNOWN, never faked.</p></div>
+        <div class="card"><div class="big">10+</div><p>Doors tried on every name. Most people leave one unlocked.</p></div>
+        <div class="card"><h3>No guessing</h3><p>Every page is opened for real, in the dark, and read before it answers.</p></div>
+        <div class="card"><h3>Nothing invented</h3><p>What hides behind a wall stays UNKNOWN. The tool never fills the silence.</p></div>
       </div>
 
       <button class="cta" id="goInvestigate">
@@ -1172,8 +1279,8 @@ you cant run by your own footprints.
           <option value="password">password</option>
         </select>
         <input type="text" id="invQuery" placeholder="value to search" autocomplete="off" spellcheck="false" required />
-        <button type="submit" class="scan" id="invSubmitBtn">Search</button>
-        <button type="button" class="scan ultra" id="invUltraBtn"><svg class="ultra-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2L4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5z"/></svg><span>Ultra Search</span></button>
+        <button type="submit" class="scan" id="invSubmitBtn" data-cost="1 token">Search</button>
+        <button type="button" class="scan ultra" id="invUltraBtn" data-cost="3 tokens"><svg class="ultra-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2L4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5z"/></svg><span>Ultra Search</span></button>
         <button type="button" class="scan g-cancel hidden" id="invCancelBtn">Cancel</button>
       </form>
 
@@ -1211,8 +1318,8 @@ you cant run by your own footprints.
 
       <div class="save-bar" id="saveBar" style="display:none">
         <button class="btn-mini" id="saveSearchBtn" type="button">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-          Save to bookmarks
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v4H3zM3 8v12h18V8M9 8v12M15 8v12"/></svg>
+          Save to Table
         </button>
       </div>
 
@@ -1329,10 +1436,11 @@ you cant run by your own footprints.
       </div>
     </section>
 
-    <!-- BOOKMARKS -->
+    <!-- TABLE (saved investigation results) -->
     <section class="page" id="page-bookmarks">
-      <h1>Bookmarks</h1>
-      <p class="sub">Saved investigations — open one to reload the query.</p>
+      <h1>Table</h1>
+      <p class="sub">Everything you've laid out on the table. Saved results stay here — no token spent to look again.</p>
+      <div class="table-meter"><span id="bmUsed">0</span> / <span id="bmLimit">10</span> slots used</div>
       <div id="bookmarksList" class="bm-list"></div>
     </section>
 
@@ -1341,12 +1449,34 @@ you cant run by your own footprints.
       <h1>Admin</h1>
       <p class="sub">Manage members and review search activity.</p>
       <div id="storageStatus" class="storage-status" style="display:none"></div>
+
+      <h3 class="prof-sub">Post an announcement</h3>
+      <div class="ann-compose">
+        <input type="text" id="annTitle" maxlength="120" placeholder="Title">
+        <textarea id="annBody" maxlength="2000" rows="3" placeholder="What does everyone need to know?"></textarea>
+        <button class="btn-mini" id="annPost" type="button">Publish</button>
+      </div>
+
       <h3 class="prof-sub">Members</h3>
       <div id="adminUsers" class="admin-users"></div>
       <h3 class="prof-sub" style="margin-top:22px">Search logs</h3>
       <div id="adminLogs" class="admin-logs"></div>
     </section>
   </main>
+</div>
+
+<!-- member profile viewer -->
+<div class="modal-back" id="memberModal">
+  <div class="mp-modal">
+    <button class="mp-close" id="mpClose" type="button" aria-label="Close">✕</button>
+    <div class="mp-banner" id="mpBanner"></div>
+    <div class="mp-body">
+      <div class="mp-ava" id="mpAva">?</div>
+      <div class="mp-name"><span id="mpName">user</span><span class="mp-role" id="mpRole">member</span></div>
+      <div class="mp-status" id="mpStatus"></div>
+      <div class="mp-bio" id="mpBio"></div>
+    </div>
+  </div>
 </div>
 
 <div class="toast-wrap" id="toastWrap"></div>
@@ -1632,7 +1762,10 @@ you cant run by your own footprints.
         const result = JSON.parse(e.data);
         results.push(result);
         renderRow(result);
-        if (result.exists === true) graphAddSocial(result);
+        if (result.exists === true) {
+          graphAddSocial(result);
+          if (captured && captured.social.length < 60) captured.social.push({ name: result.name, url: result.url });
+        }
       });
       source.addEventListener("done", () => {
         if (myId === curSearch) {
@@ -1960,6 +2093,13 @@ you cant run by your own footprints.
     // Records view: the same passwords / usernames / emails, with copy buttons
     renderUltraCategories(cats);
 
+    // snapshot the aggregates so the Table can replay them without a new search
+    if (captured) {
+      const dump = (map) => [...map.entries()].slice(0, 60)
+        .map(([val, accts]) => [val, accts.slice(0, 6).map((a) => ({ domain: a.domain, ident: a.ident, url: a.url, pass: a.pass }))]);
+      captured.cats = { password: dump(cats.password), username: dump(cats.username), email: dump(cats.email) };
+    }
+
     // mount headers, then reveal rows round-robin so all columns grow together
     const headerPins = COLS.map((col) => graphAddCategoryHeader(col, col.x, HEADER_Y));
     const lastPin = headerPins.slice();
@@ -2017,6 +2157,7 @@ you cant run by your own footprints.
     nicSummary.appendChild(copyAll);
     results.forEach((rec, i) => nicResults.appendChild(renderNicCard(rec, i)));
     results.forEach((rec) => graphAddRecord(rec));
+    if (captured) captured.records = results.slice(0, 40);
   }
 
   /* ---------- investigation graph ---------- */
@@ -2421,12 +2562,31 @@ you cant run by your own footprints.
       if (currentUser.avatar) tbAva.innerHTML = '<img src="' + currentUser.avatar + '" alt="">';
       else { tbAva.textContent = initials(currentUser.username); }
       adminNav.style.display = currentUser.is_admin ? "" : "none"; // admin sidebar item
+      renderHeroGreet();
     } else {
       walletEl.style.display = "none";
       loginBtn.style.display = "";
       profileBtn.style.display = "none";
       adminNav.style.display = "none";
+      const hg = document.getElementById("heroGreet");
+      if (hg) hg.classList.remove("show");
     }
+  }
+  // "back at it again <user>?" above the home hero title
+  function renderHeroGreet() {
+    const hg = document.getElementById("heroGreet");
+    if (!hg || !currentUser) return;
+    hg.innerHTML = "";
+    const ava = document.createElement("span"); ava.className = "hg-ava";
+    if (currentUser.avatar) ava.innerHTML = '<img src="' + currentUser.avatar + '" alt="">';
+    else ava.textContent = initials(currentUser.username);
+    const txt = document.createElement("span"); txt.className = "hg-text";
+    txt.appendChild(document.createTextNode("Back at it again, "));
+    const nm = document.createElement("b"); nm.textContent = currentUser.username;
+    txt.appendChild(nm);
+    txt.appendChild(document.createTextNode("?"));
+    hg.appendChild(ava); hg.appendChild(txt);
+    hg.classList.add("show");
   }
   function setTokens(n) {
     if (!currentUser) return;
@@ -2454,10 +2614,12 @@ you cant run by your own footprints.
   const authHint = document.getElementById("authHint");
   let authMode = "login";
 
+  const authTabs = document.getElementById("authTabs");
   function setAuthMode(mode) {
     authMode = mode;
     tabLogin.classList.toggle("active", mode === "login");
     tabRegister.classList.toggle("active", mode === "register");
+    if (authTabs) authTabs.classList.toggle("on-register", mode === "register");
     authSubmit.textContent = mode === "login" ? "Log in" : "Create account";
     authPass.setAttribute("autocomplete", mode === "login" ? "current-password" : "new-password");
     authHint.textContent = mode === "login"
@@ -2500,13 +2662,35 @@ you cant run by your own footprints.
       }).then((r) => r.json());
       if (!r.ok) { authErr.textContent = r.error || "Something went wrong."; authSubmit.disabled = false; return; }
       currentUser = r.user; authForm.reset();
-      renderAccount(); renderProfile(); loadMembers();
-      introAuth.style.display = "none";
-      enterApp();
-      toast(authMode === "login" ? ("Welcome back, " + currentUser.username) : ("Account created — welcome, " + currentUser.username));
+      renderAccount(); renderProfile(); loadMembers(); loadAnnouncements();
+      const welcome = authMode === "login" ? ("Welcome back, " + currentUser.username) : ("Account created — welcome, " + currentUser.username);
+      playGreeting(currentUser.username, () => { enterApp(); toast(welcome); });
     } catch (_) { authErr.textContent = "Connection error."; }
     authSubmit.disabled = false;
   });
+
+  /* the login form drops away, the eye settles, and the title becomes "Hello <user>" */
+  function playGreeting(username, done) {
+    const title = document.querySelector(".intro-title");
+    const sub = document.querySelector(".intro-sub");
+    intro.classList.add("greeting");
+    if (!title) { setTimeout(done, 60); return; }
+    title.classList.add("swap-out");
+    setTimeout(() => {
+      title.textContent = "Hello " + username;
+      title.classList.remove("swap-out");
+      title.classList.add("swap-in");
+      if (sub) sub.textContent = "the board is yours";
+    }, 380);
+    setTimeout(() => {
+      intro.classList.remove("greeting");
+      title.classList.remove("swap-in");
+      title.textContent = "m3's investigation tool";
+      if (sub) sub.textContent = "osint · username tracing";
+      introAuth.style.display = "none";
+      done();
+    }, 2000);
+  }
 
   /* ================= profile / bookmarks / connections / admin / members ================= */
   async function doLogout() {
@@ -2599,25 +2783,111 @@ you cant run by your own footprints.
   document.getElementById("phLogout").addEventListener("click", doLogout);
   document.getElementById("discordConnect").addEventListener("click", () => toast("Discord connection is coming in the next update."));
 
-  /* bookmarks */
+  /* ---------- Table (saved investigation results) ---------- */
   const bookmarksList = document.getElementById("bookmarksList");
   const saveBar = document.getElementById("saveBar");
-  let lastSearch = null; // {type, query, ultra, summary}
+  const bmUsed = document.getElementById("bmUsed");
+  const bmLimit = document.getElementById("bmLimit");
+  let lastSearch = null;   // {type, query, ultra, summary, results}
+  let captured = null;     // result snapshot filled while a search runs
+
   document.getElementById("saveSearchBtn").addEventListener("click", async () => {
     if (!lastSearch) return;
     const r = await fetch("/api/bookmarks", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ label: lastSearch.query, type: lastSearch.type, query: lastSearch.query, data: { ultra: lastSearch.ultra, summary: lastSearch.summary } }),
+      body: JSON.stringify({
+        label: lastSearch.query, type: lastSearch.type, query: lastSearch.query,
+        data: { ultra: lastSearch.ultra, summary: lastSearch.summary, results: lastSearch.results || null },
+      }),
     }).then((r) => r.json()).catch(() => null);
-    if (r && r.ok) toast("Saved to bookmarks."); else toast("Couldn't save.", "err");
+    if (r && r.ok) toast("Laid out on the table."); else toast((r && r.error) || "Couldn't save.", "err");
   });
+
+  // rebuild the saved records / social hits / ultra aggregates from a snapshot
+  function renderSavedResults(box, res) {
+    if (!res || (!(res.records || []).length && !(res.social || []).length && !res.cats)) {
+      box.innerHTML = '<div class="bm-empty">This entry was saved before results were kept.</div>';
+      return;
+    }
+    if (res.cats) {
+      const DEFS = [
+        { key: "password", title: "Passwords", cls: "cat-pw" },
+        { key: "username", title: "Usernames", cls: "cat-un" },
+        { key: "email", title: "Emails", cls: "cat-em" },
+      ];
+      DEFS.forEach((def) => {
+        const entries = res.cats[def.key] || [];
+        if (!entries.length) return;
+        const block = document.createElement("div"); block.className = "cat-block " + def.cls;
+        const head = document.createElement("div"); head.className = "cat-block-head";
+        const ttl = document.createElement("div"); ttl.className = "cat-block-title";
+        const bar = document.createElement("span"); bar.className = "cbt-bar"; ttl.appendChild(bar);
+        const tt = document.createElement("span"); tt.textContent = def.title; ttl.appendChild(tt);
+        const n = document.createElement("span"); n.className = "cat-block-n";
+        n.textContent = entries.length + (entries.length === 1 ? " value" : " values"); ttl.appendChild(n);
+        const copyAll = document.createElement("button"); copyAll.type = "button"; copyAll.className = "nic-copyall"; copyAll.textContent = "Copy all";
+        copyAll.addEventListener("click", () => nicCopy(entries.map((e) => e[0]).join("\n"), copyAll));
+        head.appendChild(ttl); head.appendChild(copyAll); block.appendChild(head);
+        const rows = document.createElement("div"); rows.className = "cat-rows";
+        entries.forEach(([val, accts]) => {
+          const row = document.createElement("div"); row.className = "cat-row";
+          const main = document.createElement("div"); main.className = "cat-row-main";
+          const v = document.createElement("div"); v.className = "cat-row-val"; v.textContent = val; v.title = "click to copy";
+          v.addEventListener("click", () => { nicCopy(val); v.classList.add("copied"); setTimeout(() => v.classList.remove("copied"), 950); });
+          main.appendChild(v);
+          const al = document.createElement("div"); al.className = "cat-row-accts";
+          (accts || []).forEach((a) => {
+            const s = document.createElement("span"); s.className = "cat-acct";
+            s.appendChild(nicFavicon(a.url || ""));
+            const b = document.createElement("b"); b.textContent = a.domain; s.appendChild(b);
+            if (a.ident) s.appendChild(document.createTextNode(" · " + a.ident));
+            if (def.key !== "password" && a.pass) {
+              s.appendChild(document.createTextNode(" · "));
+              const pw = document.createElement("span"); pw.className = "cat-acct-pw"; pw.textContent = a.pass; pw.title = "click to copy password";
+              pw.addEventListener("click", (ev) => { ev.stopPropagation(); nicCopy(a.pass); pw.classList.add("copied"); setTimeout(() => pw.classList.remove("copied"), 900); });
+              s.appendChild(pw);
+            }
+            al.appendChild(s);
+          });
+          main.appendChild(al);
+          const cp = document.createElement("button"); cp.type = "button"; cp.className = "nic-copy"; cp.textContent = "Copy";
+          cp.addEventListener("click", () => nicCopy(val, cp));
+          row.appendChild(main); row.appendChild(cp); rows.appendChild(row);
+        });
+        block.appendChild(rows); box.appendChild(block);
+      });
+    }
+    if ((res.records || []).length) {
+      const h = document.createElement("div"); h.className = "bm-sec"; h.textContent = "Records (" + res.records.length + ")";
+      box.appendChild(h);
+      res.records.forEach((rec, i) => box.appendChild(renderNicCard(rec, i)));
+    }
+    if ((res.social || []).length) {
+      const h = document.createElement("div"); h.className = "bm-sec"; h.textContent = "Accounts found (" + res.social.length + ")";
+      box.appendChild(h);
+      res.social.forEach((s) => {
+        const row = document.createElement("div"); row.className = "row";
+        const left = document.createElement("div");
+        const nm = document.createElement("div"); nm.className = "name"; nm.textContent = s.name;
+        const ur = document.createElement("div"); ur.className = "url";
+        const a = document.createElement("a"); a.href = s.url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = s.url;
+        ur.appendChild(a); left.appendChild(nm); left.appendChild(ur);
+        const badge = document.createElement("span"); badge.className = "badge ok"; badge.textContent = "FOUND";
+        row.appendChild(left); row.appendChild(badge); box.appendChild(row);
+      });
+    }
+  }
+
   async function loadBookmarks() {
     bookmarksList.innerHTML = '<div class="bm-empty">Loading…</div>';
     const r = await fetch("/api/bookmarks").then((r) => r.json()).catch(() => null);
-    if (!r || !r.ok) { bookmarksList.innerHTML = '<div class="bm-empty">Couldn\'t load bookmarks.</div>'; return; }
-    if (!r.bookmarks.length) { bookmarksList.innerHTML = '<div class="bm-empty">No bookmarks yet — run a search and press “Save to bookmarks”.</div>'; return; }
+    if (!r || !r.ok) { bookmarksList.innerHTML = '<div class="bm-empty">Couldn\'t load the table.</div>'; return; }
+    if (bmLimit) bmLimit.textContent = r.limit != null ? r.limit : 10;
+    if (bmUsed) bmUsed.textContent = r.bookmarks.length;
+    if (!r.bookmarks.length) { bookmarksList.innerHTML = '<div class="bm-empty">The table is empty — run a search and press “Save to Table”.</div>'; return; }
     bookmarksList.innerHTML = "";
     r.bookmarks.forEach((bm) => {
+      const item = document.createElement("div"); item.className = "bm-entry";
       const row = document.createElement("div"); row.className = "bm-item";
       const main = document.createElement("div"); main.className = "bm-main";
       const q = document.createElement("div"); q.className = "bm-q";
@@ -2626,15 +2896,23 @@ you cant run by your own footprints.
       const meta = document.createElement("div"); meta.className = "bm-meta";
       meta.textContent = (bm.data && bm.data.summary ? bm.data.summary + " · " : "") + new Date(bm.created_at).toLocaleString();
       main.appendChild(q); main.appendChild(meta);
-      const open = document.createElement("button"); open.className = "btn-mini"; open.textContent = "Open";
-      open.addEventListener("click", () => {
-        invType.value = bm.type || "username"; invQuery.value = bm.query || "";
-        showPage("investigate"); toast("Loaded — press Search to run it.");
+
+      const box = document.createElement("div"); box.className = "bm-results hidden";
+      let built = false;
+      const view = document.createElement("button"); view.className = "btn-mini"; view.textContent = "View";
+      view.addEventListener("click", () => {
+        if (!built) { renderSavedResults(box, bm.data && bm.data.results); built = true; }
+        const open = box.classList.toggle("hidden");
+        view.textContent = open ? "View" : "Hide";
       });
       const del = document.createElement("button"); del.className = "btn-mini danger"; del.textContent = "Delete";
-      del.addEventListener("click", async () => { await fetch("/api/bookmarks/" + bm.id, { method: "DELETE" }); loadBookmarks(); });
-      row.appendChild(main); row.appendChild(open); row.appendChild(del);
-      bookmarksList.appendChild(row);
+      del.addEventListener("click", async () => {
+        await fetch("/api/bookmarks/" + bm.id, { method: "DELETE" });
+        loadBookmarks();
+      });
+      row.appendChild(main); row.appendChild(view); row.appendChild(del);
+      item.appendChild(row); item.appendChild(box);
+      bookmarksList.appendChild(item);
     });
   }
 
@@ -2728,20 +3006,98 @@ you cant run by your own footprints.
       const role = document.createElement("div"); role.className = "mc-role" + (u.role === "admin" ? " admin" : ""); role.textContent = u.role === "admin" ? "admin" : "member";
       card.appendChild(ban); card.appendChild(ava); card.appendChild(name); card.appendChild(role);
       if (u.activity) { const act = document.createElement("div"); act.className = "mc-activity"; act.textContent = u.activity; card.appendChild(act); }
+      card.style.cursor = "pointer";
+      card.title = "View " + u.username + "'s profile";
+      card.addEventListener("click", () => openMemberModal(u));
       memberGrid.appendChild(card);
     });
   }
 
+  /* announcements — admins post, everyone sees them on the home page */
+  const annList = document.getElementById("annList");
+  const ANN_PIN = '<svg class="ann-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>';
+  async function loadAnnouncements() {
+    if (!annList || !currentUser) return;
+    const r = await fetch("/api/announcements").then((r) => r.json()).catch(() => null);
+    annList.innerHTML = "";
+    if (!r || !r.ok || !r.announcements.length) return;
+    r.announcements.forEach((a) => {
+      const card = document.createElement("div"); card.className = "ann-card";
+      const head = document.createElement("div"); head.className = "ann-head";
+      head.innerHTML = ANN_PIN;
+      const t = document.createElement("div"); t.className = "ann-title"; t.textContent = a.title || "Announcement";
+      head.appendChild(t); card.appendChild(head);
+      if (a.body) { const b = document.createElement("div"); b.className = "ann-body"; b.textContent = a.body; card.appendChild(b); }
+      const m = document.createElement("div"); m.className = "ann-meta";
+      m.textContent = (a.author || "admin") + " · " + new Date(a.created_at).toLocaleString();
+      card.appendChild(m);
+      if (currentUser.is_admin) {
+        const del = document.createElement("button"); del.className = "ann-del"; del.type = "button"; del.title = "Delete"; del.textContent = "✕";
+        del.addEventListener("click", async () => {
+          if (!confirm("Delete this announcement?")) return;
+          await fetch("/api/announcements/" + a.id, { method: "DELETE" });
+          loadAnnouncements();
+        });
+        card.appendChild(del);
+      }
+      annList.appendChild(card);
+    });
+  }
+  const annPost = document.getElementById("annPost");
+  if (annPost) annPost.addEventListener("click", async () => {
+    const title = document.getElementById("annTitle");
+    const body = document.getElementById("annBody");
+    if (!title.value.trim() && !body.value.trim()) { toast("Write something first.", "err"); return; }
+    const r = await fetch("/api/announcements", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: title.value, body: body.value }),
+    }).then((r) => r.json()).catch(() => null);
+    if (r && r.ok) { title.value = ""; body.value = ""; toast("Announcement published."); loadAnnouncements(); }
+    else toast((r && r.error) || "Couldn't publish.", "err");
+  });
+
+  /* member profile modal — a bigger look at whoever you click on the home grid */
+  const memberModal = document.getElementById("memberModal");
+  const mpBanner = document.getElementById("mpBanner");
+  const mpAva = document.getElementById("mpAva");
+  const mpName = document.getElementById("mpName");
+  const mpRole = document.getElementById("mpRole");
+  const mpStatus = document.getElementById("mpStatus");
+  const mpBio = document.getElementById("mpBio");
+  function openMemberModal(u) {
+    mpBanner.style.backgroundImage = u.banner ? "url('" + u.banner + "')" : "";
+    mpAva.innerHTML = "";
+    if (u.avatar) { const im = document.createElement("img"); im.src = u.avatar; im.alt = ""; mpAva.appendChild(im); }
+    else mpAva.textContent = initials(u.username);
+    if (u.online) { const d = document.createElement("span"); d.className = "mp-online"; mpAva.appendChild(d); }
+    mpName.textContent = u.username;
+    mpRole.textContent = u.role === "admin" ? "admin" : "member";
+    mpRole.classList.toggle("admin", u.role === "admin");
+    mpStatus.innerHTML = "";
+    if (u.online) {
+      const dot = document.createElement("span"); dot.className = "dot-live";
+      mpStatus.appendChild(dot); mpStatus.appendChild(document.createTextNode("online now"));
+    } else mpStatus.textContent = "offline";
+    if (u.activity) mpStatus.appendChild(document.createTextNode(" · " + u.activity));
+    mpBio.textContent = u.bio || "This one keeps quiet.";
+    mpBio.classList.toggle("empty", !u.bio);
+    memberModal.classList.add("show");
+  }
+  function closeMemberModal() { memberModal.classList.remove("show"); }
+  document.getElementById("mpClose").addEventListener("click", closeMemberModal);
+  memberModal.addEventListener("click", (e) => { if (e.target === memberModal) closeMemberModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && memberModal.classList.contains("show")) closeMemberModal(); });
+
   // navigation hooks
   profileBtn.addEventListener("click", () => { showPage("profile"); openProfile(); });
   navItems.forEach((n) => n.addEventListener("click", () => {
-    if (n.dataset.page === "home") loadMembers();
+    if (n.dataset.page === "home") { loadMembers(); loadAnnouncements(); }
     if (n.dataset.page === "profile") openProfile();
     if (n.dataset.page === "bookmarks") loadBookmarks();
     if (n.dataset.page === "admin") loadAdmin();
   }));
 
-  refreshMe().then(() => { applyAuthGate(); if (currentUser) { renderProfile(); loadMembers(); } });
+  refreshMe().then(() => { applyAuthGate(); if (currentUser) { renderProfile(); loadMembers(); loadAnnouncements(); } });
 
   function endSearchUI() {
     graphSetScanning(false);
@@ -2800,6 +3156,7 @@ you cant run by your own footprints.
     scanLoader.classList.remove("hidden");
 
     saveBar.style.display = "none"; lastSearch = null;
+    captured = { records: [], social: [], cats: null }; // snapshot for the Table
 
     const tasks = [];
     if (ultra) tasks.push(runUltraSearch(query, type, myId));
@@ -2809,7 +3166,11 @@ you cant run by your own footprints.
 
     if (myId === curSearch) {
       endSearchUI();
-      lastSearch = { type, query, ultra: !!ultra, summary: (nicSummary.textContent || "").slice(0, 120) };
+      lastSearch = {
+        type, query, ultra: !!ultra,
+        summary: (nicSummary.textContent || "").slice(0, 120),
+        results: captured,
+      };
       saveBar.style.display = "flex";
     }
   }

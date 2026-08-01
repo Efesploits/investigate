@@ -1,5 +1,5 @@
 {
-  "version": "1.9.0",
+  "version": "1.10.0",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "The client now has a full Profile (banner, picture, bio, reset buttons) and a Bookmarks tab — save any investigation and reload it later. Everything syncs with your website account and shared token wallet. Also: a wider, shorter investigation board."
+  "notes": "Bookmarks are now the Table — it saves the actual results, so you can reopen an investigation without spending a token (10 slots each). New Users and Admin tabs, announcements from the team on the home page, hover a search button to see what it costs, and a proper update notification that no longer covers your wallet."
 }

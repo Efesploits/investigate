@@ -128,28 +128,47 @@
   .card h3 { margin: 0 0 6px; font-size: 1rem; }
   .card p { margin: 0; color: var(--muted); font-size: .84rem; line-height: 1.5; }
 
-  /* update banner across the top of the app */
+  /* update notification — a floating card in the bottom-right, out of the topbar's way */
   #app.show { flex-direction: row; }
   .update-banner {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 40;
-    display: none; align-items: center; gap: 14px;
-    padding: 10px 18px;
-    background: var(--accent); color: #000;
-    font-size: .88rem; font-weight: 700;
-    box-shadow: 0 2px 18px rgb(var(--accent-rgb) / .25);
+    position: fixed; right: 18px; bottom: 18px; left: auto; top: auto; z-index: 130;
+    display: none; align-items: flex-start; gap: 12px;
+    width: 340px; max-width: calc(100vw - 36px); padding: 14px 15px;
+    background: var(--panel); color: var(--text);
+    border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.6);
+    font-size: .88rem; font-weight: 600;
+    animation: ubIn .28s cubic-bezier(.2,.9,.3,1.1);
   }
+  @keyframes ubIn { from { opacity: 0; transform: translateY(14px) scale(.97); } }
   .update-banner.show { display: flex; }
-  .update-banner .ub-text { flex: 1; }
-  .update-banner .ub-sub { font-weight: 500; opacity: .75; font-size: .8rem; }
+  .update-banner .ub-ico {
+    width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+    background: rgb(var(--accent-rgb) / .14); border: 1px solid rgb(var(--accent-rgb) / .35);
+    display: flex; align-items: center; justify-content: center; color: var(--accent);
+  }
+  .update-banner .ub-ico svg { width: 17px; height: 17px; }
+  .update-banner .ub-text { flex: 1; min-width: 0; }
+  .update-banner .ub-title { font-weight: 800; font-size: .9rem; }
+  .update-banner .ub-sub { display: block; font-weight: 500; color: var(--muted); font-size: .78rem; margin-top: 2px; }
+  .update-banner .ub-actions { display: flex; gap: 8px; margin-top: 11px; }
   .update-banner button {
-    border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer;
-    background: #000; color: var(--accent); font-weight: 800; font-size: .82rem;
+    border: none; border-radius: 9px; padding: 8px 14px; cursor: pointer;
+    background: var(--accent); color: #000; font-family: inherit; font-weight: 800; font-size: .8rem;
+    transition: filter .15s ease, transform .15s ease;
   }
+  .update-banner button:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
   .update-banner button:disabled { opacity: .55; cursor: not-allowed; }
-  .update-banner .ub-close {
-    background: transparent; color: #000; font-size: 1.1rem; padding: 4px 8px; opacity: .6;
+  .update-banner .ub-later {
+    background: transparent; color: var(--muted); border: 1px solid var(--border); font-weight: 700;
   }
-  body.has-update .sidebar, body.has-update .content { padding-top: 52px; }
+  .update-banner .ub-later:hover:not(:disabled) { color: var(--text); border-color: #666; transform: none; }
+  .update-banner .ub-close {
+    position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; padding: 0;
+    background: transparent; color: var(--muted); font-size: .85rem; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .update-banner .ub-close:hover { background: var(--panel2); color: var(--text); transform: none; }
 
   .settings-row {
     display: flex; align-items: center; justify-content: space-between; gap: 20px;
@@ -232,6 +251,19 @@
     color: #000; font-size: 1rem; font-weight: 800; cursor: pointer;
   }
   button.scan:disabled { opacity: .55; cursor: not-allowed; }
+
+  /* hovering a search button reveals what it costs (::after is the shine sweep) */
+  button.scan[data-cost] { transition: padding-right .22s cubic-bezier(.3,.9,.4,1.1); }
+  button.scan[data-cost]::before {
+    content: attr(data-cost); position: absolute; right: 11px; top: 50%; z-index: 2;
+    transform: translateY(-50%) scale(.82); opacity: 0; pointer-events: none;
+    font-size: .62rem; font-weight: 800; letter-spacing: .5px; white-space: nowrap;
+    padding: 3px 8px; border-radius: 999px; background: rgba(0,0,0,.2); color: inherit;
+    transition: opacity .18s ease, transform .18s cubic-bezier(.3,.9,.4,1.3);
+  }
+  button.scan[data-cost]:hover:not(:disabled) { padding-right: 82px; }
+  button.scan[data-cost]:hover:not(:disabled)::before { opacity: 1; transform: translateY(-50%) scale(1); }
+  button.scan.ultra[data-cost]::before { background: rgb(var(--accent-rgb) / .16); }
   .osint-row {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
     padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px;
@@ -669,9 +701,42 @@
   .tb-ava img { width: 100%; height: 100%; object-fit: cover; }
 
   .intro-auth { width: 100%; max-width: 300px; margin: 8px auto 0; position: relative; z-index: 1; }
-  .auth-tabs { display: flex; gap: 4px; padding: 4px; background: var(--panel2); border: 1px solid var(--border); border-radius: 999px; margin-bottom: 14px; }
-  .auth-tab { flex: 1; border: none; background: transparent; color: var(--muted); font-weight: 700; font-size: .84rem; padding: 8px; border-radius: 999px; cursor: pointer; }
-  .auth-tab.active { background: var(--accent); color: #000; }
+  .auth-tabs { position: relative; display: flex; gap: 4px; padding: 4px; background: var(--panel2);
+    border: 1px solid var(--border); border-radius: 999px; margin-bottom: 14px; }
+  /* the white pill physically slides between the two tabs */
+  .auth-slider { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 6px); border-radius: 999px;
+    background: var(--accent); box-shadow: 0 2px 10px -2px rgb(var(--accent-rgb) / .45);
+    transition: left .34s cubic-bezier(.65,.05,.25,1.15); pointer-events: none; }
+  .auth-tabs.on-register .auth-slider { left: calc(50% + 2px); }
+  .auth-tab { position: relative; z-index: 1; flex: 1; border: none; background: transparent; color: var(--muted);
+    font-family: inherit; font-weight: 700; font-size: .84rem; padding: 9px 8px; border-radius: 999px; cursor: pointer;
+    transition: color .22s ease; }
+  .auth-tab:not(.active):hover { color: var(--text); }
+  .auth-tab.active { color: #000; }
+
+  /* welcome beat: the form drops away, the eye recenters, the title becomes "Hello <user>" */
+  .intro-auth, .intro-credit { transition: opacity .5s ease, transform .5s cubic-bezier(.5,0,.75,0); }
+  #intro.greeting .intro-auth { opacity: 0; transform: translateY(90px); pointer-events: none; }
+  #intro.greeting .intro-credit { opacity: 0; }
+  #intro.greeting .glass-wrap { animation: eyeSettle .9s cubic-bezier(.2,.9,.3,1.05) both; }
+  @keyframes eyeSettle { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(26px) scale(1.1); } }
+  /* the intro title's entrance animation is forwards-filled, so it must be cleared
+     before opacity/transform from these swap classes can take effect */
+  .intro-title.swap-out { animation: none; opacity: 0; transform: translateY(-14px);
+    transition: opacity .38s ease, transform .38s ease; }
+  .intro-title.swap-in { animation: titleIn .62s cubic-bezier(.2,.9,.3,1.1) both; }
+  @keyframes titleIn { 0% { opacity: 0; transform: translateY(18px) scale(.94); } 100% { opacity: 1; transform: none; } }
+
+  /* home greeting — a quiet eyebrow above everything else on the page */
+  .hero-greet { display: none; align-items: center; gap: 11px; margin: 0 0 22px; padding-bottom: 16px;
+    border-bottom: 1px solid var(--border); animation: greetIn .45s ease both; }
+  .hero-greet.show { display: flex; }
+  .hero-greet .hg-ava { width: 36px; height: 36px; border-radius: 50%; background: var(--panel2); overflow: hidden; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 800; color: var(--accent); }
+  .hero-greet .hg-ava img { width: 100%; height: 100%; object-fit: cover; }
+  .hero-greet .hg-text { color: var(--text); font-size: 1.32rem; font-weight: 300; letter-spacing: .2px; }
+  .hero-greet .hg-text b { color: var(--muted); font-weight: 300; }
+  @keyframes greetIn { from { opacity: 0; transform: translateY(-6px); } }
   .intro-auth form { display: flex; flex-direction: column; gap: 10px; }
   .intro-auth input { width: 100%; box-sizing: border-box; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--border);
     background: rgba(255,255,255,.045); color: var(--text); font-size: .9rem; text-align: center; }
@@ -728,6 +793,98 @@
   .bm-meta { color: var(--muted); font-size: .76rem; margin-top: 3px; }
   .bm-tag { font-size: .62rem; text-transform: uppercase; letter-spacing: .5px; padding: 2px 7px; border-radius: 6px; background: var(--panel2); border: 1px solid var(--border); color: var(--muted); font-weight: 800; margin-right: 6px; }
   .bm-empty { color: var(--muted); font-size: .88rem; padding: 20px; text-align: center; }
+  .bm-entry { display: flex; flex-direction: column; }
+  .bm-results { margin: 10px 0 4px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px;
+    background: color-mix(in srgb, var(--panel) 60%, #000); max-height: 460px; overflow-y: auto; }
+  .bm-sec { font-size: .7rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); font-weight: 800; margin: 14px 0 8px; }
+  .bm-results > .bm-sec:first-child { margin-top: 0; }
+  .table-meter { color: var(--muted); font-size: .78rem; margin: -10px 0 16px; letter-spacing: .3px; }
+  .table-meter span { color: var(--accent); font-weight: 800; }
+
+  /* announcements */
+  .ann-list { display: flex; flex-direction: column; gap: 10px; margin: 0 0 22px; }
+  .ann-list:empty { display: none; }
+  .ann-card { position: relative; padding: 15px 17px; border: 1px solid var(--border); border-radius: 14px;
+    background: linear-gradient(140deg, color-mix(in srgb, var(--accent) 7%, var(--panel)), var(--panel));
+    border-left: 3px solid var(--accent); }
+  .ann-head { display: flex; align-items: center; gap: 9px; }
+  .ann-pin { width: 15px; height: 15px; color: var(--accent); flex-shrink: 0; }
+  .ann-title { font-weight: 800; font-size: .96rem; }
+  .ann-body { color: var(--text); font-size: .88rem; line-height: 1.6; margin-top: 7px; white-space: pre-wrap; }
+  .ann-meta { color: var(--muted); font-size: .73rem; margin-top: 9px; }
+  .ann-del { position: absolute; top: 10px; right: 10px; border: 1px solid var(--border); background: var(--panel2);
+    color: var(--muted); border-radius: 7px; width: 24px; height: 24px; cursor: pointer; font-size: .78rem; line-height: 1;
+    display: flex; align-items: center; justify-content: center; }
+  .ann-del:hover { border-color: #ff6b6b; color: #ff6b6b; }
+  .ann-compose { display: flex; flex-direction: column; gap: 9px; align-items: flex-start; margin-bottom: 6px; }
+  .ann-compose input, .ann-compose textarea { width: 100%; box-sizing: border-box; padding: 11px 13px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--panel2); color: var(--text); font-size: .9rem; font-family: inherit; resize: vertical; }
+  .ann-compose input:focus, .ann-compose textarea:focus { outline: none; border-color: #666; }
+
+  /* members grid */
+  .members-head { display: flex; align-items: baseline; justify-content: flex-end; margin-bottom: 14px; }
+  .members-stat { color: var(--muted); font-size: .84rem; display: flex; align-items: center; gap: 6px; }
+  .members-stat b { color: var(--text); }
+  .dot-live { width: 8px; height: 8px; border-radius: 50%; background: #35d07f; box-shadow: 0 0 8px #35d07f; display: inline-block; }
+  .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .member-card { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--panel); text-align: center;
+    padding-bottom: 12px; transition: border-color .2s ease, transform .2s ease; cursor: pointer; }
+  .member-card:hover { border-color: #4a4a4a; transform: translateY(-2px); }
+  .mc-banner { height: 46px; background: linear-gradient(120deg, #1a1a1a, #2a2a2a); background-size: cover; background-position: center; }
+  .mc-ava { width: 48px; height: 48px; border-radius: 50%; border: 3px solid var(--panel); background: var(--panel2); margin: -24px auto 0;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--accent); overflow: hidden; position: relative; }
+  .mc-ava img { width: 100%; height: 100%; object-fit: cover; }
+  .mc-online { position: absolute; bottom: 1px; right: 1px; width: 12px; height: 12px; border-radius: 50%; background: #35d07f; border: 2px solid var(--panel); }
+  .mc-name { font-weight: 800; font-size: .86rem; margin-top: 8px; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mc-role { font-size: .6rem; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 800; }
+  .mc-role.admin { color: var(--accent); }
+
+  /* admin */
+  .admin-users { display: flex; flex-direction: column; gap: 8px; }
+  .admin-user { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border: 1px solid var(--border); border-radius: 11px; background: var(--panel); flex-wrap: wrap; }
+  .au-ava { width: 34px; height: 34px; border-radius: 50%; background: var(--panel2); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--accent); overflow: hidden; flex-shrink: 0; }
+  .au-ava img { width: 100%; height: 100%; object-fit: cover; }
+  .au-name { font-weight: 800; font-size: .9rem; }
+  .au-name .you { color: var(--muted); font-weight: 600; font-size: .74rem; }
+  .au-spacer { flex: 1; }
+  .au-ctrl { display: flex; align-items: center; gap: 6px; }
+  .au-ctrl select, .au-ctrl input { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel2); color: var(--text); font-size: .78rem; font-weight: 700; font-family: inherit; }
+  .au-ctrl input { width: 62px; text-align: center; }
+  .au-tok { color: var(--accent); font-weight: 800; font-size: .8rem; min-width: 30px; text-align: right; }
+  .admin-logs { display: flex; flex-direction: column; gap: 4px; max-height: 320px; overflow-y: auto; border: 1px solid var(--border); border-radius: 11px; padding: 8px; }
+  .log-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 7px; font-size: .8rem; }
+  .log-row:hover { background: var(--panel2); }
+  .log-user { font-weight: 800; min-width: 90px; }
+  .log-kind { font-size: .6rem; text-transform: uppercase; letter-spacing: .5px; padding: 2px 6px; border-radius: 5px; font-weight: 800; }
+  .log-kind.ultra { background: #e0561f22; color: #ff7a4d; border: 1px solid #ff7a4d55; }
+  .log-kind.search { background: var(--panel2); color: var(--muted); border: 1px solid var(--border); }
+  .log-q { color: var(--text); font-family: ui-monospace, Consolas, monospace; }
+  .log-time { color: var(--muted); font-size: .72rem; margin-left: auto; }
+
+  /* member profile modal */
+  .modal-back { position: fixed; inset: 0; background: rgba(0,0,0,.66); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 140; padding: 20px; }
+  .modal-back.show { display: flex; }
+  .mp-modal { width: 100%; max-width: 520px; background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
+    overflow: hidden; box-shadow: 0 30px 90px rgba(0,0,0,.65); position: relative; animation: mpIn .22s cubic-bezier(.2,.9,.3,1.1); }
+  @keyframes mpIn { from { opacity: 0; transform: translateY(12px) scale(.97); } }
+  .mp-banner { height: 168px; background: linear-gradient(120deg, #1a1a1a, #262626); background-size: cover; background-position: center; }
+  .mp-close { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.55); color: #fff; font-size: 1rem; line-height: 1;
+    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .mp-body { padding: 0 24px 24px; margin-top: -44px; }
+  .mp-ava { width: 104px; height: 104px; border-radius: 50%; border: 4px solid var(--panel); background: var(--panel2);
+    display: flex; align-items: center; justify-content: center; font-size: 2.3rem; font-weight: 800; color: var(--accent);
+    overflow: hidden; position: relative; }
+  .mp-ava img { width: 100%; height: 100%; object-fit: cover; }
+  .mp-online { position: absolute; bottom: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: #35d07f; border: 3px solid var(--panel); }
+  .mp-name { display: flex; align-items: center; gap: 10px; font-size: 1.5rem; font-weight: 800; margin-top: 12px; }
+  .mp-role { font-size: .62rem; text-transform: uppercase; letter-spacing: .6px; padding: 3px 9px; border-radius: 999px;
+    background: var(--panel2); border: 1px solid var(--border); color: var(--muted); font-weight: 800; }
+  .mp-role.admin { background: var(--accent); color: #000; border-color: var(--accent); }
+  .mp-status { color: var(--muted); font-size: .82rem; margin-top: 6px; display: flex; align-items: center; gap: 7px; }
+  .mp-bio { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--text); font-size: .9rem; line-height: 1.6; white-space: pre-wrap; }
+  .mp-bio.empty { color: var(--muted); font-style: italic; }
   .save-bar { display: flex; justify-content: center; margin: 2px 0 12px; }
 </style>
 </head>
@@ -755,7 +912,8 @@
   <p class="intro-sub">osint · sql database client</p>
 
   <div class="intro-auth" id="introAuth">
-    <div class="auth-tabs">
+    <div class="auth-tabs" id="authTabs">
+      <span class="auth-slider" aria-hidden="true"></span>
       <button class="auth-tab active" id="tabLogin" type="button">Log in</button>
       <button class="auth-tab" id="tabRegister" type="button">Register</button>
     </div>
@@ -774,8 +932,17 @@
 
 <!-- APP -->
 <div class="update-banner" id="updateBanner">
-  <span class="ub-text">Update available<span class="ub-sub" id="ubVersion"></span></span>
-  <button id="ubInstall" type="button">Update now</button>
+  <div class="ub-ico">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
+  </div>
+  <div class="ub-text">
+    <div class="ub-title">Update available</div>
+    <span class="ub-sub" id="ubVersion"></span>
+    <div class="ub-actions">
+      <button id="ubInstall" type="button">Update now</button>
+      <button class="ub-later" id="ubLater" type="button">Later</button>
+    </div>
+  </div>
   <button class="ub-close" id="ubDismiss" type="button" title="Dismiss">✕</button>
 </div>
 
@@ -810,16 +977,24 @@
       Investigate
     </div>
     <div class="nav-item" data-page="bookmarks">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-      Bookmarks
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v4H3zM3 8v12h18V8M9 8v12M15 8v12"/></svg>
+      Table
     </div>
     <div class="nav-item" data-page="database">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
       Database
     </div>
+    <div class="nav-item" data-page="members">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2 21v-1a5.5 5.5 0 0 1 5.5-5.5h3A5.5 5.5 0 0 1 16 20v1"/><path d="M17 4.5a3.5 3.5 0 0 1 0 7M19 21v-1a5.5 5.5 0 0 0-3-4.9"/></svg>
+      Users
+    </div>
     <div class="nav-item" data-page="profile">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
       Profile
+    </div>
+    <div class="nav-item" data-page="admin" id="adminNav" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.6c0 4.2-3 7.6-7.5 9.4-4.5-1.8-7.5-5.2-7.5-9.4V6z"/><path d="m9 12 2 2 4-4"/></svg>
+      Admin
     </div>
     <div class="footer-credit">m3fxn — theres always a clue, find it.</div>
   </aside>
@@ -827,6 +1002,7 @@
   <main class="content">
     <!-- HOME -->
     <section class="page show" id="page-home">
+      <div class="hero-greet" id="heroGreet"></div>
       <div class="home-hero">
         <svg class="hero-eye" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <line x1="221" y1="211" x2="286" y2="276" stroke="var(--accent)" stroke-width="16" stroke-linecap="round"/>
@@ -845,10 +1021,12 @@
           <p class="sub">Connect your own database and sweep every table for a username or any term. Everything runs locally; your credentials never leave this machine.</p>
         </div>
       </div>
+      <div id="annList" class="ann-list"></div>
+
       <div class="cards">
-        <div class="card"><h3>MySQL · PostgreSQL · SQLite</h3><p>Connect with host / port / user, or just open a local .db file.</p></div>
-        <div class="card"><h3>Full-text sweep</h3><p>Scans text columns across all tables — no SQL to write.</p></div>
-        <div class="card"><h3>Fully offline</h3><p>No servers, no uploads. It talks straight to your database.</p></div>
+        <div class="card"><h3>Every engine</h3><p>MySQL, PostgreSQL, SQLite — a host and a port, or just a file on disk.</p></div>
+        <div class="card"><h3>Full-text sweep</h3><p>Every text column in every table, read end to end. No SQL to write.</p></div>
+        <div class="card"><h3>Stays on this machine</h3><p>No servers, no uploads. It talks straight to your database and nowhere else.</p></div>
       </div>
       <div style="display:flex; gap:10px; margin-top:22px; flex-wrap:wrap">
         <button class="btn" id="goInvestigate">Start investigating →</button>
@@ -868,8 +1046,8 @@
           <option value="password">password</option>
         </select>
         <input type="text" id="invQuery" placeholder="value to search" autocomplete="off" spellcheck="false" required />
-        <button type="submit" class="scan" id="invSubmitBtn">Search</button>
-        <button type="button" class="scan ultra" id="invUltraBtn"><svg class="ultra-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2L4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5z"/></svg><span>Ultra Search</span></button>
+        <button type="submit" class="scan" id="invSubmitBtn" data-cost="1 token">Search</button>
+        <button type="button" class="scan ultra" id="invUltraBtn" data-cost="3 tokens"><svg class="ultra-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2L4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5z"/></svg><span>Ultra Search</span></button>
         <button type="button" class="scan g-cancel hidden" id="invCancelBtn">Cancel</button>
       </form>
 
@@ -907,8 +1085,8 @@
 
       <div class="save-bar" id="saveBar" style="display:none">
         <button class="btn-mini" id="saveSearchBtn" type="button">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-          Save to bookmarks
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v4H3zM3 8v12h18V8M9 8v12M15 8v12"/></svg>
+          Save to Table
         </button>
       </div>
 
@@ -1069,10 +1247,39 @@
       </div>
     </section>
 
-    <!-- BOOKMARKS -->
+    <!-- USERS -->
+    <section class="page" id="page-members">
+      <h1>Users</h1>
+      <p class="sub">Everyone with access to the tool. Click anyone to see their profile.</p>
+      <div class="members-head">
+        <div class="members-stat"><span class="dot-live"></span> <b id="statActive">0</b> online · <b id="statTotal">0</b> total</div>
+      </div>
+      <div class="member-grid" id="memberGrid"></div>
+    </section>
+
+    <!-- ADMIN (admins only) -->
+    <section class="page" id="page-admin">
+      <h1>Admin</h1>
+      <p class="sub">Manage members and review search activity.</p>
+
+      <h3 class="prof-sub">Post an announcement</h3>
+      <div class="ann-compose">
+        <input type="text" id="annTitle" maxlength="120" placeholder="Title">
+        <textarea id="annBody" maxlength="2000" rows="3" placeholder="What does everyone need to know?"></textarea>
+        <button class="btn-mini" id="annPost" type="button">Publish</button>
+      </div>
+
+      <h3 class="prof-sub">Members</h3>
+      <div id="adminUsers" class="admin-users"></div>
+      <h3 class="prof-sub" style="margin-top:22px">Search logs</h3>
+      <div id="adminLogs" class="admin-logs"></div>
+    </section>
+
+    <!-- TABLE (saved investigation results) -->
     <section class="page" id="page-bookmarks">
-      <h1>Bookmarks</h1>
-      <p class="sub">Saved investigations — open one to reload the query.</p>
+      <h1>Table</h1>
+      <p class="sub">Everything you've laid out on the table. Saved results stay here — no token spent to look again.</p>
+      <div class="table-meter"><span id="bmUsed">0</span> / <span id="bmLimit">10</span> slots used</div>
       <div id="bookmarksList" class="bm-list"></div>
     </section>
   </main>
@@ -1212,7 +1419,31 @@
       if (currentUser.avatar) tbAva.innerHTML = '<img src="' + currentUser.avatar + '" alt="">';
       else tbAva.textContent = initials(currentUser.username);
       if (typeof renderProfile === "function") renderProfile();
-    } else { walletEl.style.display = "none"; logoutBtn.style.display = "none"; }
+      renderHeroGreet();
+    } else {
+      walletEl.style.display = "none"; logoutBtn.style.display = "none";
+      const hg = document.getElementById("heroGreet");
+      if (hg) hg.classList.remove("show");
+    }
+    // the Admin tab only exists for admins
+    const adminNav = document.getElementById("adminNav");
+    if (adminNav) adminNav.style.display = (currentUser && currentUser.is_admin) ? "" : "none";
+  }
+  // "back at it again <user>?" above the home hero title
+  function renderHeroGreet() {
+    const hg = document.getElementById("heroGreet");
+    if (!hg || !currentUser) return;
+    hg.innerHTML = "";
+    const ava = document.createElement("span"); ava.className = "hg-ava";
+    if (currentUser.avatar) ava.innerHTML = '<img src="' + currentUser.avatar + '" alt="">';
+    else ava.textContent = initials(currentUser.username);
+    const txt = document.createElement("span"); txt.className = "hg-text";
+    txt.appendChild(document.createTextNode("Back at it again, "));
+    const nm = document.createElement("b"); nm.textContent = currentUser.username;
+    txt.appendChild(nm);
+    txt.appendChild(document.createTextNode("?"));
+    hg.appendChild(ava); hg.appendChild(txt);
+    hg.classList.add("show");
   }
   function setTokens(n) {
     if (!currentUser) return;
@@ -1229,10 +1460,12 @@
   const authForm = document.getElementById("authForm"), authUser = document.getElementById("authUser"), authPass = document.getElementById("authPass");
   const authSubmit = document.getElementById("authSubmit"), authErr = document.getElementById("authErr"), authHint = document.getElementById("authHint");
   let authMode = "login";
+  const authTabs = document.getElementById("authTabs");
   function setAuthMode(mode) {
     authMode = mode;
     tabLogin.classList.toggle("active", mode === "login");
     tabRegister.classList.toggle("active", mode === "register");
+    if (authTabs) authTabs.classList.toggle("on-register", mode === "register");
     authSubmit.textContent = mode === "login" ? "Log in" : "Create account";
     authPass.setAttribute("autocomplete", mode === "login" ? "current-password" : "new-password");
     authHint.textContent = mode === "login" ? "New here? Switch to Register to make an account." : "New accounts start with free tokens. Already have one? Log in.";
@@ -1259,8 +1492,9 @@
     try {
       const r = authMode === "login" ? await window.api.authLogin(username, password) : await window.api.authRegister(username, password);
       if (!r || !r.ok) { authErr.textContent = (r && r.error) || "Something went wrong."; authSubmit.disabled = false; return; }
-      currentUser = r.user; authForm.reset(); renderAccount(); introAuth.style.display = "none"; enterApp();
-      toast(authMode === "login" ? ("Welcome back, " + currentUser.username) : ("Account created — welcome, " + currentUser.username));
+      currentUser = r.user; authForm.reset(); renderAccount(); loadAnnouncements();
+      const welcome = authMode === "login" ? ("Welcome back, " + currentUser.username) : ("Account created — welcome, " + currentUser.username);
+      playGreeting(currentUser.username, () => { enterApp(); toast(welcome); });
     } catch (_) { authErr.textContent = "Connection error."; }
     authSubmit.disabled = false;
   });
@@ -1269,7 +1503,30 @@
     try { await window.api.authLogout(); } catch (_) {}
     currentUser = null; setAuthMode("login"); applyAuthGate(); toast("Logged out.");
   });
-  refreshMe().then(applyAuthGate);
+  /* the login form drops away, the eye settles, and the title becomes "Hello <user>" */
+  function playGreeting(username, done) {
+    const title = document.querySelector(".intro-title");
+    const sub = document.querySelector(".intro-sub");
+    intro.classList.add("greeting");
+    if (!title) { setTimeout(done, 60); return; }
+    title.classList.add("swap-out");
+    setTimeout(() => {
+      title.textContent = "Hello " + username;
+      title.classList.remove("swap-out");
+      title.classList.add("swap-in");
+      if (sub) sub.textContent = "the board is yours";
+    }, 380);
+    setTimeout(() => {
+      intro.classList.remove("greeting");
+      title.classList.remove("swap-in");
+      title.textContent = "m3's investigation tool";
+      if (sub) sub.textContent = "osint · sql database client";
+      introAuth.style.display = "none";
+      done();
+    }, 2000);
+  }
+
+  refreshMe().then(() => { applyAuthGate(); if (currentUser) loadAnnouncements(); });
 
   /* ---------- nav ---------- */
   const navItems = document.querySelectorAll(".nav-item");
@@ -1359,26 +1616,109 @@
   });
   document.getElementById("phLogout").addEventListener("click", () => logoutBtn.click());
 
-  /* ---------- bookmarks ---------- */
+  /* ---------- Table (saved investigation results) ---------- */
   const bookmarksList = document.getElementById("bookmarksList");
   const saveBar = document.getElementById("saveBar");
-  let lastSearch = null; // {type, query, ultra, summary}
+  const bmUsed = document.getElementById("bmUsed");
+  const bmLimit = document.getElementById("bmLimit");
+  let lastSearch = null;   // {type, query, ultra, summary, results}
+  let captured = null;     // result snapshot filled while a search runs
+
   document.getElementById("saveSearchBtn").addEventListener("click", async () => {
     if (!lastSearch) return;
     const r = await window.api.bookmarksAdd({
       label: lastSearch.query, type: lastSearch.type, query: lastSearch.query,
-      data: { ultra: lastSearch.ultra, summary: lastSearch.summary },
+      data: { ultra: lastSearch.ultra, summary: lastSearch.summary, results: lastSearch.results || null },
     }).catch(() => null);
-    if (r && r.ok) toast("Saved to bookmarks."); else toast((r && r.error) || "Couldn't save.", "err");
+    if (r && r.ok) toast("Laid out on the table."); else toast((r && r.error) || "Couldn't save.", "err");
   });
+
+  // rebuild the saved records / social hits / ultra aggregates from a snapshot
+  function renderSavedResults(box, res) {
+    if (!res || (!(res.records || []).length && !(res.social || []).length && !res.cats)) {
+      box.innerHTML = '<div class="bm-empty">This entry was saved before results were kept.</div>';
+      return;
+    }
+    if (res.cats) {
+      const DEFS = [
+        { key: "password", title: "Passwords", cls: "cat-pw" },
+        { key: "username", title: "Usernames", cls: "cat-un" },
+        { key: "email", title: "Emails", cls: "cat-em" },
+      ];
+      DEFS.forEach((def) => {
+        const entries = res.cats[def.key] || [];
+        if (!entries.length) return;
+        const block = document.createElement("div"); block.className = "cat-block " + def.cls;
+        const head = document.createElement("div"); head.className = "cat-block-head";
+        const ttl = document.createElement("div"); ttl.className = "cat-block-title";
+        const bar = document.createElement("span"); bar.className = "cbt-bar"; ttl.appendChild(bar);
+        const tt = document.createElement("span"); tt.textContent = def.title; ttl.appendChild(tt);
+        const n = document.createElement("span"); n.className = "cat-block-n";
+        n.textContent = entries.length + (entries.length === 1 ? " value" : " values"); ttl.appendChild(n);
+        const copyAll = document.createElement("button"); copyAll.type = "button"; copyAll.className = "nic-copyall"; copyAll.textContent = "Copy all";
+        copyAll.addEventListener("click", () => copyText(entries.map((e) => e[0]).join("\n"), copyAll));
+        head.appendChild(ttl); head.appendChild(copyAll); block.appendChild(head);
+        const rows = document.createElement("div"); rows.className = "cat-rows";
+        entries.forEach(([val, accts]) => {
+          const row = document.createElement("div"); row.className = "cat-row";
+          const main = document.createElement("div"); main.className = "cat-row-main";
+          const v = document.createElement("div"); v.className = "cat-row-val"; v.textContent = val; v.title = "click to copy";
+          v.addEventListener("click", () => { copyText(val); v.classList.add("copied"); setTimeout(() => v.classList.remove("copied"), 950); });
+          main.appendChild(v);
+          const al = document.createElement("div"); al.className = "cat-row-accts";
+          (accts || []).forEach((a) => {
+            const s = document.createElement("span"); s.className = "cat-acct";
+            s.appendChild(nicFavicon(a.url || ""));
+            const b = document.createElement("b"); b.textContent = a.domain; s.appendChild(b);
+            if (a.ident) s.appendChild(document.createTextNode(" · " + a.ident));
+            if (def.key !== "password" && a.pass) {
+              s.appendChild(document.createTextNode(" · "));
+              const pw = document.createElement("span"); pw.className = "cat-acct-pw"; pw.textContent = a.pass; pw.title = "click to copy password";
+              pw.addEventListener("click", (ev) => { ev.stopPropagation(); copyText(a.pass); pw.classList.add("copied"); setTimeout(() => pw.classList.remove("copied"), 900); });
+              s.appendChild(pw);
+            }
+            al.appendChild(s);
+          });
+          main.appendChild(al);
+          const cp = document.createElement("button"); cp.type = "button"; cp.className = "nic-copy"; cp.textContent = "Copy";
+          cp.addEventListener("click", () => copyText(val, cp));
+          row.appendChild(main); row.appendChild(cp); rows.appendChild(row);
+        });
+        block.appendChild(rows); box.appendChild(block);
+      });
+    }
+    if ((res.records || []).length) {
+      const h = document.createElement("div"); h.className = "bm-sec"; h.textContent = "Records (" + res.records.length + ")";
+      box.appendChild(h);
+      res.records.forEach((rec, i) => box.appendChild(renderNicCard(rec, i)));
+    }
+    if ((res.social || []).length) {
+      const h = document.createElement("div"); h.className = "bm-sec"; h.textContent = "Accounts found (" + res.social.length + ")";
+      box.appendChild(h);
+      res.social.forEach((s) => {
+        const row = document.createElement("div"); row.className = "row";
+        const left = document.createElement("div");
+        const nm = document.createElement("div"); nm.className = "name"; nm.textContent = s.name;
+        const ur = document.createElement("div"); ur.className = "url";
+        const a = document.createElement("a"); a.href = s.url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = s.url;
+        ur.appendChild(a); left.appendChild(nm); left.appendChild(ur);
+        const badge = document.createElement("span"); badge.className = "badge ok"; badge.textContent = "FOUND";
+        row.appendChild(left); row.appendChild(badge); box.appendChild(row);
+      });
+    }
+  }
+
   async function loadBookmarks() {
-    if (!currentUser) { bookmarksList.innerHTML = '<div class="bm-empty">Log in to see your bookmarks.</div>'; return; }
+    if (!currentUser) { bookmarksList.innerHTML = '<div class="bm-empty">Log in to see your table.</div>'; return; }
     bookmarksList.innerHTML = '<div class="bm-empty">Loading…</div>';
     const r = await window.api.bookmarksList().catch(() => null);
-    if (!r || !r.ok) { bookmarksList.innerHTML = '<div class="bm-empty">Couldn\'t load bookmarks.</div>'; return; }
-    if (!r.bookmarks.length) { bookmarksList.innerHTML = '<div class="bm-empty">No bookmarks yet — run a search and press “Save to bookmarks”.</div>'; return; }
+    if (!r || !r.ok) { bookmarksList.innerHTML = '<div class="bm-empty">Couldn\'t load the table.</div>'; return; }
+    if (bmLimit) bmLimit.textContent = r.limit != null ? r.limit : 10;
+    if (bmUsed) bmUsed.textContent = r.bookmarks.length;
+    if (!r.bookmarks.length) { bookmarksList.innerHTML = '<div class="bm-empty">The table is empty — run a search and press “Save to Table”.</div>'; return; }
     bookmarksList.innerHTML = "";
     r.bookmarks.forEach((bm) => {
+      const item = document.createElement("div"); item.className = "bm-entry";
       const row = document.createElement("div"); row.className = "bm-item";
       const main = document.createElement("div"); main.className = "bm-main";
       const q = document.createElement("div"); q.className = "bm-q";
@@ -1387,22 +1727,189 @@
       const meta = document.createElement("div"); meta.className = "bm-meta";
       meta.textContent = (bm.data && bm.data.summary ? bm.data.summary + " · " : "") + new Date(bm.created_at).toLocaleString();
       main.appendChild(q); main.appendChild(meta);
-      const open = document.createElement("button"); open.className = "btn-mini"; open.textContent = "Open";
-      open.addEventListener("click", () => {
-        invType.value = bm.type || "username"; invQuery.value = bm.query || "";
-        showPage("investigate"); toast("Loaded — press Search to run it.");
+
+      const box = document.createElement("div"); box.className = "bm-results hidden";
+      let built = false;
+      const view = document.createElement("button"); view.className = "btn-mini"; view.textContent = "View";
+      view.addEventListener("click", () => {
+        if (!built) { renderSavedResults(box, bm.data && bm.data.results); built = true; }
+        const open = box.classList.toggle("hidden");
+        view.textContent = open ? "View" : "Hide";
       });
       const del = document.createElement("button"); del.className = "btn-mini danger"; del.textContent = "Delete";
       del.addEventListener("click", async () => { await window.api.bookmarksDelete(bm.id).catch(() => {}); loadBookmarks(); });
-      row.appendChild(main); row.appendChild(open); row.appendChild(del);
-      bookmarksList.appendChild(row);
+      row.appendChild(main); row.appendChild(view); row.appendChild(del);
+      item.appendChild(row); item.appendChild(box);
+      bookmarksList.appendChild(item);
     });
   }
 
-  // load profile / bookmarks when their tab opens
+  /* ---------- announcements ---------- */
+  const annList = document.getElementById("annList");
+  const ANN_PIN = '<svg class="ann-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>';
+  async function loadAnnouncements() {
+    if (!annList || !currentUser) return;
+    const r = await window.api.annList().catch(() => null);
+    annList.innerHTML = "";
+    if (!r || !r.ok || !r.announcements.length) return;
+    r.announcements.forEach((a) => {
+      const card = document.createElement("div"); card.className = "ann-card";
+      const head = document.createElement("div"); head.className = "ann-head";
+      head.innerHTML = ANN_PIN;
+      const t = document.createElement("div"); t.className = "ann-title"; t.textContent = a.title || "Announcement";
+      head.appendChild(t); card.appendChild(head);
+      if (a.body) { const b = document.createElement("div"); b.className = "ann-body"; b.textContent = a.body; card.appendChild(b); }
+      const m = document.createElement("div"); m.className = "ann-meta";
+      m.textContent = (a.author || "admin") + " · " + new Date(a.created_at).toLocaleString();
+      card.appendChild(m);
+      if (currentUser.is_admin) {
+        const del = document.createElement("button"); del.className = "ann-del"; del.type = "button"; del.title = "Delete"; del.textContent = "✕";
+        del.addEventListener("click", async () => {
+          if (!confirm("Delete this announcement?")) return;
+          await window.api.annDelete(a.id).catch(() => {});
+          loadAnnouncements();
+        });
+        card.appendChild(del);
+      }
+      annList.appendChild(card);
+    });
+  }
+  document.getElementById("annPost").addEventListener("click", async () => {
+    const title = document.getElementById("annTitle");
+    const body = document.getElementById("annBody");
+    if (!title.value.trim() && !body.value.trim()) { toast("Write something first.", "err"); return; }
+    const r = await window.api.annPost(title.value, body.value).catch(() => null);
+    if (r && r.ok) { title.value = ""; body.value = ""; toast("Announcement published."); loadAnnouncements(); }
+    else toast((r && r.error) || "Couldn't publish.", "err");
+  });
+
+  /* ---------- users / members ---------- */
+  const memberGrid = document.getElementById("memberGrid");
+  const statActive = document.getElementById("statActive");
+  const statTotal = document.getElementById("statTotal");
+  async function loadMembers() {
+    if (!currentUser) return;
+    const r = await window.api.stats().catch(() => null);
+    if (!r || !r.ok) return;
+    statActive.textContent = r.activeUsers; statTotal.textContent = r.totalUsers;
+    memberGrid.innerHTML = "";
+    r.users.forEach((u) => {
+      const card = document.createElement("div"); card.className = "member-card";
+      const ban = document.createElement("div"); ban.className = "mc-banner"; if (u.banner) ban.style.backgroundImage = "url('" + u.banner + "')";
+      const ava = document.createElement("div"); ava.className = "mc-ava";
+      if (u.avatar) ava.innerHTML = '<img src="' + u.avatar + '" alt="">'; else ava.textContent = initials(u.username);
+      if (u.online) { const d = document.createElement("span"); d.className = "mc-online"; ava.appendChild(d); }
+      const name = document.createElement("div"); name.className = "mc-name"; name.textContent = u.username;
+      const role = document.createElement("div"); role.className = "mc-role" + (u.role === "admin" ? " admin" : ""); role.textContent = u.role === "admin" ? "admin" : "member";
+      card.appendChild(ban); card.appendChild(ava); card.appendChild(name); card.appendChild(role);
+      card.title = "View " + u.username + "'s profile";
+      card.addEventListener("click", () => openMemberModal(u));
+      memberGrid.appendChild(card);
+    });
+  }
+
+  /* member profile modal */
+  const memberModal = document.getElementById("memberModal");
+  const mpBanner = document.getElementById("mpBanner");
+  const mpAva = document.getElementById("mpAva");
+  const mpName = document.getElementById("mpName");
+  const mpRole = document.getElementById("mpRole");
+  const mpStatus = document.getElementById("mpStatus");
+  const mpBio = document.getElementById("mpBio");
+  function openMemberModal(u) {
+    mpBanner.style.backgroundImage = u.banner ? "url('" + u.banner + "')" : "";
+    mpAva.innerHTML = "";
+    if (u.avatar) { const im = document.createElement("img"); im.src = u.avatar; im.alt = ""; mpAva.appendChild(im); }
+    else mpAva.textContent = initials(u.username);
+    if (u.online) { const d = document.createElement("span"); d.className = "mp-online"; mpAva.appendChild(d); }
+    mpName.textContent = u.username;
+    mpRole.textContent = u.role === "admin" ? "admin" : "member";
+    mpRole.classList.toggle("admin", u.role === "admin");
+    mpStatus.innerHTML = "";
+    if (u.online) {
+      const dot = document.createElement("span"); dot.className = "dot-live";
+      mpStatus.appendChild(dot); mpStatus.appendChild(document.createTextNode("online now"));
+    } else mpStatus.textContent = "offline";
+    mpBio.textContent = u.bio || "This one keeps quiet.";
+    mpBio.classList.toggle("empty", !u.bio);
+    memberModal.classList.add("show");
+  }
+  const closeMemberModal = () => memberModal.classList.remove("show");
+  document.getElementById("mpClose").addEventListener("click", closeMemberModal);
+  memberModal.addEventListener("click", (e) => { if (e.target === memberModal) closeMemberModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && memberModal.classList.contains("show")) closeMemberModal(); });
+
+  /* ---------- admin ---------- */
+  const adminUsers = document.getElementById("adminUsers");
+  const adminLogs = document.getElementById("adminLogs");
+  async function loadAdmin() {
+    if (!currentUser || !currentUser.is_admin) return;
+    adminUsers.innerHTML = '<div class="bm-empty">Loading…</div>';
+    const r = await window.api.adminUsers().catch(() => null);
+    if (!r || !r.ok) { adminUsers.innerHTML = '<div class="bm-empty">Couldn\'t load users.</div>'; return; }
+    adminUsers.innerHTML = "";
+    r.users.forEach((u) => adminUsers.appendChild(adminUserRow(u)));
+    const lr = await window.api.adminLogs(200).catch(() => null);
+    adminLogs.innerHTML = "";
+    if (lr && lr.ok && lr.logs.length) {
+      lr.logs.forEach((l) => {
+        const row = document.createElement("div"); row.className = "log-row";
+        const user = document.createElement("span"); user.className = "log-user"; user.textContent = l.username || "—";
+        const kind = document.createElement("span"); kind.className = "log-kind " + (l.ultra ? "ultra" : "search"); kind.textContent = l.ultra ? "ultra" : "search";
+        const q = document.createElement("span"); q.className = "log-q"; q.textContent = (l.type ? l.type + ":" : "") + (l.query || "");
+        const time = document.createElement("span"); time.className = "log-time"; time.textContent = new Date(l.created_at).toLocaleString();
+        row.appendChild(user); row.appendChild(kind); row.appendChild(q); row.appendChild(time);
+        adminLogs.appendChild(row);
+      });
+    } else adminLogs.innerHTML = '<div class="bm-empty">No searches logged yet.</div>';
+  }
+  function adminUserRow(u) {
+    const row = document.createElement("div"); row.className = "admin-user";
+    const ava = document.createElement("div"); ava.className = "au-ava";
+    if (u.avatar) ava.innerHTML = '<img src="' + u.avatar + '" alt="">'; else ava.textContent = initials(u.username);
+    const name = document.createElement("div"); name.className = "au-name"; name.textContent = u.username;
+    if (u.id === currentUser.id) { const y = document.createElement("span"); y.className = "you"; y.textContent = " (you)"; name.appendChild(y); }
+    const spacer = document.createElement("div"); spacer.className = "au-spacer";
+    const tok = document.createElement("span"); tok.className = "au-tok"; tok.textContent = u.tokens;
+    const ctrl = document.createElement("div"); ctrl.className = "au-ctrl";
+
+    const role = document.createElement("select");
+    ["user", "admin"].forEach((r) => { const o = document.createElement("option"); o.value = r; o.textContent = r; role.appendChild(o); });
+    role.value = u.role === "admin" ? "admin" : "user";
+    role.addEventListener("change", async () => {
+      const res = await window.api.adminPatchUser(u.id, { role: role.value }).catch(() => null);
+      if (res && res.ok) toast(u.username + " is now " + role.value + "."); else toast("Couldn't change role.", "err");
+    });
+
+    const amt = document.createElement("input"); amt.type = "number"; amt.value = "10"; amt.min = "-999"; amt.max = "999";
+    const give = document.createElement("button"); give.className = "btn-mini"; give.textContent = "Grant";
+    give.addEventListener("click", async () => {
+      const delta = parseInt(amt.value, 10) || 0;
+      const res = await window.api.adminGrantTokens(u.id, delta).catch(() => null);
+      if (res && res.ok) { tok.textContent = res.user.tokens; toast((delta >= 0 ? "Gave " : "Took ") + Math.abs(delta) + " tokens."); if (u.id === currentUser.id) setTokens(res.user.tokens); }
+      else toast("Couldn't grant tokens.", "err");
+    });
+
+    const del = document.createElement("button"); del.className = "btn-mini danger"; del.textContent = "Delete"; del.disabled = u.id === currentUser.id;
+    del.addEventListener("click", async () => {
+      if (!confirm("Delete " + u.username + "'s account? This can't be undone.")) return;
+      const res = await window.api.adminDeleteUser(u.id).catch(() => null);
+      if (res && res.ok) { row.remove(); toast("Deleted " + u.username + "."); } else toast("Couldn't delete.", "err");
+    });
+
+    ctrl.appendChild(role); ctrl.appendChild(amt); ctrl.appendChild(give); ctrl.appendChild(del);
+    row.appendChild(ava); row.appendChild(name); row.appendChild(spacer); row.appendChild(tok); row.appendChild(ctrl);
+    return row;
+  }
+
+  // load each tab's data when it opens
   navItems.forEach((n) => n.addEventListener("click", () => {
-    if (n.dataset.page === "profile") renderProfile();
-    else if (n.dataset.page === "bookmarks") loadBookmarks();
+    const p = n.dataset.page;
+    if (p === "profile") renderProfile();
+    else if (p === "bookmarks") loadBookmarks();
+    else if (p === "members") loadMembers();
+    else if (p === "admin") loadAdmin();
+    else if (p === "home") loadAnnouncements();
   }));
 
   /* ---------- unified investigation (social scan + nicotine records) ---------- */
@@ -1474,7 +1981,14 @@
     socialResults.appendChild(row);
   }
 
-  window.api.onOsintResult((result) => { if (!invSubmitBtn.disabled) return; renderOsintRow(result); if (result.exists === true) graphAddSocial(result); });
+  window.api.onOsintResult((result) => {
+    if (!invSubmitBtn.disabled) return;
+    renderOsintRow(result);
+    if (result.exists === true) {
+      graphAddSocial(result);
+      if (captured && captured.social.length < 60) captured.social.push({ name: result.name, url: result.url });
+    }
+  });
 
   // Known fields shown first, in this order; anything else the API returns is appended generically.
   const NIC_FIELDS = [
@@ -1794,6 +2308,13 @@
     // Records view: the same passwords / usernames / emails, with copy buttons
     renderUltraCategories(cats);
 
+    // snapshot the aggregates so the Table can replay them without a new search
+    if (captured) {
+      const dump = (map) => [...map.entries()].slice(0, 60)
+        .map(([val, accts]) => [val, accts.slice(0, 6).map((a) => ({ domain: a.domain, ident: a.ident, url: a.url, pass: a.pass }))]);
+      captured.cats = { password: dump(cats.password), username: dump(cats.username), email: dump(cats.email) };
+    }
+
     // mount headers, then reveal rows round-robin so all columns grow together
     const headerPins = COLS.map((col) => graphAddCategoryHeader(col, col.x, HEADER_Y));
     const lastPin = headerPins.slice();
@@ -1852,6 +2373,7 @@
     nicSummary.appendChild(copyAll);
     results.forEach((rec, i) => nicResults.appendChild(renderNicCard(rec, i)));
     results.forEach((rec) => graphAddRecord(rec));
+    if (captured) captured.records = results.slice(0, 40);
   }
 
   /* ---------- investigation graph ---------- */
@@ -2258,6 +2780,7 @@
 
     invError.textContent = "";
     saveBar.style.display = "none"; lastSearch = null;
+    captured = { records: [], social: [], cats: null }; // snapshot for the Table
     socialResults.innerHTML = ""; socialSummary.textContent = ""; socialCount.textContent = "";
     nicResults.innerHTML = ""; nicSummary.innerHTML = "";
     catSocial.classList.add("hidden");
@@ -2279,8 +2802,12 @@
 
     if (myId === curSearch) {
       endSearchUI();
-      // offer to bookmark this search
-      lastSearch = { type, query, ultra: !!ultra, summary: (nicSummary.textContent || "").slice(0, 120) };
+      // offer to lay this search out on the table
+      lastSearch = {
+        type, query, ultra: !!ultra,
+        summary: (nicSummary.textContent || "").slice(0, 120),
+        results: captured,
+      };
       saveBar.style.display = "flex";
     }
   }
@@ -2508,15 +3035,14 @@
   const appVersionEl = document.getElementById("appVersion");
   let pendingUpdateUrl = null;
 
-  [ubInstall, ubDismiss, checkUpdateBtn, installUpdateBtn].forEach(attachSounds);
+  [ubInstall, ubDismiss, document.getElementById("ubLater"), checkUpdateBtn, installUpdateBtn].forEach(attachSounds);
 
   window.api.appVersion().then((v) => { appVersionEl.textContent = "v" + v; });
 
   function showUpdateAvailable(info) {
     pendingUpdateUrl = info.url;
-    ubVersion.textContent = "  ·  v" + info.currentVersion + " → v" + info.latestVersion;
+    ubVersion.textContent = "v" + info.currentVersion + " → v" + info.latestVersion;
     updateBanner.classList.add("show");
-    document.body.classList.add("has-update");
     installUpdateBtn.classList.remove("hidden");
     updateStatus.textContent = "Version " + info.latestVersion + " is available." + (info.notes ? " " + info.notes : "");
   }
@@ -2571,14 +3097,27 @@
   ubInstall.addEventListener("click", runInstall);
   installUpdateBtn.addEventListener("click", runInstall);
   checkUpdateBtn.addEventListener("click", () => runCheck(true));
-  ubDismiss.addEventListener("click", () => {
-    updateBanner.classList.remove("show");
-    document.body.classList.remove("has-update");
-  });
+  const dismissUpdate = () => updateBanner.classList.remove("show");
+  ubDismiss.addEventListener("click", dismissUpdate);
+  document.getElementById("ubLater").addEventListener("click", dismissUpdate);
 
   // quiet check shortly after launch
   setTimeout(() => runCheck(false), 2500);
 </script>
+<!-- member profile viewer -->
+<div class="modal-back" id="memberModal">
+  <div class="mp-modal">
+    <button class="mp-close" id="mpClose" type="button" aria-label="Close">✕</button>
+    <div class="mp-banner" id="mpBanner"></div>
+    <div class="mp-body">
+      <div class="mp-ava" id="mpAva">?</div>
+      <div class="mp-name"><span id="mpName">user</span><span class="mp-role" id="mpRole">member</span></div>
+      <div class="mp-status" id="mpStatus"></div>
+      <div class="mp-bio" id="mpBio"></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast-wrap" id="toastWrap"></div>
 </body>
 </html>
