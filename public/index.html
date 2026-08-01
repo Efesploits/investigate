@@ -1146,6 +1146,344 @@ you cant run by your own footprints.
   .toast.err { border-color: #ff6b6b55; }
   @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } }
   @media (max-width: 720px) { .topbar { top: 10px; right: 10px; } .wallet .wk-lbl { display: none; } }
+
+  /* ===================== THE PLAYBOOK (rules book) =====================
+     A real 3D book: it rises off the bottom of the screen, spins, opens, and
+     its leaves turn on a hinge at the spine — either from the buttons or by
+     dragging a corner with the mouse. */
+  /* The stage never animates its own opacity. It is the book's ancestor, and a
+     fading ancestor pushes the whole 3D subtree through an offscreen group on
+     every frame — which is why the book used to stutter on the way in but never
+     on the way out. The darkening is a separate sibling layer instead. */
+  /* The stage is never display:none. It stays laid out with the book parked just
+     below the screen, so the browser has already painted and cached every face
+     long before the entry runs — a first paint landing on frame one of the
+     animation is what you see as a hitch. */
+  .book-stage {
+    position: fixed; inset: 0; z-index: 240;
+    display: flex; align-items: center; justify-content: center;
+    perspective: 1500px; perspective-origin: 50% 44%;
+    pointer-events: none;
+    user-select: none; -webkit-user-select: none;
+  }
+  .book-stage:not(.show) .book-lift { transform: translateY(115vh); }
+  .book-stage.show { pointer-events: auto; }
+  .book-stage.show .book-lift { will-change: transform; }
+  .book-veil {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 54%, rgba(34,30,24,.5), rgba(0,0,0,.95) 64%);
+    opacity: 0; transition: opacity .45s ease;
+  }
+  .book-stage.lit .book-veil { opacity: 1; }
+  .book-stage.grabbable { cursor: grab; }
+  .book-stage.dragging { cursor: grabbing; }
+
+  .book-lift { transform-style: preserve-3d; }
+  .book {
+    --pw: min(384px, 34vw, 43vh);
+    --ph: calc(var(--pw) * 1.36);
+    --T: calc(var(--pw) * .075);   /* how thick the block of pages is */
+    --bo: calc(var(--pw) * .038);  /* how far the boards overhang the paper */
+    position: relative;
+    width: calc(var(--pw) * 2); height: var(--ph);
+    transform-style: preserve-3d;
+    transform: rotateX(7deg) translateX(calc(var(--pw) * -.5));
+    transition: transform .75s cubic-bezier(.34,.02,.2,1);
+  }
+  .book.opened { transform: rotateX(7deg) translateX(0); }
+
+  /* the pooled shadow the book casts on the desk (no blur filter — it would
+     force a fresh render surface on every frame of the spin) */
+  .book-shadow {
+    position: absolute; left: 26%; right: 26%; bottom: -40px; height: 58px;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(0,0,0,.78), rgba(0,0,0,0) 70%);
+    transform: translateZ(-40px);
+    transition: left .75s cubic-bezier(.34,.02,.2,1), right .75s cubic-bezier(.34,.02,.2,1), opacity .3s ease;
+  }
+  .book-stage.flying .book-shadow { opacity: 0; }
+  /* while the book is in the air only the cover and the solid body are on screen.
+     Every page kept in the render tree would be re-rasterised on each frame of
+     the spin, which is what made the turn stutter. */
+  .book-stage.flying .bk-base,
+  .book-stage.flying .leaf:not(.cover) { visibility: hidden; }
+  .book.opened .book-shadow { left: 3%; right: 3%; }
+
+  /* ---- the solid body: back board, spine and the block of page edges.
+     It gives the closed book real volume so the spin reads as an object.
+     Once the covers are open the spread stands in for it. ---- */
+  .bk-body {
+    position: absolute; top: 0; height: 100%; width: var(--pw);
+    transform-style: preserve-3d;
+    transition: opacity .3s ease;
+  }
+  /* the block under the right-hand half — it is the whole book while closed */
+  .bk-body.b-right { left: var(--pw); transform: translateZ(calc(var(--T) / -2)); }
+  /* its mirror under the left-hand half, so an open book still sits on paper.
+     scaleX(-1) flips the whole block, putting the spine back at the centre. */
+  .bk-body.b-left { left: 0; transform: translateZ(calc(var(--T) / -2)) scaleX(-1); }
+  .book:not(.spread) .bk-body.b-left { opacity: 0; }
+  .bk-face { position: absolute; left: 50%; top: 50%; }
+  .bk-face.f-back, .bk-face.f-fore, .bk-face.f-spine { height: var(--ph); margin-top: calc(var(--ph) / -2); }
+  /* the board is cut bigger than the paper, so a rim of cover shows all the way
+     round the open spread — the way a hardback actually sits */
+  .bk-face.f-back { width: calc(var(--pw) + var(--bo)); height: calc(var(--ph) + var(--bo) * 2);
+    margin-left: calc(var(--pw) / -2); margin-top: calc((var(--ph) + var(--bo) * 2) / -2);
+    transform: translateZ(calc(var(--T) / -2));
+    background:
+      radial-gradient(120% 90% at 68% 14%, rgba(255,255,255,.075), rgba(255,255,255,0) 58%),
+      linear-gradient(225deg, #3b3128 0%, #251e18 55%, #15110d 100%);
+    border-radius: 9px 2px 2px 9px; }
+  .bk-face.f-back::after { content: ""; position: absolute; inset: 5% 6%;
+    border: 1.5px solid rgba(201,185,152,.15); border-radius: 4px; }
+  .bk-face.f-spine { width: var(--T); margin-left: calc(var(--T) / -2);
+    transform: rotateY(-90deg) translateZ(calc(var(--pw) / 2));
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.26) 0 1px, rgba(0,0,0,0) 1px 11px),
+      linear-gradient(90deg, #14100c 0%, #3d3229 42%, #2a221b 78%, #120f0b 100%); }
+  .bk-face.f-fore { width: var(--T); margin-left: calc(var(--T) / -2);
+    transform: rotateY(90deg) translateZ(calc(var(--pw) / 2));
+    background:
+      linear-gradient(90deg, #241d17 0 2.5px, rgba(0,0,0,0) 2.5px calc(100% - 2.5px), #241d17 calc(100% - 2.5px) 100%),
+      repeating-linear-gradient(90deg, rgba(118,94,56,.42) 0 1px, rgba(252,247,236,.9) 1px 2.4px),
+      #e7dcc5; }
+  .bk-face.f-top, .bk-face.f-bot { width: var(--pw); height: var(--T); margin-left: calc(var(--pw) / -2); margin-top: calc(var(--T) / -2);
+    background:
+      linear-gradient(90deg, #241d17 0 6px, rgba(0,0,0,0) 6px),
+      linear-gradient(0deg, #241d17 0 2.5px, rgba(0,0,0,0) 2.5px calc(100% - 2.5px), #241d17 calc(100% - 2.5px) 100%),
+      repeating-linear-gradient(0deg, rgba(118,94,56,.4) 0 1px, rgba(250,245,233,.92) 1px 2.4px),
+      #e7dcc5; }
+  /* light baked into the gradients instead of brightness() filters, which are
+     costly to re-render while the book turns */
+  .bk-face.f-top { transform: rotateX(90deg) translateZ(calc(var(--ph) / 2)); }
+  .bk-face.f-bot { transform: rotateX(-90deg) translateZ(calc(var(--ph) / 2));
+    background:
+      linear-gradient(90deg, #1a1510 0 6px, rgba(0,0,0,0) 6px),
+      linear-gradient(0deg, #1a1510 0 2.5px, rgba(0,0,0,0) 2.5px calc(100% - 2.5px), #1a1510 calc(100% - 2.5px) 100%),
+      repeating-linear-gradient(0deg, rgba(72,56,30,.5) 0 1px, rgba(178,168,146,.92) 1px 2.4px),
+      #a99e86; }
+
+  /* aged paper shared by every page face */
+  .paper {
+    background-color: #efe5d1;
+    background-image:
+      radial-gradient(78% 62% at 50% 42%, rgba(255,255,255,.5), rgba(150,120,74,.3) 100%),
+      repeating-linear-gradient(93deg, rgba(150,124,84,.05) 0 3px, rgba(0,0,0,0) 3px 8px);
+    color: #241f19;
+  }
+  .paper.pg-right { border-radius: 2px 9px 9px 2px; }
+  .paper.pg-left  { border-radius: 9px 2px 2px 9px; }
+  /* the gutter darkens toward the spine */
+  .paper.pg-right::before, .paper.pg-left::before {
+    content: ""; position: absolute; top: 0; bottom: 0; width: 15%; pointer-events: none;
+  }
+  .paper.pg-right::before { left: 0; background: linear-gradient(90deg, rgba(58,42,20,.36), rgba(58,42,20,0)); }
+  .paper.pg-left::before  { right: 0; background: linear-gradient(270deg, rgba(58,42,20,.36), rgba(58,42,20,0)); }
+
+  .bk-base { position: absolute; top: 0; height: 100%; width: var(--pw); overflow: hidden; }
+  .bk-base.left  { left: 0; }
+  .bk-base.right { left: var(--pw); }
+  /* the left page only exists once the cover has actually swung over onto it —
+     until then that half of the desk is empty, the way a real book behaves */
+  .book:not(.spread) .bk-base.left { opacity: 0; }
+
+  /* a turning leaf, hinged at the spine */
+  .leaf {
+    position: absolute; top: 0; left: var(--pw); width: var(--pw); height: 100%;
+    transform-origin: left center; transform-style: preserve-3d;
+    transform: rotateY(0deg) rotateZ(0deg) translateZ(0px);
+    will-change: transform;
+  }
+  .leaf-face {
+    position: absolute; inset: 0; overflow: hidden;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  }
+  .leaf-face.bk { transform: rotateY(180deg); }
+  /* Light falls off the page as it lifts away from the spread. During a dragged
+     turn --a changes every frame so the opacity tracks the hand; during a button
+     turn it jumps straight to the end value, so the shade needs its own
+     transition or the shadow would snap on at full strength. */
+  .leaf-shade { position: absolute; inset: 0; pointer-events: none; }
+  .leaf-face.fr .leaf-shade { background: linear-gradient(270deg, rgba(26,18,6,.55), rgba(26,18,6,0) 72%); opacity: calc(var(--a, 0) / 180); }
+  .leaf-face.bk .leaf-shade { background: linear-gradient(90deg, rgba(26,18,6,.5), rgba(26,18,6,0) 72%); opacity: calc(1 - var(--a, 0) / 180); }
+  .leaf.turning .leaf-shade { transition: opacity var(--dur, 600ms) linear; }
+
+  /* leather cover */
+  /* Only the leather side of the cover is cut oversized — its paper side is the
+     left-hand page and has to line up exactly with the right-hand one, or the
+     spread sits with a step in it. */
+  .leaf.cover .leaf-face.fr { inset: calc(var(--bo) * -1) calc(var(--bo) * -1) calc(var(--bo) * -1) 0; }
+  /* the shading is painted as gradients rather than blurred box-shadows, which
+     would be re-rendered on every frame the book turns */
+  .leaf.cover .leaf-face.fr {
+    background:
+      radial-gradient(120% 90% at 30% 12%, rgba(255,255,255,.1), rgba(255,255,255,0) 52%),
+      radial-gradient(86% 74% at 50% 50%, rgba(0,0,0,0) 40%, rgba(0,0,0,.55) 100%),
+      linear-gradient(135deg, #3b3128 0%, #262019 52%, #17130f 100%);
+    border-radius: 2px 10px 10px 2px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cover-emblem { width: 46%; opacity: .5; filter: drop-shadow(0 1px 0 rgba(255,255,255,.12)); }
+  .cover-emblem circle, .cover-emblem line { stroke: #c9b998; }
+  .cover-rule {
+    position: absolute; inset: 5% 6%; border: 1.5px solid rgba(201,185,152,.22); border-radius: 4px; pointer-events: none;
+  }
+
+  /* page bodies */
+  .pg { position: absolute; inset: 0; padding: calc(var(--pw) * .1) calc(var(--pw) * .105); display: flex; flex-direction: column; }
+  .pg-inner-note {
+    margin: auto; text-align: center; font-family: var(--paper-hand); color: rgba(48,40,30,.42);
+    font-size: calc(var(--pw) * .044); line-height: 1.7; transform: rotate(-1.4deg);
+  }
+
+  /* page one — the title, hand-lettered */
+  .pb-title {
+    margin: auto; text-align: center; font-family: var(--paper-hand);
+    color: #17140f; line-height: 1.02; transform: rotate(-1.1deg);
+    text-shadow: 0 1px 0 rgba(255,255,255,.35);
+  }
+  .pb-title .t1 { display: block; font-size: calc(var(--pw) * .1); letter-spacing: .06em; }
+  .pb-title .t2 { display: block; font-size: calc(var(--pw) * .128); letter-spacing: 0; margin-top: .14em; }
+
+  /* page two, left — the mark */
+  .pg-mark { align-items: center; justify-content: center; gap: calc(var(--pw) * .07); }
+  .pg-mark svg { width: 44%; opacity: .88; }
+  .pg-mark .mk-cap {
+    font-family: var(--paper-hand); font-size: calc(var(--pw) * .046); color: rgba(36,31,25,.7);
+    letter-spacing: .06em; text-align: center; transform: rotate(-1deg);
+  }
+
+  /* page two, right — the rules */
+  .pg-rules h3 {
+    font-family: var(--paper-hand); font-size: calc(var(--pw) * .078); margin: 0 0 calc(var(--pw) * .055);
+    color: #17140f; letter-spacing: .05em; transform: rotate(-.8deg);
+  }
+  .pg-rules h3::after {
+    content: ""; display: block; height: 2px; margin-top: .18em; border-radius: 2px;
+    background: linear-gradient(90deg, rgba(36,31,25,.75), rgba(36,31,25,.08));
+  }
+  .rule-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: calc(var(--pw) * .038); }
+  .rule-list li {
+    display: flex; gap: .55em; align-items: baseline;
+    font-family: var(--paper-hand); font-size: calc(var(--pw) * .048); line-height: 1.34; color: #2a241d;
+  }
+  .rule-list li .n { flex-shrink: 0; opacity: .55; }
+  .rule-list li:nth-child(odd) { transform: rotate(-.5deg); }
+  .rule-list li:nth-child(even) { transform: rotate(.4deg); margin-left: .12em; }
+
+  .agree-wrap { margin-top: auto; padding-top: calc(var(--pw) * .05); display: flex; flex-direction: column; gap: calc(var(--pw) * .038); }
+  .agree-row { display: flex; align-items: center; gap: .6em; cursor: pointer; }
+  .tickbox {
+    position: relative; flex-shrink: 0;
+    width: calc(var(--pw) * .085); height: calc(var(--pw) * .085);
+    border: 2.4px solid #2b2620; border-radius: 5px 7px 4px 8px;
+    background: rgba(255,255,255,.22); transform: rotate(-1.6deg);
+  }
+  .tickbox svg { position: absolute; left: -18%; top: -18%; width: 136%; height: 136%; overflow: visible; }
+  /* the pencil-rough filter only switches on once the mark is being drawn —
+     an idle feTurbulence would be paid for on every repaint of the book */
+  .tickbox path {
+    fill: none; stroke: #241f19; stroke-width: 3.6; stroke-linecap: round;
+    stroke-dasharray: 70; stroke-dashoffset: 70;
+  }
+  .tickbox.on path { filter: url(#pencilRough); }
+  .tickbox.on .x1 { animation: drawX .3s cubic-bezier(.5,.1,.4,1) forwards; }
+  .tickbox.on .x2 { animation: drawX .3s cubic-bezier(.5,.1,.4,1) .22s forwards; }
+  @keyframes drawX { to { stroke-dashoffset: 0; } }
+  .agree-lbl { font-family: var(--paper-hand); font-size: calc(var(--pw) * .044); color: #2a241d; line-height: 1.25; }
+  .agree-btn {
+    align-self: flex-start; font-family: var(--paper-hand); font-size: calc(var(--pw) * .055);
+    background: transparent; color: #241f19; border: 2.6px solid #241f19;
+    border-radius: 7px 11px 6px 10px; padding: .3em 1.15em; cursor: pointer; transform: rotate(-1deg);
+    transition: transform .2s cubic-bezier(.34,1.4,.5,1), background .2s ease, opacity .25s ease;
+  }
+  .agree-btn[disabled] { opacity: .3; cursor: not-allowed; }
+  .agree-btn:not([disabled]):hover { background: rgba(36,31,25,.1); transform: rotate(-1deg) scale(1.05); }
+
+  /* the corner you can grab */
+  .pg-curl {
+    position: absolute; right: 0; bottom: 0; width: calc(var(--pw) * .2); height: calc(var(--pw) * .2);
+    background: linear-gradient(225deg, rgba(60,44,20,.26), rgba(60,44,20,0) 62%);
+    pointer-events: none; opacity: .75; transition: opacity .2s ease;
+  }
+  .pg-curl.l { right: auto; left: 0; background: linear-gradient(135deg, rgba(60,44,20,.26), rgba(60,44,20,0) 62%); }
+
+  /* controls under the book */
+  .book-ctl {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 10px;
+    opacity: 0; pointer-events: none; transition: opacity .45s ease;
+  }
+  .book-stage.ready .book-ctl { opacity: 1; pointer-events: auto; }
+  .bk-btn {
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.2); color: #ece6d9;
+    border-radius: 999px; padding: 9px 18px; font-family: inherit; font-size: .8rem; font-weight: 700;
+    letter-spacing: .2px; cursor: pointer; transition: background .18s ease, opacity .2s ease, transform .18s ease;
+  }
+  .bk-btn:not([disabled]):hover { background: rgba(255,255,255,.14); transform: translateY(-1px); }
+  .bk-btn[disabled] { opacity: .28; cursor: default; }
+  .bk-hint { color: rgba(236,230,217,.42); font-size: .72rem; letter-spacing: .4px; padding: 0 6px; }
+  .book-stage.first-run #bkExit { display: none; }
+
+  /* The shell slides right and clears the stage while the book is up. It is kept
+     short so it is finished before the book starts flying — the two were
+     overlapping, and fading a whole page of content is not cheap. */
+  .sidebar, .content { transition: transform .36s cubic-bezier(.4,0,.2,1), opacity .3s ease; }
+  body.book-mode { overflow: hidden; }
+  body.book-mode .sidebar { transform: translateX(58px); opacity: 0; pointer-events: none; will-change: transform, opacity; }
+  body.book-mode .content { transform: translateX(34px); opacity: 0; pointer-events: none; will-change: transform, opacity; }
+  body.book-mode .topbar { opacity: 0; pointer-events: none; transition: opacity .35s ease; }
+
+  /* Rise and tumble are ONE animation on ONE element. Splitting them across two
+     elements meant a timer, a forced reflow and a fresh animation starting
+     mid-flight — which is exactly where the turn hitched. The tilt sits ahead of
+     the yaw in the list so the lean stays in world space, and depth is held
+     still through the spin so nothing has to be re-rasterised. */
+  /* NB: no opacity anywhere in these keyframes. Animating opacity on a
+     preserve-3d element flattens its whole 3D context — the book would spin as
+     a flat card with no spine or page block. It enters and leaves off-screen
+     instead, which needs no fade. */
+  @keyframes bookEnter {
+    /* comes straight up off the bottom edge... */
+    0%   { transform: translateY(88vh) translateZ(-160px) rotateX(40deg) rotateY(0deg) rotateZ(-7deg);
+           animation-timing-function: cubic-bezier(.15,.72,.3,1); }
+    20%  { transform: translateY(30vh) translateZ(-96px) rotateX(27deg) rotateY(0deg) rotateZ(-5deg);
+           animation-timing-function: cubic-bezier(.2,.7,.35,1); }
+    /* ...and is already turning as it arrives, so there is no dead beat between
+       the rise and the spin — they are one continuous move */
+    36%  { transform: translateY(-12px) translateZ(-14px) rotateX(7deg) rotateY(16deg) rotateZ(1deg);
+           animation-timing-function: cubic-bezier(.35,.06,.42,1); }
+    46%  { transform: translateY(0px) translateZ(0px) rotateX(10deg) rotateY(54deg) rotateZ(1.6deg); animation-timing-function: linear; }
+    58%  { transform: translateY(0px) translateZ(0px) rotateX(14deg) rotateY(122deg) rotateZ(2deg); animation-timing-function: linear; }
+    70%  { transform: translateY(0px) translateZ(0px) rotateX(15deg) rotateY(192deg) rotateZ(0deg); animation-timing-function: linear; }
+    82%  { transform: translateY(0px) translateZ(0px) rotateX(12deg) rotateY(263deg) rotateZ(-2deg); animation-timing-function: linear; }
+    92%  { transform: translateY(0px) translateZ(0px) rotateX(6deg) rotateY(326deg) rotateZ(-1deg);
+           animation-timing-function: cubic-bezier(.3,0,.2,1); }
+    100% { transform: translateY(0px) translateZ(0px) rotateX(0deg) rotateY(360deg) rotateZ(0deg); }
+  }
+  /* one more turn on the way out, then it drops off the bottom of the screen */
+  @keyframes bookExit {
+    0%   { transform: translateY(0px) translateZ(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); animation-timing-function: linear; }
+    10%  { transform: translateY(0px) translateZ(0px) rotateX(6deg) rotateY(31deg) rotateZ(1deg); animation-timing-function: linear; }
+    19%  { transform: translateY(0px) translateZ(0px) rotateX(13deg) rotateY(101deg) rotateZ(2deg); animation-timing-function: linear; }
+    28%  { transform: translateY(0px) translateZ(0px) rotateX(15deg) rotateY(180deg) rotateZ(0deg); animation-timing-function: linear; }
+    37%  { transform: translateY(0px) translateZ(0px) rotateX(13deg) rotateY(259deg) rotateZ(-2deg); animation-timing-function: linear; }
+    47%  { transform: translateY(0px) translateZ(0px) rotateX(6deg) rotateY(329deg) rotateZ(-1deg); animation-timing-function: linear; }
+    56%  { transform: translateY(0px) translateZ(0px) rotateX(0deg) rotateY(360deg) rotateZ(0deg);
+           animation-timing-function: cubic-bezier(.3,0,.6,1); }
+    66%  { transform: translateY(-30px) translateZ(0px) rotateX(-5deg) rotateY(360deg) rotateZ(1.5deg);
+           animation-timing-function: cubic-bezier(.5,0,.85,.4); }
+    100% { transform: translateY(110vh) translateZ(-380px) rotateX(46deg) rotateY(360deg) rotateZ(7deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .book, .book-shadow, .leaf { transition-duration: .18s !important; }
+    .book-lift { animation-duration: .5s !important; }
+  }
+  @media (max-width: 780px) {
+    .book { --pw: min(300px, 42vw, 40vh); }
+    .book-ctl { bottom: 14px; }
+    .bk-hint { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -1252,6 +1590,10 @@ you cant run by your own footprints.
     <div class="nav-item" data-page="profile">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       Profile
+    </div>
+    <div class="nav-item" data-page="rules">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22z"/><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20"/></svg>
+      Rules
     </div>
     <div class="nav-item admin-nav" data-page="admin" id="adminNav" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg>
@@ -1518,6 +1860,119 @@ you cant run by your own footprints.
   </div>
 </div>
 
+<!-- ===================== THE PLAYBOOK ===================== -->
+<div class="book-stage" id="bookStage" aria-hidden="true">
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <filter id="pencilRough" x="-30%" y="-30%" width="160%" height="160%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </svg>
+
+  <div class="book-veil" aria-hidden="true"></div>
+
+  <div class="book-lift" id="bookLift">
+      <div class="book" id="book">
+        <div class="book-shadow"></div>
+
+        <!-- the solid block: back board, spine and page edges. Two of them, so an
+             open book still rests on paper on both sides. -->
+        <div class="bk-body b-right" aria-hidden="true">
+          <div class="bk-face f-back"></div>
+          <div class="bk-face f-spine"></div>
+          <div class="bk-face f-fore"></div>
+          <div class="bk-face f-top"></div>
+          <div class="bk-face f-bot"></div>
+        </div>
+        <div class="bk-body b-left" aria-hidden="true">
+          <div class="bk-face f-back"></div>
+          <div class="bk-face f-spine"></div>
+          <div class="bk-face f-fore"></div>
+          <div class="bk-face f-top"></div>
+          <div class="bk-face f-bot"></div>
+        </div>
+
+        <!-- static bases: what sits under the turning leaves -->
+        <div class="bk-base left paper pg-left">
+          <div class="pg"><div class="pg-inner-note">kept quiet<br>passed on<br>never explained</div></div>
+        </div>
+        <div class="bk-base right paper pg-right">
+          <div class="pg pg-rules">
+            <h3>THE RULES</h3>
+            <ol class="rule-list">
+              <li><span class="n">1.</span><span>you dont know where you got this information</span></li>
+              <li><span class="n">2.</span><span>use your tokens wisely</span></li>
+              <li><span class="n">3.</span><span>dont be a creep.</span></li>
+              <li><span class="n">4.</span><span>m3 the coolest</span></li>
+              <li><span class="n">5.</span><span>Suit up.</span></li>
+            </ol>
+            <div class="agree-wrap">
+              <div class="agree-row" id="bkTickRow">
+                <span class="tickbox" id="bkTick" role="checkbox" aria-checked="false" tabindex="0">
+                  <svg viewBox="0 0 40 40" aria-hidden="true">
+                    <path class="x1" d="M8 9 C15 15.5, 25 24.5, 32 31.5"/>
+                    <path class="x2" d="M32 9 C25 15.5, 15 24.5, 8 31.5"/>
+                  </svg>
+                </span>
+                <span class="agree-lbl">i have read the rules</span>
+              </div>
+              <button class="agree-btn" id="bkAgree" type="button" disabled>Agree</button>
+            </div>
+          </div>
+          <div class="pg-curl"></div>
+        </div>
+
+        <!-- leaf 0 — the cover -->
+        <div class="leaf cover" id="bkCover">
+          <div class="leaf-face fr">
+            <div class="cover-rule"></div>
+            <svg class="cover-emblem" viewBox="0 0 300 340" aria-hidden="true">
+              <line x1="221" y1="211" x2="286" y2="276" stroke="#c9b998" stroke-width="16" stroke-linecap="round"/>
+              <circle cx="150" cy="140" r="100" fill="none" stroke="#c9b998" stroke-width="9"/>
+            </svg>
+            <div class="leaf-shade"></div>
+          </div>
+          <div class="leaf-face bk paper pg-left">
+            <div class="pg"><div class="pg-inner-note">property of m3<br><br>if found — you never<br>found it</div></div>
+            <div class="leaf-shade"></div>
+          </div>
+        </div>
+
+        <!-- leaf 1 — title page / the mark -->
+        <div class="leaf" id="bkLeafOne">
+          <div class="leaf-face fr paper pg-right">
+            <div class="pg">
+              <div class="pb-title"><span class="t1">THE</span><span class="t2">PLAYBOOK</span></div>
+            </div>
+            <div class="pg-curl"></div>
+            <div class="leaf-shade"></div>
+          </div>
+          <div class="leaf-face bk paper pg-left">
+            <div class="pg pg-mark">
+              <svg viewBox="0 0 300 340" aria-hidden="true">
+                <line x1="221" y1="211" x2="286" y2="276" stroke="#241f19" stroke-width="15" stroke-linecap="round"/>
+                <circle cx="150" cy="140" r="100" fill="none" stroke="#241f19" stroke-width="9"/>
+                <path d="M70,150 C104,120 196,110 230,132 C214,196 92,200 70,150 Z" fill="none" stroke="#241f19" stroke-width="7" stroke-linejoin="round"/>
+                <circle cx="150" cy="152" r="25" fill="#241f19"/>
+                <circle cx="141" cy="144" r="6" fill="#efe5d1"/>
+              </svg>
+              <div class="mk-cap">m3's investigation tool</div>
+            </div>
+            <div class="pg-curl l"></div>
+            <div class="leaf-shade"></div>
+          </div>
+        </div>
+      </div>
+  </div>
+
+  <div class="book-ctl">
+    <button class="bk-btn" id="bkPrev" type="button" disabled>‹ Previous</button>
+    <span class="bk-hint">drag a corner to turn the page</span>
+    <button class="bk-btn" id="bkNext" type="button">Next ›</button>
+    <button class="bk-btn" id="bkExit" type="button">Close</button>
+  </div>
+</div>
+
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script>
@@ -1701,6 +2156,8 @@ you cant run by your own footprints.
   /* ---------- sidebar navigation ---------- */
   const navItems = document.querySelectorAll(".nav-item");
   function showPage(page) {
+    // the rules aren't a page — they're a book that takes over the screen
+    if (page === "rules") { openPlaybook(); return; }
     navItems.forEach((n) => n.classList.toggle("active", n.dataset.page === page));
     document.querySelectorAll(".page").forEach((p) => p.classList.remove("show"));
     document.getElementById("page-" + page).classList.add("show");
@@ -2713,7 +3170,7 @@ you cant run by your own footprints.
     renderAccount();
     if (currentUser) {
       introAuth.style.display = "none";
-      if (!document.body.classList.contains("entered")) enterApp();
+      if (!document.body.classList.contains("entered")) { enterApp(); maybePlaybook(); }
     } else {
       showGate();
     }
@@ -2732,7 +3189,11 @@ you cant run by your own footprints.
       currentUser = r.user; authForm.reset();
       renderAccount(); renderProfile(); loadMembers(); loadAnnouncements();
       const welcome = authMode === "login" ? ("Welcome back, " + currentUser.username) : ("Account created — welcome, " + currentUser.username);
-      playGreeting(currentUser.username, () => { enterApp(); toast(welcome); });
+      playGreeting(currentUser.username, () => {
+        enterApp();
+        // a brand-new member gets the playbook before anything else
+        if (!maybePlaybook()) toast(welcome);
+      });
     } catch (_) { authErr.textContent = "Connection error."; }
     authSubmit.disabled = false;
   });
@@ -3262,6 +3723,266 @@ you cant run by your own footprints.
 
   invForm.addEventListener("submit", (e) => { e.preventDefault(); startSearch(false); });
   invUltraBtn.addEventListener("click", () => startSearch(true));
+
+  /* ================= THE PLAYBOOK =================
+     The book rises, spins, opens itself, and then hands over: the leaves turn
+     from the buttons or by dragging a corner. New members meet it on the way in
+     and can't get past it until they've signed off on the rules. */
+  const bookStage = document.getElementById("bookStage");
+  const bookLift = document.getElementById("bookLift");
+  const bookEl = document.getElementById("book");
+  const bkLeaves = [document.getElementById("bkCover"), document.getElementById("bkLeafOne")];
+  const bkPrev = document.getElementById("bkPrev");
+  const bkNext = document.getElementById("bkNext");
+  const bkExit = document.getElementById("bkExit");
+  const bkTick = document.getElementById("bkTick");
+  const bkTickRow = document.getElementById("bkTickRow");
+  const bkAgree = document.getElementById("bkAgree");
+
+  const BK_N = bkLeaves.length;
+  let bkFlipped = 0;      // leaves currently turned to the left
+  let bkMin = 0;          // the cover only closes on the way out
+  let bkBusy = false;     // an entry/exit sequence owns the book
+  let bkFirstRun = false;
+  let bkDrag = null;
+
+  /* paper swish, synthesized like the rest of the app's sounds */
+  function pageTurnSound() {
+    const ctx = getCtx();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    const src = ctx.createBufferSource();
+    src.buffer = getNoiseBuffer(ctx);
+    const filt = ctx.createBiquadFilter();
+    filt.type = "bandpass"; filt.Q.value = 0.8;
+    filt.frequency.setValueAtTime(760, t);
+    filt.frequency.exponentialRampToValueAtTime(2600, t + 0.16);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.13, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+    src.connect(filt).connect(g).connect(ctx.destination);
+    src.start(t); src.stop(t + 0.26);
+  }
+
+  function bkSetAngle(leaf, a) {
+    const lift = Math.sin((a / 180) * Math.PI);
+    leaf.style.setProperty("--a", a);
+    leaf.style.transform = "rotateY(" + (-a) + "deg) rotateZ(" + (lift * 2.2).toFixed(2) + "deg) translateZ(" + (lift * 12).toFixed(1) + "px)";
+  }
+  function bkAnimate(leaf, a, ms, done) {
+    leaf.style.transition = "transform " + ms + "ms cubic-bezier(.42,.02,.24,1)";
+    leaf.style.setProperty("--dur", ms + "ms");
+    leaf.classList.add("turning");           // lets the page shading ease in with it
+    requestAnimationFrame(() => bkSetAngle(leaf, a));
+    setTimeout(() => {
+      leaf.style.transition = "";
+      leaf.classList.remove("turning");
+      if (done) done();
+    }, ms + 40);
+  }
+  function bkZ() {
+    bkLeaves.forEach((lf, i) => { lf.style.zIndex = i < bkFlipped ? i + 1 : BK_N - i; });
+  }
+  function bkSync() {
+    bkLeaves.forEach((lf, i) => bkSetAngle(lf, i < bkFlipped ? 180 : 0));
+    bkZ();
+    bookEl.classList.toggle("opened", bkFlipped > 0);
+    bkPrev.disabled = bkBusy || bkFlipped <= bkMin;
+    bkNext.disabled = bkBusy || bkFlipped >= BK_N;
+  }
+
+  function bkTurn(dir) {
+    if (bkBusy) return;
+    const i = dir > 0 ? bkFlipped : bkFlipped - 1;
+    if (dir > 0 ? i >= BK_N : i < bkMin) return;
+    const leaf = bkLeaves[i];
+    bkBusy = true; bkPrev.disabled = bkNext.disabled = true;
+    leaf.style.zIndex = 99;
+    pageTurnSound();
+    bkAnimate(leaf, dir > 0 ? 180 : 0, 640, () => {
+      bkFlipped = dir > 0 ? i + 1 : i;
+      bkBusy = false; bkSync();
+    });
+  }
+
+  /* ---- drag a corner to turn the page ---- */
+  function bkGrabAt(x, y) {
+    const r = bookEl.getBoundingClientRect();
+    if (y < r.top - 24 || y > r.bottom + 24) return null;
+    const half = r.width / 2, zone = half * 0.45;
+    if (x > r.right - zone && x <= r.right + 26 && bkFlipped < BK_N) return { i: bkFlipped, spineX: r.left + half, half };
+    if (x < r.left + zone && x >= r.left - 26 && bkFlipped > bkMin) return { i: bkFlipped - 1, spineX: r.left + half, half };
+    return null;
+  }
+  bookStage.addEventListener("pointermove", (e) => {
+    if (bkDrag) {
+      const a = Math.max(0, Math.min(180, 90 - ((e.clientX - bkDrag.spineX) / bkDrag.half) * 90));
+      bkDrag.a = a;
+      bkSetAngle(bkDrag.leaf, a);
+      return;
+    }
+    bookStage.classList.toggle("grabbable", !bkBusy && !!bkGrabAt(e.clientX, e.clientY));
+  });
+  bookStage.addEventListener("pointerdown", (e) => {
+    if (bkBusy || e.button !== 0) return;
+    const g = bkGrabAt(e.clientX, e.clientY);
+    if (!g) return;
+    e.preventDefault();
+    const leaf = bkLeaves[g.i];
+    leaf.style.transition = ""; leaf.classList.remove("turning"); leaf.style.zIndex = 99;
+    bkDrag = { leaf, i: g.i, spineX: g.spineX, half: g.half, a: g.i < bkFlipped ? 180 : 0 };
+    bookStage.classList.add("dragging");
+    try { bookStage.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  function bkEndDrag() {
+    if (!bkDrag) return;
+    const d = bkDrag; bkDrag = null;
+    bookStage.classList.remove("dragging");
+    const target = d.a > 90 ? 180 : 0;
+    const ms = Math.max(160, Math.round((Math.abs(target - d.a) / 180) * 620));
+    if (Math.abs(target - d.a) > 4) pageTurnSound();
+    bkBusy = true;
+    bkAnimate(d.leaf, target, ms, () => {
+      bkFlipped = target === 180 ? d.i + 1 : d.i;
+      bkBusy = false; bkSync();
+    });
+  }
+  bookStage.addEventListener("pointerup", bkEndDrag);
+  bookStage.addEventListener("pointercancel", bkEndDrag);
+
+  bkPrev.addEventListener("click", () => bkTurn(-1));
+  bkNext.addEventListener("click", () => bkTurn(1));
+  [bkPrev, bkNext, bkExit, bkAgree].forEach(attachSounds);
+
+  /* ---- the pencil tick ---- */
+  function bkToggleTick(force) {
+    const on = typeof force === "boolean" ? force : !bkTick.classList.contains("on");
+    bkTick.classList.toggle("on", on);
+    bkTick.setAttribute("aria-checked", on ? "true" : "false");
+    bkAgree.disabled = !on;
+    if (on) knock({ dur: 0.05, gain: 0.1, tone: 2200 });
+  }
+  bkTickRow.addEventListener("click", () => bkToggleTick());
+  bkTick.addEventListener("keydown", (e) => {
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); bkToggleTick(); }
+  });
+
+  /* ---- open / close sequences ---- */
+  function bkResetAnim(el) { el.style.animation = "none"; void el.offsetWidth; }
+
+  function openPlaybook(opts) {
+    if (bookStage.classList.contains("show")) return;
+    bkFirstRun = !!(opts && opts.firstRun);
+    const accepted = !!(currentUser && rulesAccepted(currentUser.username));
+    bookStage.classList.toggle("first-run", bkFirstRun);
+    bookStage.classList.remove("ready");
+    bookStage.setAttribute("aria-hidden", "false");
+    document.body.classList.add("book-mode");
+    bookStage.classList.add("show");
+    // timers, not rAF: rAF never fires while the window is in the background,
+    // and a first-run member would be left staring at a book that never arrives
+    setTimeout(() => bookStage.classList.add("lit"), 20);
+    bkToggleTick(accepted && !bkFirstRun);
+    bkBusy = true; bkFlipped = 0; bkMin = 0;
+    bookEl.classList.remove("spread");
+    bkSync();
+    bookStage.classList.add("flying");
+
+    // Park the book below the screen and let two things finish BEFORE the flight
+    // starts: the shell sliding out of the way, and the browser's first paint of
+    // the book itself. Running the entry on top of that work is what made the
+    // rise stutter while closing — which paints nothing new — stayed smooth.
+    bkResetAnim(bookLift);
+    bookLift.style.transform = "translateY(110vh)";
+    setTimeout(() => {
+        bookLift.style.transform = "";
+        bookLift.style.animation = "bookEnter 1.8s both";
+        setTimeout(() => { thump({ freq: 96, dropTo: 40, type: "sine", dur: 0.2, gain: 0.22 }); }, 560);
+        setTimeout(() => {
+          // the cover swings open on its own, once the book has come to rest
+          bookStage.classList.remove("flying");
+          bookEl.classList.add("opened");
+          bkLeaves[0].style.zIndex = 99;
+          pageTurnSound();
+          // the left page arrives under the cover once it is past upright
+          setTimeout(() => bookEl.classList.add("spread"), 430);
+          bkAnimate(bkLeaves[0], 180, 760, () => {
+            bkFlipped = 1; bkMin = 1; bkBusy = false; bkSync();
+            bookStage.classList.add("ready");
+          });
+        }, 1880);
+    }, 420);
+  }
+
+  function closePlaybook(then) {
+    if (bkBusy && !bkDrag) { /* let the running step finish anyway */ }
+    bkBusy = true; bkDrag = null;
+    bookStage.classList.remove("ready", "grabbable", "dragging");
+    bkMin = 0;
+    let i = bkFlipped - 1;
+    const step = () => {
+      if (i < 0) { land(); return; }
+      // as the cover swings back the spread narrows and the block comes back
+      if (i === 0) bookEl.classList.remove("spread", "opened");
+      pageTurnSound();
+      bkAnimate(bkLeaves[i], 0, i === 0 ? 460 : 300, () => { bkFlipped = i; bkZ(); i--; step(); });
+    };
+    step();
+    function land() {
+      thump({ freq: 120, dropTo: 44, type: "triangle", dur: 0.16, gain: 0.2 });
+      bookStage.classList.add("flying");
+      // one animation again: a full turn, then away off the bottom
+      setTimeout(() => { bkResetAnim(bookLift); bookLift.style.animation = "bookExit 1.6s both"; }, 150);
+      setTimeout(() => bookStage.classList.remove("lit"), 1150);   // the dark lifts as it goes
+      setTimeout(() => {
+        bookStage.classList.remove("show", "flying", "lit");
+        bookStage.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("book-mode");
+        // hand control back to the parked CSS state, ready for next time
+        bookLift.style.animation = "";
+        bookLift.style.transform = "";
+        bkBusy = false;
+        if (then) then();
+      }, 1800);
+    }
+  }
+
+  bkAgree.addEventListener("click", () => {
+    if (bkAgree.disabled || bkBusy) return;
+    markRulesAccepted();
+    const first = bkFirstRun;
+    closePlaybook(() => {
+      showPage("home");
+      toast(first ? "Rules signed. Welcome to the board." : "Rules re-read. Suit up.");
+    });
+  });
+  bkExit.addEventListener("click", () => { if (!bkFirstRun && !bkBusy) closePlaybook(() => showPage("home")); });
+  document.addEventListener("keydown", (e) => {
+    if (!bookStage.classList.contains("show")) return;
+    if (e.key === "Escape" && !bkFirstRun && !bkBusy) { closePlaybook(() => showPage("home")); return; }
+    if (e.key === "ArrowRight") bkTurn(1);
+    if (e.key === "ArrowLeft") bkTurn(-1);
+  });
+
+  /* ---- who has signed off ---- */
+  function rulesAccepted(username) {
+    return !!(settings.rulesOk && settings.rulesOk[username]);
+  }
+  function markRulesAccepted() {
+    if (!currentUser) return;
+    settings.rulesOk = settings.rulesOk || {};
+    settings.rulesOk[currentUser.username] = true;
+    saveSettings();
+  }
+  // new members meet the playbook before they see anything else
+  function maybePlaybook() {
+    if (!currentUser || rulesAccepted(currentUser.username)) return false;
+    // let the greeting and the app's own entrance finish first, so the book
+    // isn't animating against them
+    setTimeout(() => openPlaybook({ firstRun: true }), 700);
+    return true;
+  }
 </script>
 </body>
 </html>
