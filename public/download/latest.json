@@ -1,5 +1,5 @@
 {
-  "version": "1.10.1",
+  "version": "1.10.2",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Fixes search being unresponsive in 1.10.0. The social scan no longer opens a browser for each site — it now checks every platform in parallel over plain HTTP, so a scan finishes in seconds instead of minutes."
+  "notes": "Ultra Search now chases its leads in parallel, so it finishes in seconds instead of stalling. Saving to the Table confirms on the button, the Table's found-accounts list is styled again, the online dot no longer hides behind avatars, and the intro tagline sits clear of the magnifying glass. Users and Profile viewing included."
 }

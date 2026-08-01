@@ -186,8 +186,10 @@ you cant run by your own footprints.
 
   .print-tag {
     position: absolute;
-    top: clamp(40px, 12vh, 130px);
+    top: clamp(24px, 8vh, 92px);
     margin: 0;
+    /* sits on top of the lens instead of being painted over by it */
+    z-index: 3;
     color: var(--muted);
     font-size: clamp(.9rem, 2.4vw, 1.15rem);
     font-style: italic;
@@ -1005,9 +1007,9 @@ you cant run by your own footprints.
   .mp-body { padding: 0 24px 24px; margin-top: -44px; }
   .mp-ava { width: 104px; height: 104px; border-radius: 50%; border: 4px solid var(--panel); background: var(--panel2);
     display: flex; align-items: center; justify-content: center; font-size: 2.3rem; font-weight: 800; color: var(--accent);
-    overflow: hidden; position: relative; }
-  .mp-ava img { width: 100%; height: 100%; object-fit: cover; }
-  .mp-online { position: absolute; bottom: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: #35d07f; border: 3px solid var(--panel); }
+    overflow: visible; position: relative; }
+  .mp-ava img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .mp-online { position: absolute; z-index: 2; bottom: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: #35d07f; border: 3px solid var(--panel); }
   .mp-name { display: flex; align-items: center; gap: 10px; font-size: 1.5rem; font-weight: 800; margin-top: 12px; }
   .mp-role { font-size: .62rem; text-transform: uppercase; letter-spacing: .6px; padding: 3px 9px; border-radius: 999px;
     background: var(--panel2); border: 1px solid var(--border); color: var(--muted); font-weight: 800; }
@@ -1089,15 +1091,18 @@ you cant run by your own footprints.
   .member-card { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--panel); text-align: center; padding-bottom: 12px; transition: border-color .2s ease, transform .2s ease; }
   .member-card:hover { border-color: #4a4a4a; transform: translateY(-2px); }
   .mc-banner { height: 46px; background: linear-gradient(120deg, #1a1a1a, #2a2a2a); background-size: cover; background-position: center; }
-  .mc-ava { width: 48px; height: 48px; border-radius: 50%; border: 3px solid var(--panel); background: var(--panel2); margin: -24px auto 0; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--accent); overflow: hidden; position: relative; }
-  .mc-ava img { width: 100%; height: 100%; object-fit: cover; }
-  .mc-online { position: absolute; bottom: 1px; right: 1px; width: 12px; height: 12px; border-radius: 50%; background: #35d07f; border: 2px solid var(--panel); }
+  .mc-ava { width: 48px; height: 48px; border-radius: 50%; border: 3px solid var(--panel); background: var(--panel2); margin: -24px auto 0; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--accent); overflow: visible; position: relative; }
+  .mc-ava img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .mc-online { position: absolute; z-index: 2; bottom: 1px; right: 1px; width: 12px; height: 12px; border-radius: 50%; background: #35d07f; border: 2px solid var(--panel); }
   .mc-name { font-weight: 800; font-size: .86rem; margin-top: 8px; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mc-role { font-size: .6rem; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 800; }
   .mc-role.admin { color: var(--accent); }
   .mc-activity { font-size: .68rem; color: var(--muted); margin-top: 5px; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .save-bar { display: flex; justify-content: center; margin: 2px 0 12px; }
+  #saveSearchBtn.saved { background: rgba(45,190,110,.16); border-color: rgba(60,210,125,.6); color: #7ff0ae; }
+  #saveSearchBtn.saved svg { color: #7ff0ae; }
+  #saveSearchBtn:disabled { cursor: default; }
   .reset-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
   /* lightweight toast */
@@ -1942,6 +1947,7 @@ you cant run by your own footprints.
   const ULTRA_MAX_LEADS = 60;     // distinct pivot values queued
   const ULTRA_MAX_DEPTH = 4;      // how many hops from the seed
   const ULTRA_MAX_PER_LOOKUP = 40; // records mined per search
+  const ULTRA_CONCURRENCY = 6;    // leads chased at once (sequential was ~6x slower)
   function ultraValid(v, t) {
     if (!v) return false;
     v = String(v).trim();
@@ -2026,33 +2032,44 @@ you cant run by your own footprints.
     setStatus();
     while (queue.length && lookups < ULTRA_MAX_LOOKUPS) {
       if (myId !== curSearch) return;
-      const item = queue.shift();
-      lookups++;
+      // Chase a whole batch of leads at once. Done one-at-a-time these ~40
+      // lookups stacked up to well over a minute against the live API, which
+      // made Ultra look broken; in parallel the same scan is ~6x quicker.
+      const batch = [];
+      while (batch.length < ULTRA_CONCURRENCY && queue.length && lookups < ULTRA_MAX_LOOKUPS) {
+        batch.push(queue.shift());
+        lookups++;
+      }
       setStatus();
-      const res = await nicFetch(item.value, item.type);
+      const settled = await Promise.all(
+        batch.map((it) => nicFetch(it.value, it.type).then((r) => ({ it, r })).catch(() => ({ it, r: null })))
+      );
       if (myId !== curSearch) return;
-      const results = parseNicResults(res).slice(0, ULTRA_MAX_PER_LOOKUP);
-      for (const rec of results) {
-        const domain = domainOf(rec.url || "") || "record";
-        const url = rec.url || "";
-        const recPw = (rec.password ? String(rec.password).trim() : "");
-        if (rec.password) addAcct(cats.password, recPw, { domain: domain, ident: (rec.email || rec.username || "").trim(), url: url });
-        if (rec.username) addAcct(cats.username, String(rec.username).trim(), { domain: domain, ident: (rec.email || "").trim(), url: url, pass: recPw });
-        if (rec.email) addAcct(cats.email, String(rec.email).trim(), { domain: domain, ident: (rec.username || "").trim(), url: url, pass: recPw });
-        recCount++;
-        // mine this record for fresh leads to chase
-        const cands = [];
-        if (rec.email) cands.push(["email", String(rec.email).trim()]);
-        if (rec.username) cands.push(["username", String(rec.username).trim()]);
-        if (rec.password) cands.push(["password", String(rec.password).trim()]);
-        for (const [t, v] of cands) {
-          const key = t + "|" + v.toLowerCase();
-          if (visited.has(key) || !ultraValid(v, t)) continue;
-          if (item.depth + 1 > ULTRA_MAX_DEPTH) continue;
-          if (t === "password" && item.depth + 1 > 2) continue; // passwords explode — keep them shallow
-          if (visited.size >= ULTRA_MAX_LEADS) continue;
-          visited.add(key);
-          queue.push({ value: v, type: t, depth: item.depth + 1 });
+      for (const { it, r } of settled) {
+        if (!r) continue;
+        const results = parseNicResults(r).slice(0, ULTRA_MAX_PER_LOOKUP);
+        for (const rec of results) {
+          const domain = domainOf(rec.url || "") || "record";
+          const url = rec.url || "";
+          const recPw = (rec.password ? String(rec.password).trim() : "");
+          if (rec.password) addAcct(cats.password, recPw, { domain: domain, ident: (rec.email || rec.username || "").trim(), url: url });
+          if (rec.username) addAcct(cats.username, String(rec.username).trim(), { domain: domain, ident: (rec.email || "").trim(), url: url, pass: recPw });
+          if (rec.email) addAcct(cats.email, String(rec.email).trim(), { domain: domain, ident: (rec.username || "").trim(), url: url, pass: recPw });
+          recCount++;
+          // mine this record for fresh leads to chase
+          const cands = [];
+          if (rec.email) cands.push(["email", String(rec.email).trim()]);
+          if (rec.username) cands.push(["username", String(rec.username).trim()]);
+          if (rec.password) cands.push(["password", String(rec.password).trim()]);
+          for (const [t, v] of cands) {
+            const key = t + "|" + v.toLowerCase();
+            if (visited.has(key) || !ultraValid(v, t)) continue;
+            if (it.depth + 1 > ULTRA_MAX_DEPTH) continue;
+            if (t === "password" && it.depth + 1 > 2) continue; // passwords explode — keep them shallow
+            if (visited.size >= ULTRA_MAX_LEADS) continue;
+            visited.add(key);
+            queue.push({ value: v, type: t, depth: it.depth + 1 });
+          }
         }
       }
       setStatus();
@@ -2104,6 +2121,9 @@ you cant run by your own footprints.
     const headerPins = COLS.map((col) => graphAddCategoryHeader(col, col.x, HEADER_Y));
     const lastPin = headerPins.slice();
     const maxRows = Math.max(...COLS.map((c) => c.rows.length));
+    // keep the whole reveal under ~2.5s no matter how many papers landed
+    const totalPapers = COLS.reduce((n, c) => n + c.rows.length, 0);
+    const stepDelay = Math.max(10, Math.min(55, Math.round(2500 / Math.max(1, totalPapers))));
     for (let r = 0; r < maxRows; r++) {
       for (let c = 0; c < COLS.length; c++) {
         if (myId !== curSearch) return;
@@ -2111,7 +2131,7 @@ you cant run by your own footprints.
         if (!row) continue;
         const pin = graphAddAggregate(COLS[c], row.value, row.accts, row.x, row.y, lastPin[c]);
         if (pin) lastPin[c] = pin;
-        await ultraSleep(55);
+        await ultraSleep(stepDelay);
         if (myId !== curSearch) return;
       }
     }
@@ -2791,8 +2811,11 @@ you cant run by your own footprints.
   let lastSearch = null;   // {type, query, ultra, summary, results}
   let captured = null;     // result snapshot filled while a search runs
 
-  document.getElementById("saveSearchBtn").addEventListener("click", async () => {
-    if (!lastSearch) return;
+  const saveSearchBtn = document.getElementById("saveSearchBtn");
+  const SAVE_BTN_HTML = saveSearchBtn.innerHTML;
+  saveSearchBtn.addEventListener("click", async () => {
+    if (!lastSearch || saveSearchBtn.disabled) return;
+    saveSearchBtn.disabled = true;
     const r = await fetch("/api/bookmarks", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2800,7 +2823,21 @@ you cant run by your own footprints.
         data: { ultra: lastSearch.ultra, summary: lastSearch.summary, results: lastSearch.results || null },
       }),
     }).then((r) => r.json()).catch(() => null);
-    if (r && r.ok) toast("Laid out on the table."); else toast((r && r.error) || "Couldn't save.", "err");
+    if (r && r.ok) {
+      // confirm on the button itself as well as in a toast
+      saveSearchBtn.classList.add("saved");
+      saveSearchBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></svg> Saved to Table';
+      const left = (r.limit != null && r.used != null) ? (r.limit - r.used) : null;
+      toast("Saved to Table" + (left != null ? " · " + left + " slot" + (left === 1 ? "" : "s") + " left" : ""));
+      setTimeout(() => {
+        saveSearchBtn.classList.remove("saved");
+        saveSearchBtn.innerHTML = SAVE_BTN_HTML;
+        saveSearchBtn.disabled = false;
+      }, 2200);
+    } else {
+      toast((r && r.error) || "Couldn't save.", "err");
+      saveSearchBtn.disabled = false;
+    }
   });
 
   // rebuild the saved records / social hits / ultra aggregates from a snapshot
