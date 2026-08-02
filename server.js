@@ -268,6 +268,7 @@ app.get("/api/stats", async (_req, res) => {
     discord_id: u.discord_id || null, discord_username: u.discord_username || null,
     discord_avatar: u.discord_avatar || null,
     online: new Date(u.last_seen).getTime() > cut,
+    last_seen: u.last_seen,
   });
   const list = users.map(card);
   res.json({

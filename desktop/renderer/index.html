@@ -787,6 +787,33 @@
   .m-err { color: #ff6b6b; font-size: .82rem; min-height: 1em; text-align: center; }
   .intro-hint { color: var(--muted); font-size: .76rem; margin-top: 12px; text-align: center; position: relative; z-index: 1; }
 
+  /* Connect-Discord modal (liquid glass) */
+  .dc-modal { position: relative; width: 100%; max-width: 430px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 18px; padding: 26px 24px; box-shadow: 0 30px 90px rgba(0,0,0,.6);
+    -webkit-backdrop-filter: blur(16px) saturate(175%) brightness(1.08); backdrop-filter: blur(16px) saturate(175%) brightness(1.08); }
+  .dc-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .dc-badge { width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, #8b93f5 0%, #5865F2 55%, #4551d4 100%);
+    box-shadow: 0 4px 14px -4px rgba(88,101,242,.7), inset 0 1.5px 0 rgba(255,255,255,.45), inset 0 -2px 5px -2px rgba(0,0,0,.32); }
+  .dc-badge svg { width: 27px; height: 27px; color: #fff; }
+  .dc-head h2 { margin: 0; font-size: 1.22rem; }
+  .dc-head .m-sub { margin: 3px 0 0; color: var(--muted); font-size: .82rem; line-height: 1.35; }
+  .dc-steps { list-style: none; counter-reset: dc; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .dc-steps li { position: relative; padding: 12px 14px 12px 44px; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--panel2); font-size: .82rem; line-height: 1.5; color: var(--muted); }
+  .dc-steps li::before { counter-increment: dc; content: counter(dc); position: absolute; left: 12px; top: 11px; width: 22px; height: 22px;
+    border-radius: 50%; background: var(--accent); color: #000; font-weight: 800; font-size: .76rem; display: flex; align-items: center; justify-content: center; }
+  .dc-steps b { color: var(--text); font-weight: 800; }
+  .dc-join { display: inline-flex; align-items: center; gap: 6px; margin-top: 9px; padding: 7px 12px; border-radius: 9px; border: none;
+    background: #5865F2; color: #fff; font-family: inherit; font-weight: 700; font-size: .78rem; cursor: pointer; }
+  .dc-join:hover { filter: brightness(1.09); transform: translateY(-1px); }
+  .dc-label { display: block; font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 2px 0 7px; font-weight: 700; }
+  .dc-input { width: 100%; box-sizing: border-box; padding: 12px 13px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--panel2); color: var(--text); font-size: .95rem; letter-spacing: .3px; font-family: inherit; }
+  .dc-input:focus { outline: none; border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .12); }
+  .dc-modal .m-submit { width: 100%; margin-top: 16px; }
+  .dc-modal .m-err { margin-top: 10px; text-align: center; }
+
   .toast-wrap { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 120; display: flex; flex-direction: column; gap: 8px; align-items: center; }
   .toast { background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 11px 18px; border-radius: 10px;
     font-size: .86rem; font-weight: 600; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
@@ -1708,6 +1735,26 @@
   </div>
 </div>
 
+<!-- ===================== CONNECT DISCORD ===================== -->
+<div class="modal-back" id="discordModal">
+  <div class="dc-modal">
+    <button class="mp-close" id="dcClose" type="button" aria-label="Close">✕</button>
+    <div class="dc-head">
+      <span class="dc-badge"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/></svg></span>
+      <div><h2>Connect Discord</h2><p class="m-sub">Show your live activity — music &amp; games — on your member card.</p></div>
+    </div>
+    <ol class="dc-steps">
+      <li><b>Join the Lanyard server</b> — it's what reads your live presence. Your Discord stays private; only your status &amp; current activity are shown.
+        <button class="dc-join" id="dcJoin" type="button">Open discord.gg/lanyard →</button></li>
+      <li><b>Copy your user ID.</b> In Discord: Settings → Advanced → turn on <b>Developer Mode</b>, then right-click your name → <b>Copy User ID</b>. Jot it down and paste it below.</li>
+    </ol>
+    <label class="dc-label" for="dcInput">Your Discord user ID</label>
+    <input class="dc-input" id="dcInput" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="e.g. 94490510688792576" maxlength="20">
+    <button class="m-submit" id="dcSubmit" type="button">Connect</button>
+    <div class="m-err" id="dcErr"></div>
+  </div>
+</div>
+
 <!-- ===================== THE PLAYBOOK ===================== -->
 <div class="book-stage" id="bookStage" aria-hidden="true">
   <svg width="0" height="0" aria-hidden="true" style="position:absolute">
@@ -2153,15 +2200,41 @@
       else toast((r && r.error) || "Couldn't disconnect.", "err");
       return;
     }
-    const id = (prompt("Enter your Discord user ID.\n\nEnable Developer Mode (Settings → Advanced), then right-click your name → Copy User ID. Make sure you've joined discord.gg/lanyard first so your presence can be read.") || "").trim();
-    if (!id) return;
-    discordConnectBtn.disabled = true;
-    const prev = discordConnectBtn.textContent; discordConnectBtn.textContent = "Connecting…";
-    const r = await window.api.discordConnect(id).catch(() => null);
-    discordConnectBtn.disabled = false; discordConnectBtn.textContent = prev;
-    if (r && r.ok) { currentUser = r.user; renderConnections(); toast("Discord connected — welcome, " + (currentUser.discord_username || "friend") + "!"); loadMembers(); }
-    else toast((r && r.error) || "Couldn't connect Discord.", "err");
+    openDiscordModal();
   });
+
+  /* Connect-Discord modal */
+  const discordModal = document.getElementById("discordModal");
+  const dcInput = document.getElementById("dcInput");
+  const dcSubmit = document.getElementById("dcSubmit");
+  const dcErr = document.getElementById("dcErr");
+  function openDiscordModal() {
+    if (!discordModal) return;
+    dcInput.value = ""; dcErr.textContent = "";
+    dcSubmit.disabled = false; dcSubmit.textContent = "Connect";
+    discordModal.classList.add("show");
+    setTimeout(() => dcInput.focus(), 60);
+  }
+  function closeDiscordModal() { discordModal && discordModal.classList.remove("show"); }
+  async function submitDiscord() {
+    const id = (dcInput.value || "").trim();
+    if (!/^\d{17,20}$/.test(id)) { dcErr.textContent = "That doesn't look like a Discord user ID (17–20 digits)."; dcInput.focus(); return; }
+    dcSubmit.disabled = true; dcSubmit.textContent = "Connecting…"; dcErr.textContent = "";
+    const r = await window.api.discordConnect(id).catch(() => null);
+    dcSubmit.disabled = false; dcSubmit.textContent = "Connect";
+    if (r && r.ok) {
+      currentUser = r.user; renderConnections(); closeDiscordModal();
+      toast("Discord connected — welcome, " + (currentUser.discord_username || "friend") + "!"); loadMembers();
+    } else { dcErr.textContent = (r && r.error) || "Couldn't connect Discord."; }
+  }
+  if (discordModal) {
+    document.getElementById("dcClose").addEventListener("click", closeDiscordModal);
+    document.getElementById("dcJoin").addEventListener("click", () => { if (window.api.openExternal) window.api.openExternal("https://discord.gg/lanyard"); });
+    dcSubmit.addEventListener("click", submitDiscord);
+    dcInput.addEventListener("keydown", (e) => { if (e.key === "Enter") submitDiscord(); });
+    discordModal.addEventListener("click", (e) => { if (e.target === discordModal) closeDiscordModal(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && discordModal.classList.contains("show")) closeDiscordModal(); });
+  }
 
   function fileToDataURL(file, maxDim, quality) {
     return new Promise((resolve, reject) => {
@@ -2462,6 +2535,21 @@
   const mpStatus = document.getElementById("mpStatus");
   const mpBio = document.getElementById("mpBio");
 
+  // friendly relative time, rounded so we never leak exact last_seen precision
+  function timeAgo(ts) {
+    const then = new Date(ts).getTime();
+    if (!then) return "a while ago";
+    const s = Math.max(0, Math.floor((Date.now() - then) / 1000));
+    if (s < 45) return "just now";
+    const m = Math.floor(s / 60);
+    if (m < 60) return m + (m === 1 ? " minute ago" : " minutes ago");
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + (h === 1 ? " hour ago" : " hours ago");
+    const d = Math.floor(h / 24);
+    if (d < 7) return d + (d === 1 ? " day ago" : " days ago");
+    return "on " + new Date(then).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  }
+
   function applyModalPresence(s) {
     const dnode = document.getElementById("mpDiscord");
     if (!dnode) return;
@@ -2486,8 +2574,10 @@
     mpStatus.innerHTML = "";
     if (u.online) {
       const dot = document.createElement("span"); dot.className = "dot-live";
-      mpStatus.appendChild(dot); mpStatus.appendChild(document.createTextNode("online now"));
-    } else mpStatus.textContent = "offline";
+      mpStatus.appendChild(dot); mpStatus.appendChild(document.createTextNode("Online now"));
+    } else {
+      mpStatus.textContent = u.last_seen ? ("Last active " + timeAgo(u.last_seen)) : "Offline";
+    }
     mpBio.textContent = u.bio || "This one keeps quiet.";
     mpBio.classList.toggle("empty", !u.bio);
 

@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld("api", {
   meUpdate: (patch) => ipcRenderer.invoke("me:update", patch),
   discordConnect: (discord_id) => ipcRenderer.invoke("discord:connect", discord_id),
   discordDisconnect: () => ipcRenderer.invoke("discord:disconnect"),
+  openExternal: (url) => ipcRenderer.invoke("open:external", url),
   bookmarksList: () => ipcRenderer.invoke("bookmarks:list"),
   bookmarksAdd: (bm) => ipcRenderer.invoke("bookmarks:add", bm),
   bookmarksDelete: (id) => ipcRenderer.invoke("bookmarks:delete", id),

@@ -1,5 +1,5 @@
 "use strict";
-const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const db = require("./db");
@@ -219,6 +219,11 @@ ipcMain.handle("discord:connect", async (_e, discord_id) => {
 ipcMain.handle("discord:disconnect", async () => {
   try { return await serverFetch("/api/discord/disconnect", { method: "POST" }); }
   catch (_) { return { ok: false, error: "Connection error." }; }
+});
+// open a vetted external link (the Lanyard invite) in the user's real browser
+ipcMain.handle("open:external", async (_e, url) => {
+  try { if (/^https:\/\//i.test(String(url))) await shell.openExternal(String(url)); } catch (_) {}
+  return { ok: true };
 });
 ipcMain.handle("bookmarks:list", async () => {
   try { return await serverFetch("/api/bookmarks"); }
