@@ -2477,12 +2477,20 @@
   const presenceById = {};   // discord_id -> latest summary
   const presenceCards = {};  // discord_id -> { dot, txt, act }
   let presenceSub = null;
+  // What Discord line to show. A real activity (game/Spotify) always shows; a
+  // bare "Online/Idle/DND" status shows ONLY when the member isn't already live
+  // on the site (avoids a redundant second "online" indicator).
+  function discordLine(s, onSite) {
+    if (s.activity) return s.activity;
+    if (!onSite && s.status !== "offline") return s.label;
+    return "";
+  }
   function applyPresence(did, s) {
     presenceById[did] = s;
     const ref = presenceCards[did];
     if (ref) {
-      if (ref.dot) { ref.dot.style.background = s.color; ref.dot.title = s.label; }
-      const line = s.activity || (s.status !== "offline" ? s.label : "");
+      const line = discordLine(s, ref.online);
+      if (ref.dot) { ref.dot.style.background = s.color; ref.dot.style.boxShadow = "0 0 7px " + s.color; ref.dot.title = s.label; }
       if (ref.txt) ref.txt.textContent = line;
       if (ref.act) ref.act.style.display = line ? "" : "none";
     }
@@ -2513,7 +2521,7 @@
         const txt = document.createElement("span"); txt.className = "dstat-txt";
         act.appendChild(dot); act.appendChild(txt);
         card.appendChild(act);
-        presenceCards[u.discord_id] = { dot, txt, act };
+        presenceCards[u.discord_id] = { dot, txt, act, online: !!u.online };
         if (presenceById[u.discord_id]) applyPresence(u.discord_id, presenceById[u.discord_id]);
       }
       card.title = "View " + u.username + "'s profile";
@@ -2553,11 +2561,13 @@
   function applyModalPresence(s) {
     const dnode = document.getElementById("mpDiscord");
     if (!dnode) return;
-    if (!s || (!s.activity && s.status === "offline")) { dnode.style.display = "none"; dnode.innerHTML = ""; return; }
+    const onSite = memberModal.dataset.online === "1";
+    const line = s ? discordLine(s, onSite) : "";
+    if (!line) { dnode.style.display = "none"; dnode.innerHTML = ""; return; }
     dnode.innerHTML = "";
-    const dot = document.createElement("span"); dot.className = "dstat-dot"; dot.style.background = s.color; dot.title = s.label;
+    const dot = document.createElement("span"); dot.className = "dstat-dot"; dot.style.background = s.color; dot.style.boxShadow = "0 0 7px " + s.color; dot.title = s.label;
     dnode.appendChild(dot);
-    dnode.appendChild(document.createTextNode(s.activity || ("Discord · " + s.label)));
+    dnode.appendChild(document.createTextNode(s.activity ? line : ("Discord · " + s.label)));
     dnode.style.display = "";
   }
 
@@ -2583,6 +2593,7 @@
 
     // live Discord presence row (created once, updated in place)
     memberModal.dataset.did = u.discord_id || "";
+    memberModal.dataset.online = u.online ? "1" : "";
     let dnode = document.getElementById("mpDiscord");
     if (!dnode) { dnode = document.createElement("div"); dnode.id = "mpDiscord"; dnode.className = "mp-discord"; mpStatus.parentNode.insertBefore(dnode, mpStatus.nextSibling); }
     dnode.style.display = "none"; dnode.innerHTML = "";
@@ -2755,8 +2766,9 @@
 
   window.api.onOsintResult((result) => {
     if (!invSubmitBtn.disabled) return;
-    renderOsintRow(result);
+    // only surface confirmed hits — hide NOT FOUND / UNKNOWN platforms
     if (result.exists === true) {
+      renderOsintRow(result);
       graphAddSocial(result);
       if (captured && captured.social.length < 60) captured.social.push({ name: result.name, url: result.url });
     }
