@@ -237,5 +237,6 @@ relay("ann:delete", (id) => serverFetch("/api/announcements/" + encodeURICompone
 relay("admin:users", () => serverFetch("/api/admin/users"));
 relay("admin:patchUser", ({ id, patch }) => serverFetch("/api/admin/users/" + encodeURIComponent(id), { method: "PATCH", body: JSON.stringify(patch || {}) }));
 relay("admin:grantTokens", ({ id, delta }) => serverFetch("/api/admin/users/" + encodeURIComponent(id) + "/tokens", { method: "POST", body: JSON.stringify({ delta }) }));
+relay("admin:renameUser", ({ id, username }) => serverFetch("/api/admin/users/" + encodeURIComponent(id) + "/username", { method: "POST", body: JSON.stringify({ username }) }));
 relay("admin:deleteUser", (id) => serverFetch("/api/admin/users/" + encodeURIComponent(id), { method: "DELETE" }));
 relay("admin:logs", (limit) => serverFetch("/api/admin/logs?limit=" + (parseInt(limit, 10) || 200)));

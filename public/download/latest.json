@@ -1,5 +1,5 @@
 {
-  "version": "1.11.2",
+  "version": "1.11.3",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "The Playbook, plus fixes: the \"i have read the rules\" tick and the Agree button now respond to clicks on the desktop client (both live inside the 3D book, where clicks were being mis-routed), and the login / register form no longer gets cut off the bottom on a short window."
+  "notes": "Smoother Playbook: the rules book no longer freezes on the way in or out — the rise flows straight into the tumble and the cover opens the instant it lands, with no dead pauses. Admins can now rename any member from the Admin tab."
 }

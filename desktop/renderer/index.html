@@ -2451,6 +2451,17 @@
       else toast("Couldn't grant tokens.", "err");
     });
 
+    const ren = document.createElement("button"); ren.className = "btn-mini"; ren.textContent = "Rename"; ren.disabled = u.id === currentUser.id;
+    ren.title = u.id === currentUser.id ? "Rename yourself from your profile" : "Change this member's username";
+    ren.addEventListener("click", async () => {
+      const input = prompt("New username for " + u.username + ":", u.username);
+      if (input == null) return;
+      const nm = input.trim();
+      if (!nm || nm === u.username) return;
+      const res = await window.api.adminRenameUser(u.id, nm).catch(() => null);
+      if (res && res.ok) { toast(u.username + " is now " + res.user.username + "."); loadAdmin(); loadMembers(); }
+      else toast((res && res.error) || "Couldn't rename.", "err");
+    });
     const del = document.createElement("button"); del.className = "btn-mini danger"; del.textContent = "Delete"; del.disabled = u.id === currentUser.id;
     del.addEventListener("click", async () => {
       if (!confirm("Delete " + u.username + "'s account? This can't be undone.")) return;
@@ -2458,7 +2469,7 @@
       if (res && res.ok) { row.remove(); toast("Deleted " + u.username + "."); } else toast("Couldn't delete.", "err");
     });
 
-    ctrl.appendChild(role); ctrl.appendChild(amt); ctrl.appendChild(give); ctrl.appendChild(del);
+    ctrl.appendChild(role); ctrl.appendChild(amt); ctrl.appendChild(give); ctrl.appendChild(ren); ctrl.appendChild(del);
     row.appendChild(ava); row.appendChild(name); row.appendChild(spacer); row.appendChild(tok); row.appendChild(ctrl);
     return row;
   }
@@ -3844,7 +3855,30 @@
   });
 
   /* ---- open / close sequences ---- */
-  function bkResetAnim(el) { el.style.animation = "none"; void el.offsetWidth; }
+  // the cover swings open on its own, the instant the rise+tumble finishes
+  function bkOpenCover() {
+    bookStage.classList.remove("flying");
+    bookEl.classList.add("opened");
+    bkLeaves[0].style.zIndex = 99;
+    pageTurnSound();
+    // the left page arrives under the cover once it is past upright
+    setTimeout(() => bookEl.classList.add("spread"), 430);
+    bkAnimate(bkLeaves[0], 180, 760, () => {
+      bkFlipped = 1; bkMin = 1; bkBusy = false; bkSync();
+      bookStage.classList.add("ready");
+    });
+  }
+
+  // run `fn` when `el`'s named animation ends, but never later than `fallback`
+  // ms — CSS animationend can be throttled when the window is backgrounded, and
+  // we must not leave a first-run member stranded behind a book that never opens
+  function bkOnAnimEnd(el, name, fallback, fn) {
+    let done = false;
+    const go = () => { if (done) return; done = true; el.removeEventListener("animationend", on); fn(); };
+    const on = (e) => { if (e.animationName === name) go(); };
+    el.addEventListener("animationend", on);
+    setTimeout(go, fallback);
+  }
 
   function openPlaybook(opts) {
     if (bookStage.classList.contains("show")) return;
@@ -3854,44 +3888,27 @@
     bookStage.classList.remove("ready");
     bookStage.setAttribute("aria-hidden", "false");
     document.body.classList.add("book-mode");
-    bookStage.classList.add("show");
-    // timers, not rAF: rAF never fires while the window is in the background,
-    // and a first-run member would be left staring at a book that never arrives
-    setTimeout(() => bookStage.classList.add("lit"), 20);
     bkToggleTick(accepted && !bkFirstRun);
     bkBusy = true; bkFlipped = 0; bkMin = 0;
-    bookEl.classList.remove("spread");
+    bookEl.classList.remove("spread", "opened");
     bkSync();
-    bookStage.classList.add("flying");
+    bookStage.classList.add("show", "flying");
+    setTimeout(() => bookStage.classList.add("lit"), 20);   // the veil fades in
 
-    // Park the book below the screen and let two things finish BEFORE the flight
-    // starts: the shell sliding out of the way, and the browser's first paint of
-    // the book itself. Running the entry on top of that work is what made the
-    // rise stutter while closing — which paints nothing new — stayed smooth.
-    bkResetAnim(bookLift);
+    // The book is already painted off-screen (CSS parks it while the stage isn't
+    // .show). Commit ONE parked frame, then start the flight immediately — the
+    // old code waited 420ms here and then opened on a fixed 1880ms timer, and
+    // those two dead gaps are exactly what read as "freezes". Now the rise flows
+    // straight into the tumble, and the cover opens the instant the flight ends.
+    bookLift.style.animation = "none";
     bookLift.style.transform = "translateY(110vh)";
-    setTimeout(() => {
-        bookLift.style.transform = "";
-        bookLift.style.animation = "bookEnter 1.8s both";
-        setTimeout(() => { thump({ freq: 96, dropTo: 40, type: "sine", dur: 0.2, gain: 0.22 }); }, 560);
-        setTimeout(() => {
-          // the cover swings open on its own, once the book has come to rest
-          bookStage.classList.remove("flying");
-          bookEl.classList.add("opened");
-          bkLeaves[0].style.zIndex = 99;
-          pageTurnSound();
-          // the left page arrives under the cover once it is past upright
-          setTimeout(() => bookEl.classList.add("spread"), 430);
-          bkAnimate(bkLeaves[0], 180, 760, () => {
-            bkFlipped = 1; bkMin = 1; bkBusy = false; bkSync();
-            bookStage.classList.add("ready");
-          });
-        }, 1880);
-    }, 420);
+    void bookLift.offsetWidth;                       // commit the parked frame
+    bookLift.style.animation = "bookEnter 1.8s both";
+    setTimeout(() => { thump({ freq: 96, dropTo: 40, type: "sine", dur: 0.2, gain: 0.22 }); }, 560);
+    bkOnAnimEnd(bookLift, "bookEnter", 1900, bkOpenCover);
   }
 
   function closePlaybook(then) {
-    if (bkBusy && !bkDrag) { /* let the running step finish anyway */ }
     bkBusy = true; bkDrag = null;
     bookStage.classList.remove("ready", "grabbable", "dragging");
     bkMin = 0;
@@ -3907,10 +3924,15 @@
     function land() {
       thump({ freq: 120, dropTo: 44, type: "triangle", dur: 0.16, gain: 0.2 });
       bookStage.classList.add("flying");
-      // one animation again: a full turn, then away off the bottom
-      setTimeout(() => { bkResetAnim(bookLift); bookLift.style.animation = "bookExit 1.6s both"; }, 150);
+      // Start the exit spin immediately — no pause. The book is centred (held by
+      // bookEnter's fill), so clear the leftover parked transform first, or the
+      // reset frame would snap it off-screen for an instant.
+      bookLift.style.animation = "none";
+      bookLift.style.transform = "";
+      void bookLift.offsetWidth;
+      bookLift.style.animation = "bookExit 1.6s both";
       setTimeout(() => bookStage.classList.remove("lit"), 1150);   // the dark lifts as it goes
-      setTimeout(() => {
+      bkOnAnimEnd(bookLift, "bookExit", 1700, () => {
         bookStage.classList.remove("show", "flying", "lit");
         bookStage.setAttribute("aria-hidden", "true");
         document.body.classList.remove("book-mode");
@@ -3919,7 +3941,7 @@
         bookLift.style.transform = "";
         bkBusy = false;
         if (then) then();
-      }, 1800);
+      });
     }
   }
 

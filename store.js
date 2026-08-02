@@ -128,6 +128,22 @@ const pgStore = {
     const { rows } = await pool.query(`SELECT * FROM users WHERE discord_id=$1`, [did]);
     return rows[0] || null;
   },
+  // Rename: id is a UUID here, so references (bookmarks.user_id, logs.user_id)
+  // stay valid — only the username column moves. The unique lower(username)
+  // index is the real guard; we check first for a friendly error.
+  async renameUser(id, newUsername) {
+    const me = await this.getUserById(id);
+    if (!me) return { error: "notfound" };
+    const clash = await pool.query(`SELECT id FROM users WHERE lower(username)=lower($1) AND id<>$2`, [newUsername, id]);
+    if (clash.rows.length) return { error: "taken" };
+    try {
+      const { rows } = await pool.query(`UPDATE users SET username=$1 WHERE id=$2 RETURNING *`, [newUsername, id]);
+      return { user: rows[0] };
+    } catch (e) {
+      if (e.code === "23505") return { error: "taken" };
+      throw e;
+    }
+  },
   async updateUser(id, patch) {
     const allowed = ["username", "password_hash", "role", "tokens", "banner", "avatar", "bio", "discord_id", "discord_username", "discord_avatar"];
     const sets = [], vals = [];
@@ -296,6 +312,31 @@ const fbStore = {
     const s = await ref.get();
     return s.exists ? s.data() : null;
   },
+  // Rename. The doc id === the lowercased username, so unless only the CASE
+  // changed, the user's key moves: create a new doc, carry every field and its
+  // bookmarks over, then delete the old. Returns the user under its NEW id.
+  async renameUser(id, newUsername) {
+    const oldKey = String(id);
+    const newKey = newUsername.toLowerCase();
+    const oldRef = fbUsers().doc(oldKey);
+    const oldSnap = await oldRef.get();
+    if (!oldSnap.exists) return { error: "notfound" };
+    if (newKey === oldKey) {                       // case-only change — just the field
+      await oldRef.update({ username: newUsername });
+      const s = await oldRef.get();
+      return { user: s.data() };
+    }
+    const newRef = fbUsers().doc(newKey);
+    if ((await newRef.get()).exists) return { error: "taken" };
+    const migrated = { ...oldSnap.data(), id: newKey, username: newUsername };
+    const bms = await fbBookmarks().where("user_id", "==", oldKey).get();
+    const batch = fbdb.batch();
+    batch.set(newRef, migrated);                   // Table entries follow the user to the new key
+    bms.forEach((d) => batch.update(d.ref, { user_id: newKey }));
+    batch.delete(oldRef);
+    await batch.commit();
+    return { user: migrated };
+  },
   async addTokens(id, delta) {
     const ref = fbUsers().doc(String(id));
     return fbdb.runTransaction(async (t) => {
@@ -428,6 +469,13 @@ const jsonStore = {
     for (const k of allowed) if (k in patch) u[k] = patch[k];
     jsonSave(); return u;
   },
+  async renameUser(id, newUsername) {
+    const u = mem.users.find((x) => x.id === id);
+    if (!u) return { error: "notfound" };
+    const taken = mem.users.some((x) => x.id !== id && x.username.toLowerCase() === newUsername.toLowerCase());
+    if (taken) return { error: "taken" };
+    u.username = newUsername; jsonSave(); return { user: u };
+  },
   async addTokens(id, delta) {
     const u = mem.users.find((x) => x.id === id);
     if (!u) return null;
@@ -491,7 +539,7 @@ const jsonStore = {
  * never crash the site; it falls back to JSON and logs why.
  * ============================================================== */
 const METHODS = [
-  "createUser", "getUserByUsername", "getUserById", "getUserByDiscordId", "updateUser",
+  "createUser", "getUserByUsername", "getUserById", "getUserByDiscordId", "updateUser", "renameUser",
   "addTokens", "spendTokens", "deleteUser", "listUsers", "touchLastSeen", "countUsers",
   "countActiveUsers", "addSearchLog", "listLogs", "addBookmark", "listBookmarks", "deleteBookmark",
   "addAnnouncement", "listAnnouncements", "deleteAnnouncement",

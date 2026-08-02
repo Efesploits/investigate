@@ -283,6 +283,24 @@ app.patch("/api/admin/users/:id", requireAuth, requireAdmin, async (req, res) =>
   if (!updated) return res.status(404).json({ ok: false, error: "No such user." });
   res.json({ ok: true, user: { ...store.publicUser(updated), is_admin: auth.isAdmin(updated) } });
 });
+app.post("/api/admin/users/:id/username", requireAuth, requireAdmin, async (req, res) => {
+  const newUsername = String((req.body && req.body.username) || "").trim();
+  if (!USERNAME_RE.test(newUsername)) return res.status(400).json({ ok: false, error: "Username must be 3–20 chars (letters, numbers, . _ -)." });
+  // Renaming your own account is blocked: your session token carries the old id
+  // (and on Firestore the id itself moves), which would sign you out mid-action.
+  if (req.params.id === req.user.id) return res.status(400).json({ ok: false, error: "You can't rename your own account here — do it from your profile." });
+  // Don't let a rename silently mint or demote the configured super-admin.
+  const target = await store.getUserById(req.params.id);
+  if (!target) return res.status(404).json({ ok: false, error: "No such user." });
+  const wasAdminName = String(target.username || "").toLowerCase() === auth.ADMIN_USERNAME;
+  const willBeAdminName = newUsername.toLowerCase() === auth.ADMIN_USERNAME;
+  if (willBeAdminName && !wasAdminName) return res.status(400).json({ ok: false, error: "That username is reserved for the owner account." });
+
+  const result = await store.renameUser(req.params.id, newUsername);
+  if (result && result.error === "taken") return res.status(409).json({ ok: false, error: "That username is taken." });
+  if (!result || result.error || !result.user) return res.status(404).json({ ok: false, error: "No such user." });
+  res.json({ ok: true, user: { ...store.publicUser(result.user), is_admin: auth.isAdmin(result.user) } });
+});
 app.post("/api/admin/users/:id/tokens", requireAuth, requireAdmin, async (req, res) => {
   const delta = Math.floor(Number((req.body && req.body.delta) || 0));
   const updated = await store.addTokens(req.params.id, delta);

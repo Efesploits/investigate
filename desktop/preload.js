@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld("api", {
   adminUsers: () => ipcRenderer.invoke("admin:users"),
   adminPatchUser: (id, patch) => ipcRenderer.invoke("admin:patchUser", { id, patch }),
   adminGrantTokens: (id, delta) => ipcRenderer.invoke("admin:grantTokens", { id, delta }),
+  adminRenameUser: (id, username) => ipcRenderer.invoke("admin:renameUser", { id, username }),
   adminDeleteUser: (id) => ipcRenderer.invoke("admin:deleteUser", id),
   adminLogs: (limit) => ipcRenderer.invoke("admin:logs", limit),
   checkUpdate: () => ipcRenderer.invoke("update:check"),
