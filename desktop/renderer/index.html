@@ -821,6 +821,16 @@
   @keyframes fadeIn { from { opacity: 0; } }
   .prof-sub { font-size: .95rem; margin: 18px 0 10px; }
   .prof-field { margin-bottom: 16px; }
+  .conn-card { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); max-width: 520px; }
+  .conn-ico { width: 44px; height: 44px; border-radius: 11px; background: #5865F2; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .conn-ico svg { width: 26px; height: 26px; color: #fff; }
+  .conn-meta { flex: 1; min-width: 0; }
+  .conn-name { font-weight: 800; }
+  .conn-sub { color: var(--muted); font-size: .8rem; margin-top: 2px; }
+  .conn-sub.linked { color: var(--accent); }
+  .dstat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #747f8d; margin-right: 5px; vertical-align: middle; flex-shrink: 0; }
+  .mc-activity { font-size: .68rem; color: var(--muted); margin-top: 5px; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mp-discord { font-size: .82rem; color: var(--muted); margin-top: 6px; display: flex; align-items: center; }
   .prof-field label { display: block; font-size: .74rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; font-weight: 700; }
   .prof-field textarea { width: 100%; box-sizing: border-box; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--border);
     background: var(--panel2); color: var(--text); font-size: .9rem; resize: vertical; font-family: inherit; margin-bottom: 8px; }
@@ -1616,6 +1626,13 @@
           </div>
         </div>
 
+        <h3 class="prof-sub">Connections</h3>
+        <div class="conn-card">
+          <div class="conn-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4.4A19 19 0 0 0 15.4 3l-.2.5a13 13 0 0 1 4 2 12.7 12.7 0 0 0-10.4 0 13 13 0 0 1 4-2L12.6 3A19 19 0 0 0 8 4.4C5 8.9 4.2 13.2 4.6 17.4A19 19 0 0 0 9.9 20l.6-1a12.6 12.6 0 0 1-2-1l.5-.4a9 9 0 0 0 8 0l.5.4c-.6.4-1.3.7-2 1l.6 1a19 19 0 0 0 5.3-2.6c.5-4.9-.7-9.1-3.4-12.9ZM9.7 15c-.9 0-1.6-.8-1.6-1.8s.7-1.8 1.6-1.8 1.7.8 1.6 1.8c0 1-.7 1.8-1.6 1.8Zm4.6 0c-.9 0-1.6-.8-1.6-1.8s.7-1.8 1.6-1.8 1.7.8 1.6 1.8c0 1-.7 1.8-1.6 1.8Z"/></svg></div>
+          <div class="conn-meta"><div class="conn-name">Discord</div><div class="conn-sub" id="discordSub">Show your live activity (music &amp; games) on the home page.</div></div>
+          <button class="btn-mini" id="discordConnect" type="button">Connect</button>
+        </div>
+
         <h3 class="prof-sub">Preferences</h3>
         <div class="settings-row">
           <div>
@@ -1805,6 +1822,7 @@
 </div>
 <div class="toast-wrap" id="toastWrap"></div>
 
+<script src="lanyard.js"></script>
 <script>
   /* ---------- settings (persisted in localStorage) ---------- */
   const SETTINGS_KEY = "m3-settings";
@@ -2106,7 +2124,44 @@
     phRole.classList.toggle("admin", !!currentUser.is_admin);
     phTokens.textContent = currentUser.tokens;
     bioInput.value = currentUser.bio || "";
+    renderConnections();
   }
+
+  /* ---------- Discord connection (via the hosted server + Lanyard) ---------- */
+  const discordConnectBtn = document.getElementById("discordConnect");
+  const discordSub = document.getElementById("discordSub");
+  function renderConnections() {
+    if (!discordConnectBtn || !discordSub) return;
+    const linked = currentUser && currentUser.discord_id;
+    if (linked) {
+      discordSub.textContent = "Connected as " + (currentUser.discord_username || currentUser.discord_id) + " · your live activity shows on your member card.";
+      discordSub.classList.add("linked");
+      discordConnectBtn.textContent = "Disconnect";
+      discordConnectBtn.dataset.mode = "disconnect";
+    } else {
+      discordSub.innerHTML = 'Show your live activity (music &amp; games) on the home page. Join <b>discord.gg/lanyard</b> first so your presence can be read.';
+      discordSub.classList.remove("linked");
+      discordConnectBtn.textContent = "Connect";
+      discordConnectBtn.dataset.mode = "connect";
+    }
+  }
+  if (discordConnectBtn) discordConnectBtn.addEventListener("click", async () => {
+    if (discordConnectBtn.dataset.mode === "disconnect") {
+      if (!confirm("Disconnect your Discord account?")) return;
+      const r = await window.api.discordDisconnect().catch(() => null);
+      if (r && r.ok) { currentUser = r.user; renderConnections(); toast("Discord disconnected."); loadMembers(); }
+      else toast((r && r.error) || "Couldn't disconnect.", "err");
+      return;
+    }
+    const id = (prompt("Enter your Discord user ID.\n\nEnable Developer Mode (Settings → Advanced), then right-click your name → Copy User ID. Make sure you've joined discord.gg/lanyard first so your presence can be read.") || "").trim();
+    if (!id) return;
+    discordConnectBtn.disabled = true;
+    const prev = discordConnectBtn.textContent; discordConnectBtn.textContent = "Connecting…";
+    const r = await window.api.discordConnect(id).catch(() => null);
+    discordConnectBtn.disabled = false; discordConnectBtn.textContent = prev;
+    if (r && r.ok) { currentUser = r.user; renderConnections(); toast("Discord connected — welcome, " + (currentUser.discord_username || "friend") + "!"); loadMembers(); }
+    else toast((r && r.error) || "Couldn't connect Discord.", "err");
+  });
 
   function fileToDataURL(file, maxDim, quality) {
     return new Promise((resolve, reject) => {
@@ -2344,12 +2399,32 @@
   const memberGrid = document.getElementById("memberGrid");
   const statActive = document.getElementById("statActive");
   const statTotal = document.getElementById("statTotal");
+
+  /* live Discord presence (via Lanyard) — keyed by discord_id */
+  const presenceById = {};   // discord_id -> latest summary
+  const presenceCards = {};  // discord_id -> { dot, txt, act }
+  let presenceSub = null;
+  function applyPresence(did, s) {
+    presenceById[did] = s;
+    const ref = presenceCards[did];
+    if (ref) {
+      if (ref.dot) { ref.dot.style.background = s.color; ref.dot.title = s.label; }
+      const line = s.activity || (s.status !== "offline" ? s.label : "");
+      if (ref.txt) ref.txt.textContent = line;
+      if (ref.act) ref.act.style.display = line ? "" : "none";
+    }
+    if (memberModal && memberModal.classList.contains("show") && memberModal.dataset.did === did) {
+      applyModalPresence(s);
+    }
+  }
+
   async function loadMembers() {
     if (!currentUser) return;
     const r = await window.api.stats().catch(() => null);
     if (!r || !r.ok) return;
     statActive.textContent = r.activeUsers; statTotal.textContent = r.totalUsers;
     memberGrid.innerHTML = "";
+    for (const k in presenceCards) delete presenceCards[k];
     r.users.forEach((u) => {
       const card = document.createElement("div"); card.className = "member-card";
       const ban = document.createElement("div"); ban.className = "mc-banner"; if (u.banner) ban.style.backgroundImage = "url('" + u.banner + "')";
@@ -2359,10 +2434,23 @@
       const name = document.createElement("div"); name.className = "mc-name"; name.textContent = u.username;
       const role = document.createElement("div"); role.className = "mc-role" + (u.role === "admin" ? " admin" : ""); role.textContent = u.role === "admin" ? "admin" : "member";
       card.appendChild(ban); card.appendChild(ava); card.appendChild(name); card.appendChild(role);
+      if (u.discord_id) {
+        const act = document.createElement("div"); act.className = "mc-activity"; act.style.display = "none";
+        const dot = document.createElement("span"); dot.className = "dstat-dot";
+        const txt = document.createElement("span"); txt.className = "dstat-txt";
+        act.appendChild(dot); act.appendChild(txt);
+        card.appendChild(act);
+        presenceCards[u.discord_id] = { dot, txt, act };
+        if (presenceById[u.discord_id]) applyPresence(u.discord_id, presenceById[u.discord_id]);
+      }
       card.title = "View " + u.username + "'s profile";
       card.addEventListener("click", () => openMemberModal(u));
       memberGrid.appendChild(card);
     });
+
+    const ids = r.users.filter((u) => u.discord_id).map((u) => u.discord_id);
+    if (presenceSub) { presenceSub.close(); presenceSub = null; }
+    if (window.Lanyard && ids.length) presenceSub = Lanyard.subscribe(ids, applyPresence);
   }
 
   /* member profile modal */
@@ -2373,6 +2461,18 @@
   const mpRole = document.getElementById("mpRole");
   const mpStatus = document.getElementById("mpStatus");
   const mpBio = document.getElementById("mpBio");
+
+  function applyModalPresence(s) {
+    const dnode = document.getElementById("mpDiscord");
+    if (!dnode) return;
+    if (!s || (!s.activity && s.status === "offline")) { dnode.style.display = "none"; dnode.innerHTML = ""; return; }
+    dnode.innerHTML = "";
+    const dot = document.createElement("span"); dot.className = "dstat-dot"; dot.style.background = s.color; dot.title = s.label;
+    dnode.appendChild(dot);
+    dnode.appendChild(document.createTextNode(s.activity || ("Discord · " + s.label)));
+    dnode.style.display = "";
+  }
+
   function openMemberModal(u) {
     if (!memberModal) return;
     mpBanner.style.backgroundImage = u.banner ? "url('" + u.banner + "')" : "";
@@ -2390,6 +2490,16 @@
     } else mpStatus.textContent = "offline";
     mpBio.textContent = u.bio || "This one keeps quiet.";
     mpBio.classList.toggle("empty", !u.bio);
+
+    // live Discord presence row (created once, updated in place)
+    memberModal.dataset.did = u.discord_id || "";
+    let dnode = document.getElementById("mpDiscord");
+    if (!dnode) { dnode = document.createElement("div"); dnode.id = "mpDiscord"; dnode.className = "mp-discord"; mpStatus.parentNode.insertBefore(dnode, mpStatus.nextSibling); }
+    dnode.style.display = "none"; dnode.innerHTML = "";
+    if (u.discord_id) {
+      if (presenceById[u.discord_id]) applyModalPresence(presenceById[u.discord_id]);
+      else if (window.Lanyard) Lanyard.fetchOne(u.discord_id).then((s) => { if (s && memberModal.dataset.did === u.discord_id) applyModalPresence(s); });
+    }
     memberModal.classList.add("show");
   }
   const closeMemberModal = () => memberModal && memberModal.classList.remove("show");

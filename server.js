@@ -139,6 +139,75 @@ app.patch("/api/me", requireAuth, async (req, res) => {
   res.json({ ok: true, user: meShape(updated) });
 });
 
+/* ============================= Discord (Lanyard) ============================= */
+// A Discord account is linked by its user ID, and its live presence is read
+// through Lanyard (https://api.lanyard.rest). Lanyard only knows a user once
+// they've joined its Discord (discord.gg/lanyard), so a successful connect
+// doubles as the presence opt-in — no bot token or OAuth secret to manage.
+const DISCORD_ID_RE = /^\d{17,20}$/;
+
+async function fetchLanyard(id) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const r = await fetch(`https://api.lanyard.rest/v1/users/${encodeURIComponent(id)}`, {
+      headers: { Accept: "application/json" }, signal: controller.signal,
+    });
+    const raw = await r.text();
+    try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+  } catch (_) {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Build a CDN avatar URL from Lanyard's discord_user object (falls back to the
+// user's default embed avatar when they have no custom one).
+function discordAvatarUrl(du) {
+  if (!du || !du.id) return null;
+  if (du.avatar) {
+    const ext = String(du.avatar).startsWith("a_") ? "gif" : "png";
+    return `https://cdn.discordapp.com/avatars/${du.id}/${du.avatar}.${ext}?size=128`;
+  }
+  let idx = 0;
+  try {
+    idx = du.discriminator && du.discriminator !== "0"
+      ? Number(du.discriminator) % 5
+      : Number((BigInt(du.id) >> 22n) % 6n);
+  } catch (_) { idx = 0; }
+  return `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
+}
+
+app.post("/api/discord/connect", requireAuth, async (req, res) => {
+  const id = String((req.body && req.body.discord_id) || "").trim();
+  if (!DISCORD_ID_RE.test(id)) {
+    return res.status(400).json({ ok: false, error: "That doesn't look like a Discord user ID (17–20 digits)." });
+  }
+  const lany = await fetchLanyard(id);
+  if (!lany || !lany.success || !lany.data || !lany.data.discord_user) {
+    return res.status(404).json({ ok: false, error: "Lanyard doesn't track that ID yet. Join discord.gg/lanyard with that account, then try again." });
+  }
+  const existing = await store.getUserByDiscordId(id);
+  if (existing && existing.id !== req.user.id) {
+    return res.status(409).json({ ok: false, error: "That Discord account is already linked to another member." });
+  }
+  const du = lany.data.discord_user;
+  const updated = await store.updateUser(req.user.id, {
+    discord_id: id,
+    discord_username: du.global_name || du.username || null,
+    discord_avatar: discordAvatarUrl(du),
+  });
+  res.json({ ok: true, user: meShape(updated) });
+});
+
+app.post("/api/discord/disconnect", requireAuth, async (req, res) => {
+  const updated = await store.updateUser(req.user.id, {
+    discord_id: null, discord_username: null, discord_avatar: null,
+  });
+  res.json({ ok: true, user: meShape(updated) });
+});
+
 /* ============================= token metering ============================= */
 // start a search: charge tokens up-front, hand back a short-lived search token
 app.post("/api/search/start", requireAuth, async (req, res) => {
@@ -197,6 +266,7 @@ app.get("/api/stats", async (_req, res) => {
     id: u.id, username: u.username, role: u.role,
     banner: u.banner || null, avatar: u.avatar || null, bio: u.bio || null,
     discord_id: u.discord_id || null, discord_username: u.discord_username || null,
+    discord_avatar: u.discord_avatar || null,
     online: new Date(u.last_seen).getTime() > cut,
   });
   const list = users.map(card);

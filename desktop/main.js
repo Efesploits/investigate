@@ -212,6 +212,14 @@ ipcMain.handle("me:update", async (_e, patch) => {
   try { return await serverFetch("/api/me", { method: "PATCH", body: JSON.stringify(patch || {}) }); }
   catch (_) { return { ok: false, error: "Connection error." }; }
 });
+ipcMain.handle("discord:connect", async (_e, discord_id) => {
+  try { return await serverFetch("/api/discord/connect", { method: "POST", body: JSON.stringify({ discord_id }) }); }
+  catch (_) { return { ok: false, error: "Connection error." }; }
+});
+ipcMain.handle("discord:disconnect", async () => {
+  try { return await serverFetch("/api/discord/disconnect", { method: "POST" }); }
+  catch (_) { return { ok: false, error: "Connection error." }; }
+});
 ipcMain.handle("bookmarks:list", async () => {
   try { return await serverFetch("/api/bookmarks"); }
   catch (_) { return { ok: false, error: "Connection error." }; }

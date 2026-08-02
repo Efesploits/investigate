@@ -21,6 +21,8 @@ contextBridge.exposeInMainWorld("api", {
   authLogout: () => ipcRenderer.invoke("auth:logout"),
   searchStart: (ultra, type, query) => ipcRenderer.invoke("search:start", { ultra, type, query }),
   meUpdate: (patch) => ipcRenderer.invoke("me:update", patch),
+  discordConnect: (discord_id) => ipcRenderer.invoke("discord:connect", discord_id),
+  discordDisconnect: () => ipcRenderer.invoke("discord:disconnect"),
   bookmarksList: () => ipcRenderer.invoke("bookmarks:list"),
   bookmarksAdd: (bm) => ipcRenderer.invoke("bookmarks:add", bm),
   bookmarksDelete: (id) => ipcRenderer.invoke("bookmarks:delete", id),
