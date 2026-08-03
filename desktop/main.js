@@ -253,3 +253,7 @@ relay("admin:grantTokens", ({ id, delta }) => serverFetch("/api/admin/users/" + 
 relay("admin:renameUser", ({ id, username }) => serverFetch("/api/admin/users/" + encodeURIComponent(id) + "/username", { method: "POST", body: JSON.stringify({ username }) }));
 relay("admin:deleteUser", (id) => serverFetch("/api/admin/users/" + encodeURIComponent(id), { method: "DELETE" }));
 relay("admin:logs", (limit) => serverFetch("/api/admin/logs?limit=" + (parseInt(limit, 10) || 200)));
+relay("codes:redeem", (code) => serverFetch("/api/codes/redeem", { method: "POST", body: JSON.stringify({ code }) }));
+relay("admin:codesList", () => serverFetch("/api/admin/codes"));
+relay("admin:codeCreate", (payload) => serverFetch("/api/admin/codes", { method: "POST", body: JSON.stringify(payload || {}) }));
+relay("admin:codeDelete", (id) => serverFetch("/api/admin/codes/" + encodeURIComponent(id), { method: "DELETE" }));

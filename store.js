@@ -22,6 +22,23 @@ const HAS_PG = !!process.env.DATABASE_URL;
 const uid = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
 
+// Redeem codes are case-insensitive and stored upper-case, so "summer-26" and
+// "SUMMER-26" are the same code everywhere (lookup key, uniqueness, redemption).
+const normCode = (c) => String(c == null ? "" : c).trim().toUpperCase();
+
+// Shared, backend-independent redemption checks — the single place the refusal
+// ORDER is decided, so all three backends answer identically. "already" is
+// deliberately ahead of expired/exhausted: to someone who personally used a
+// one-shot code, "you already redeemed this" is the truthful answer, whereas
+// "fully claimed" would read as if somebody else had taken it.
+function codeProblem(c, alreadyRedeemed) {
+  if (!c) return "not_found";
+  if (alreadyRedeemed) return "already";
+  if (c.expires_at && new Date(c.expires_at).getTime() <= Date.now()) return "expired";
+  if ((c.max_uses || 0) > 0 && (c.uses || 0) >= c.max_uses) return "exhausted";
+  return null;
+}
+
 // Fields that are safe to expose about *other* users (no hash).
 function publicUser(u) {
   if (!u) return null;
@@ -103,6 +120,31 @@ async function pgInit() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS ann_created ON announcements (created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS codes (
+      id         TEXT PRIMARY KEY,
+      code       TEXT NOT NULL,
+      tokens     INTEGER NOT NULL,
+      max_uses   INTEGER NOT NULL DEFAULT 0,
+      uses       INTEGER NOT NULL DEFAULT 0,
+      note       TEXT,
+      expires_at TIMESTAMPTZ,
+      created_by TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS codes_code ON codes (code);
+    CREATE INDEX IF NOT EXISTS codes_created ON codes (created_at DESC);
+
+    -- one row per (code, user): the primary key is what makes "each account may
+    -- redeem a given code once" impossible to race past.
+    CREATE TABLE IF NOT EXISTS code_redemptions (
+      code_id    TEXT NOT NULL,
+      user_id    TEXT NOT NULL,
+      username   TEXT,
+      tokens     INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (code_id, user_id)
+    );
   `);
 }
 
@@ -170,6 +212,7 @@ const pgStore = {
   },
   async deleteUser(id) {
     await pool.query(`DELETE FROM bookmarks WHERE user_id=$1`, [id]);
+    await pool.query(`DELETE FROM code_redemptions WHERE user_id=$1`, [id]);
     await pool.query(`DELETE FROM users WHERE id=$1`, [id]);
     return true;
   },
@@ -234,6 +277,62 @@ const pgStore = {
     await pool.query(`DELETE FROM announcements WHERE id=$1`, [id]);
     return true;
   },
+  async createCode(c) {
+    const id = uid();
+    try {
+      const { rows } = await pool.query(
+        `INSERT INTO codes (id,code,tokens,max_uses,note,expires_at,created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+        [id, normCode(c.code), c.tokens, c.max_uses || 0, c.note || null, c.expires_at || null, c.created_by || null]
+      );
+      return { code: rows[0] };
+    } catch (e) {
+      if (e.code === "23505") return { error: "taken" };
+      throw e;
+    }
+  },
+  async listCodes() {
+    const { rows } = await pool.query(`SELECT * FROM codes ORDER BY created_at DESC`);
+    return rows;
+  },
+  async deleteCode(id) {
+    await pool.query(`DELETE FROM code_redemptions WHERE code_id=$1`, [id]);
+    const { rowCount } = await pool.query(`DELETE FROM codes WHERE id=$1`, [id]);
+    return rowCount > 0;
+  },
+  // Atomic: the code row is locked FOR UPDATE, so two simultaneous redeems of
+  // the last remaining use serialise instead of both succeeding.
+  async redeemCode(userId, codeStr) {
+    const code = normCode(codeStr);
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const { rows } = await client.query(`SELECT * FROM codes WHERE code=$1 FOR UPDATE`, [code]);
+      const c = rows[0];
+      if (!c) { await client.query("ROLLBACK"); return { ok: false, error: "not_found" }; }
+
+      const dup = await client.query(`SELECT 1 FROM code_redemptions WHERE code_id=$1 AND user_id=$2`, [c.id, userId]);
+      const bad = codeProblem(c, dup.rows.length > 0);
+      if (bad) { await client.query("ROLLBACK"); return { ok: false, error: bad }; }
+
+      const u = await client.query(`UPDATE users SET tokens = tokens + $1 WHERE id=$2 RETURNING *`, [c.tokens, userId]);
+      if (!u.rows[0]) { await client.query("ROLLBACK"); return { ok: false, error: "no_user" }; }
+
+      await client.query(
+        `INSERT INTO code_redemptions (code_id,user_id,username,tokens) VALUES ($1,$2,$3,$4)`,
+        [c.id, userId, u.rows[0].username, c.tokens]
+      );
+      await client.query(`UPDATE codes SET uses = uses + 1 WHERE id=$1`, [c.id]);
+      await client.query("COMMIT");
+      return { ok: true, tokens: c.tokens, user: u.rows[0] };
+    } catch (e) {
+      await client.query("ROLLBACK").catch(() => {});
+      if (e.code === "23505") return { ok: false, error: "already" }; // lost the race on the PK
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
 };
 
 /* ================================================================
@@ -278,6 +377,11 @@ const fbUsers = () => fbdb.collection("users");
 const fbLogs = () => fbdb.collection("search_logs");
 const fbBookmarks = () => fbdb.collection("bookmarks");
 const fbAnnouncements = () => fbdb.collection("announcements");
+// codes doc id = the upper-cased code (uniqueness for free, like users);
+// redemption doc id = "<CODE>__<userId>" so one account can only ever hold one.
+const fbCodes = () => fbdb.collection("codes");
+const fbRedemptions = () => fbdb.collection("code_redemptions");
+const fbRedemptionKey = (code, userId) => normCode(code) + "__" + String(userId);
 const FB_USER_FIELDS = ["username", "password_hash", "role", "tokens", "banner", "avatar", "bio", "discord_id", "discord_username", "discord_avatar"];
 
 const fbStore = {
@@ -330,9 +434,17 @@ const fbStore = {
     if ((await newRef.get()).exists) return { error: "taken" };
     const migrated = { ...oldSnap.data(), id: newKey, username: newUsername };
     const bms = await fbBookmarks().where("user_id", "==", oldKey).get();
+    const reds = await fbRedemptions().where("user_id", "==", oldKey).get();
     const batch = fbdb.batch();
     batch.set(newRef, migrated);                   // Table entries follow the user to the new key
     bms.forEach((d) => batch.update(d.ref, { user_id: newKey }));
+    // redemption doc ids embed the user id, so these move rather than update —
+    // otherwise a rename would hand back every code the account already used.
+    reds.forEach((d) => {
+      const r = d.data();
+      batch.set(fbRedemptions().doc(fbRedemptionKey(r.code_id, newKey)), { ...r, user_id: newKey, username: newUsername });
+      batch.delete(d.ref);
+    });
     batch.delete(oldRef);
     await batch.commit();
     return { user: migrated };
@@ -360,8 +472,10 @@ const fbStore = {
   },
   async deleteUser(id) {
     const bms = await fbBookmarks().where("user_id", "==", id).get();
+    const reds = await fbRedemptions().where("user_id", "==", String(id)).get();
     const batch = fbdb.batch();
     bms.forEach((d) => batch.delete(d.ref));
+    reds.forEach((d) => batch.delete(d.ref));
     batch.delete(fbUsers().doc(String(id)));
     await batch.commit();
     return true;
@@ -418,6 +532,61 @@ const fbStore = {
     await fbAnnouncements().doc(String(id)).delete();
     return true;
   },
+  async createCode(c) {
+    const key = normCode(c.code);
+    const doc = {
+      id: key, code: key, tokens: c.tokens, max_uses: c.max_uses || 0, uses: 0,
+      note: c.note || null, expires_at: c.expires_at || null,
+      created_by: c.created_by || null, created_at: now(),
+    };
+    try {
+      await fbCodes().doc(key).create(doc); // throws if that code already exists
+      return { code: doc };
+    } catch (e) {
+      if (e && (e.code === 6 || String(e.message || "").includes("ALREADY_EXISTS"))) return { error: "taken" };
+      throw e;
+    }
+  },
+  async listCodes() {
+    const q = await fbCodes().get();
+    return q.docs.map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  },
+  async deleteCode(id) {
+    const key = normCode(id);
+    const reds = await fbRedemptions().where("code_id", "==", key).get();
+    const batch = fbdb.batch();
+    reds.forEach((d) => batch.delete(d.ref));
+    batch.delete(fbCodes().doc(key));
+    await batch.commit();
+    return true;
+  },
+  // All reads happen before any write, as Firestore transactions require.
+  async redeemCode(userId, codeStr) {
+    const key = normCode(codeStr);
+    const codeRef = fbCodes().doc(key);
+    const userRef = fbUsers().doc(String(userId));
+    const redRef = fbRedemptions().doc(fbRedemptionKey(key, userId));
+    return fbdb.runTransaction(async (t) => {
+      const cs = await t.get(codeRef);
+      const us = await t.get(userRef);
+      const rs = await t.get(redRef);
+      const c = cs.exists ? cs.data() : null;
+      const bad = codeProblem(c, rs.exists);
+      if (bad) return { ok: false, error: bad };
+      if (!us.exists) return { ok: false, error: "no_user" };
+
+      const user = us.data();
+      const tokens = (user.tokens || 0) + c.tokens;
+      t.create(redRef, {
+        code_id: key, user_id: String(userId), username: user.username || null,
+        tokens: c.tokens, created_at: now(),
+      });
+      t.update(codeRef, { uses: (c.uses || 0) + 1 });
+      t.update(userRef, { tokens });
+      return { ok: true, tokens: c.tokens, user: { ...user, tokens } };
+    });
+  },
 };
 
 /* ================================================================
@@ -425,7 +594,7 @@ const fbStore = {
  * ============================================================== */
 const DATA_DIR = path.join(__dirname, "data");
 const DATA_FILE = path.join(DATA_DIR, "store.json");
-let mem = { users: [], logs: [], bookmarks: [], announcements: [] };
+let mem = { users: [], logs: [], bookmarks: [], announcements: [], codes: [], redemptions: [] };
 
 function jsonLoad() {
   try {
@@ -435,6 +604,8 @@ function jsonLoad() {
   mem.logs = mem.logs || [];
   mem.bookmarks = mem.bookmarks || [];
   mem.announcements = mem.announcements || [];
+  mem.codes = mem.codes || [];
+  mem.redemptions = mem.redemptions || [];
 }
 let saveTimer = null;
 function jsonSave() {
@@ -489,6 +660,7 @@ const jsonStore = {
   async deleteUser(id) {
     mem.users = mem.users.filter((u) => u.id !== id);
     mem.bookmarks = mem.bookmarks.filter((b) => b.user_id !== id);
+    mem.redemptions = mem.redemptions.filter((r) => r.user_id !== id);
     jsonSave(); return true;
   },
   async listUsers() { return mem.users.slice().sort((a, b) => a.created_at.localeCompare(b.created_at)); },
@@ -532,6 +704,42 @@ const jsonStore = {
     mem.announcements = mem.announcements.filter((a) => a.id !== id);
     jsonSave(); return true;
   },
+  async createCode(c) {
+    const code = normCode(c.code);
+    if (mem.codes.some((x) => x.code === code)) return { error: "taken" };
+    const row = {
+      id: uid(), code, tokens: c.tokens, max_uses: c.max_uses || 0, uses: 0,
+      note: c.note || null, expires_at: c.expires_at || null,
+      created_by: c.created_by || null, created_at: now(),
+    };
+    mem.codes.push(row); jsonSave(); return { code: row };
+  },
+  async listCodes() {
+    return mem.codes.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  },
+  async deleteCode(id) {
+    const before = mem.codes.length;
+    mem.codes = mem.codes.filter((c) => c.id !== id);
+    mem.redemptions = mem.redemptions.filter((r) => r.code_id !== id);
+    jsonSave(); return mem.codes.length < before;
+  },
+  // Node is single-threaded and nothing awaits mid-check, so this whole body is
+  // effectively atomic — no interleaving is possible between check and write.
+  async redeemCode(userId, codeStr) {
+    const code = normCode(codeStr);
+    const c = mem.codes.find((x) => x.code === code);
+    const dup = !!c && mem.redemptions.some((r) => r.code_id === c.id && r.user_id === userId);
+    const bad = codeProblem(c, dup);
+    if (bad) return { ok: false, error: bad };
+    const u = mem.users.find((x) => x.id === userId);
+    if (!u) return { ok: false, error: "no_user" };
+
+    u.tokens = (u.tokens || 0) + c.tokens;
+    c.uses = (c.uses || 0) + 1;
+    mem.redemptions.push({ code_id: c.id, user_id: userId, username: u.username, tokens: c.tokens, created_at: now() });
+    jsonSave();
+    return { ok: true, tokens: c.tokens, user: u };
+  },
 };
 
 /* ================================================================
@@ -543,6 +751,7 @@ const METHODS = [
   "addTokens", "spendTokens", "deleteUser", "listUsers", "touchLastSeen", "countUsers",
   "countActiveUsers", "addSearchLog", "listLogs", "addBookmark", "listBookmarks", "deleteBookmark",
   "addAnnouncement", "listAnnouncements", "deleteAnnouncement",
+  "createCode", "listCodes", "deleteCode", "redeemCode",
 ];
 let activeBackend = jsonStore; // real backend is chosen in init()
 // diagnostics so the app can SHOW whether storage is durable (accounts survive

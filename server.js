@@ -1,5 +1,6 @@
 const express = require("express");
 const path = require("path");
+const crypto = require("crypto");
 const cookieParser = require("cookie-parser");
 const { checkHandle } = require("./checker");
 const store = require("./store");
@@ -335,6 +336,116 @@ app.post("/api/announcements", requireAuth, requireAdmin, async (req, res) => {
 });
 app.delete("/api/announcements/:id", requireAuth, requireAdmin, async (req, res) => {
   await store.deleteAnnouncement(req.params.id);
+  res.json({ ok: true });
+});
+
+/* ============================= redeem codes ============================= */
+// Admins mint codes worth N tokens; any signed-in member may redeem each code
+// once. All the race-safety (single use per account, max_uses) lives in the
+// store layer — this file only validates input and maps errors to messages.
+const CODE_RE = /^[A-Z0-9][A-Z0-9-]{2,31}$/;      // 3–32 chars, starts alphanumeric
+const CODE_MAX_TOKENS = 100000;
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1 — unambiguous when read aloud
+
+function generateCode() {
+  const pick = () => CODE_ALPHABET[crypto.randomInt(0, CODE_ALPHABET.length)];
+  const block = () => Array.from({ length: 4 }, pick).join("");
+  return block() + "-" + block();
+}
+
+// "2026-08-10" means end of that day; a full ISO timestamp is taken as given.
+function parseExpiry(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return { value: null };
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(s) ? s + "T23:59:59.999Z" : s;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return { error: "That expiry date isn't valid." };
+  if (d.getTime() <= Date.now()) return { error: "The expiry date must be in the future." };
+  return { value: d.toISOString() };
+}
+
+const REDEEM_ERRORS = {
+  not_found: "That code doesn't exist. Check the spelling and try again.",
+  expired: "That code has expired.",
+  exhausted: "That code has already been fully claimed.",
+  already: "You've already redeemed that code.",
+  no_user: "Your account could no longer be found.",
+};
+
+// Light per-account throttle so nobody can brute-force their way to a valid code.
+const REDEEM_WINDOW_MS = 60 * 1000;
+const REDEEM_MAX_TRIES = 10;
+const redeemHits = new Map(); // user id -> { count, resetAt }
+function redeemThrottled(userId) {
+  const nowMs = Date.now();
+  const hit = redeemHits.get(userId);
+  if (!hit || nowMs > hit.resetAt) {
+    redeemHits.set(userId, { count: 1, resetAt: nowMs + REDEEM_WINDOW_MS });
+    if (redeemHits.size > 5000) for (const [k, v] of redeemHits) if (nowMs > v.resetAt) redeemHits.delete(k);
+    return false;
+  }
+  hit.count += 1;
+  return hit.count > REDEEM_MAX_TRIES;
+}
+
+app.post("/api/codes/redeem", requireAuth, async (req, res) => {
+  const raw = String((req.body && req.body.code) || "").trim().toUpperCase();
+  if (!CODE_RE.test(raw)) return res.status(400).json({ ok: false, error: "That doesn't look like a valid code." });
+  if (redeemThrottled(req.user.id)) {
+    return res.status(429).json({ ok: false, error: "Too many attempts. Wait a minute and try again." });
+  }
+
+  const result = await store.redeemCode(req.user.id, raw);
+  if (!result || !result.ok) {
+    const key = (result && result.error) || "not_found";
+    return res.status(key === "already" ? 409 : 404).json({ ok: false, error: REDEEM_ERRORS[key] || "That code can't be redeemed." });
+  }
+  res.json({ ok: true, tokens: result.tokens, user: meShape(result.user) });
+});
+
+app.get("/api/admin/codes", requireAuth, requireAdmin, async (_req, res) => {
+  res.json({ ok: true, codes: await store.listCodes() });
+});
+
+app.post("/api/admin/codes", requireAuth, requireAdmin, async (req, res) => {
+  const b = req.body || {};
+
+  const tokens = Math.floor(Number(b.tokens));
+  if (!Number.isFinite(tokens) || tokens < 1 || tokens > CODE_MAX_TOKENS) {
+    return res.status(400).json({ ok: false, error: `Tokens must be a whole number between 1 and ${CODE_MAX_TOKENS}.` });
+  }
+  const maxUses = b.max_uses === "" || b.max_uses == null ? 0 : Math.floor(Number(b.max_uses));
+  if (!Number.isFinite(maxUses) || maxUses < 0 || maxUses > 1000000) {
+    return res.status(400).json({ ok: false, error: "Max uses must be 0 (unlimited) or a positive whole number." });
+  }
+  const expiry = parseExpiry(b.expires_at);
+  if (expiry.error) return res.status(400).json({ ok: false, error: expiry.error });
+  const note = String(b.note || "").trim().slice(0, 120) || null;
+
+  const wanted = String(b.code || "").trim().toUpperCase();
+  if (wanted && !CODE_RE.test(wanted)) {
+    return res.status(400).json({ ok: false, error: "Codes are 3–32 characters: letters, numbers and dashes, starting with a letter or number." });
+  }
+
+  // A blank code means "generate one" — retry a few times in the (vanishingly
+  // unlikely) event of a collision with an existing code.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = wanted || generateCode();
+    const created = await store.createCode({
+      code, tokens, max_uses: maxUses, note,
+      expires_at: expiry.value, created_by: req.user.username,
+    });
+    if (created && created.code) return res.json({ ok: true, code: created.code });
+    if (created && created.error === "taken" && wanted) {
+      return res.status(409).json({ ok: false, error: "That code already exists." });
+    }
+  }
+  res.status(500).json({ ok: false, error: "Couldn't generate a unique code. Try again." });
+});
+
+app.delete("/api/admin/codes/:id", requireAuth, requireAdmin, async (req, res) => {
+  const ok = await store.deleteCode(req.params.id);
+  if (!ok) return res.status(404).json({ ok: false, error: "No such code." });
   res.json({ ok: true });
 });
 

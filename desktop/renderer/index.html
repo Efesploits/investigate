@@ -920,6 +920,43 @@
   /* admin */
   .admin-users { display: flex; flex-direction: column; gap: 8px; }
   .admin-user { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border: 1px solid var(--border); border-radius: 11px; background: var(--panel); flex-wrap: wrap; }
+
+  /* ---- redeem codes: member page ---- */
+  .redeem-card { max-width: 520px; padding: 22px; border: 1px solid var(--border); border-radius: 16px; background: var(--panel);
+    -webkit-backdrop-filter: blur(16px) saturate(175%) brightness(1.08); backdrop-filter: blur(16px) saturate(175%) brightness(1.08); }
+  .redeem-wallet { display: flex; align-items: center; gap: 7px; font-size: .8rem; color: var(--muted); margin-bottom: 16px; }
+  .redeem-wallet svg { width: 18px; height: 18px; color: var(--accent); }
+  .redeem-wallet b { color: var(--accent); font-size: 1rem; }
+  .redeem-row { display: flex; gap: 9px; }
+  .redeem-row input { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--panel2); color: var(--text); font-family: inherit; font-size: 1rem; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase; }
+  .redeem-row input::placeholder { letter-spacing: 1px; font-weight: 600; color: #555; }
+  .redeem-row input:focus { outline: none; border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .12); }
+  .redeem-row .m-submit { width: auto; flex-shrink: 0; padding: 12px 22px; margin: 0; }
+  .redeem-msg { font-size: .84rem; margin-top: 12px; min-height: 1em; text-align: left; }
+  .redeem-msg.ok { color: #35d07f; }
+  .redeem-msg.err { color: #ff6b6b; }
+  .redeem-hint { color: var(--muted); font-size: .76rem; margin: 14px 0 0; line-height: 1.5; }
+
+  /* ---- redeem codes: admin ---- */
+  .code-compose { padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); margin-bottom: 12px; }
+  .code-fields { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+  .code-field { display: flex; flex-direction: column; gap: 5px; flex: 1 1 160px; min-width: 0; }
+  .code-field.narrow { flex: 0 0 108px; }
+  .code-field label { font-size: .68rem; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 800; }
+  .code-field label span { text-transform: none; letter-spacing: 0; font-weight: 600; opacity: .7; }
+  .code-field input { width: 100%; box-sizing: border-box; padding: 9px 11px; border-radius: 9px; border: 1px solid var(--border);
+    background: var(--panel2); color: var(--text); font-family: inherit; font-size: .84rem; }
+  .code-field input:focus { outline: none; border-color: #666; }
+  .admin-codes { display: flex; flex-direction: column; gap: 8px; }
+  .admin-code { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border: 1px solid var(--border); border-radius: 11px; background: var(--panel); flex-wrap: wrap; }
+  .ac-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 800; font-size: .92rem; letter-spacing: 1px; color: var(--accent); }
+  .ac-tokens { font-size: .78rem; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: var(--panel2); border: 1px solid var(--border); }
+  .ac-meta { color: var(--muted); font-size: .74rem; }
+  .ac-meta.spent { color: #ff6b6b; }
+  .ac-note { color: var(--muted); font-size: .74rem; font-style: italic; width: 100%; }
+  .ac-spacer { flex: 1; }
   .au-ava { width: 34px; height: 34px; border-radius: 50%; background: var(--panel2); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--accent); overflow: hidden; flex-shrink: 0; }
   .au-ava img { width: 100%; height: 100%; object-fit: cover; }
   .au-name { font-weight: 800; font-size: .9rem; }
@@ -1409,6 +1446,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
       Database
     </div>
+    <div class="nav-item" data-page="codes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7a4 4 0 1 1-2.8 6.8L9 17l-2 2H4v-3l6.2-6.2A4 4 0 0 1 15 7z"/><circle cx="16.5" cy="7.5" r=".8" fill="currentColor"/></svg>
+      Codes
+    </div>
     <div class="nav-item" data-page="members">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2 21v-1a5.5 5.5 0 0 1 5.5-5.5h3A5.5 5.5 0 0 1 16 20v1"/><path d="M17 4.5a3.5 3.5 0 0 1 0 7M19 21v-1a5.5 5.5 0 0 0-3-4.9"/></svg>
       Users
@@ -1683,6 +1724,25 @@
       </div>
     </section>
 
+    <!-- CODES (redeem for tokens) -->
+    <section class="page" id="page-codes">
+      <h1>Codes</h1>
+      <p class="sub">Got a code? Redeem it here and the tokens land straight in your wallet.</p>
+
+      <div class="redeem-card">
+        <div class="redeem-wallet">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2"/><path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3"/><path d="M16 12h5v4h-5a2 2 0 0 1 0-4z"/></svg>
+          <span>Balance</span><b id="redeemBalance">0</b><span>tokens</span>
+        </div>
+        <div class="redeem-row">
+          <input type="text" id="redeemInput" maxlength="32" autocomplete="off" spellcheck="false" placeholder="ENTER-CODE">
+          <button class="m-submit" id="redeemBtn" type="button">Redeem</button>
+        </div>
+        <div class="redeem-msg" id="redeemMsg"></div>
+        <p class="redeem-hint">Codes aren't case-sensitive. Each code can only be redeemed once per account.</p>
+      </div>
+    </section>
+
     <!-- USERS -->
     <section class="page" id="page-members">
       <h1>Users</h1>
@@ -1705,7 +1765,35 @@
         <button class="btn-mini" id="annPost" type="button">Publish</button>
       </div>
 
-      <h3 class="prof-sub">Members</h3>
+      <h3 class="prof-sub">Redeem codes</h3>
+      <div class="code-compose">
+        <div class="code-fields">
+          <div class="code-field">
+            <label for="codeCode">Code <span>optional</span></label>
+            <input type="text" id="codeCode" maxlength="32" autocomplete="off" spellcheck="false" placeholder="Leave blank to generate">
+          </div>
+          <div class="code-field narrow">
+            <label for="codeTokens">Tokens</label>
+            <input type="number" id="codeTokens" min="1" max="100000" value="5">
+          </div>
+          <div class="code-field narrow">
+            <label for="codeMaxUses">Max uses <span>0 = ∞</span></label>
+            <input type="number" id="codeMaxUses" min="0" max="1000000" value="1">
+          </div>
+          <div class="code-field">
+            <label for="codeExpires">Expires <span>optional</span></label>
+            <input type="date" id="codeExpires">
+          </div>
+          <div class="code-field">
+            <label for="codeNote">Note <span>optional</span></label>
+            <input type="text" id="codeNote" maxlength="120" placeholder="What's it for?">
+          </div>
+        </div>
+        <button class="btn-mini" id="codeCreate" type="button">Create code</button>
+      </div>
+      <div id="adminCodes" class="admin-codes"></div>
+
+      <h3 class="prof-sub" style="margin-top:22px">Members</h3>
       <div id="adminUsers" class="admin-users"></div>
       <h3 class="prof-sub" style="margin-top:22px">Search logs</h3>
       <div id="adminLogs" class="admin-logs"></div>
@@ -2634,7 +2722,128 @@
         adminLogs.appendChild(row);
       });
     } else adminLogs.innerHTML = '<div class="bm-empty">No searches logged yet.</div>';
+    loadAdminCodes();
   }
+
+  /* ---------- redeem codes: admin (create / list / delete) ---------- */
+  const adminCodes = document.getElementById("adminCodes");
+  const codeCreateBtn = document.getElementById("codeCreate");
+
+  function codeStatus(c) {
+    if (c.expires_at && new Date(c.expires_at).getTime() <= Date.now()) return { text: "expired", spent: true };
+    if (c.max_uses > 0 && c.uses >= c.max_uses) return { text: "fully claimed", spent: true };
+    if (c.max_uses > 0) return { text: c.uses + " / " + c.max_uses + " used", spent: false };
+    return { text: c.uses + (c.uses === 1 ? " use" : " uses") + " · unlimited", spent: false };
+  }
+
+  function adminCodeRow(c) {
+    const row = document.createElement("div"); row.className = "admin-code";
+
+    const code = document.createElement("span"); code.className = "ac-code"; code.textContent = c.code;
+    code.title = "Click to copy"; code.style.cursor = "pointer";
+    code.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(c.code); toast("Copied " + c.code + "."); } catch (_) {}
+    });
+
+    const tokens = document.createElement("span"); tokens.className = "ac-tokens";
+    tokens.textContent = "+" + c.tokens + (c.tokens === 1 ? " token" : " tokens");
+
+    const st = codeStatus(c);
+    const uses = document.createElement("span"); uses.className = "ac-meta" + (st.spent ? " spent" : ""); uses.textContent = st.text;
+
+    const bits = [];
+    // rendered in UTC on purpose: a date-only expiry is stored as the end of
+    // that UTC day, so local formatting would show the admin the *next* day.
+    if (c.expires_at) bits.push("expires " + new Date(c.expires_at).toLocaleDateString(undefined, { timeZone: "UTC" }));
+    if (c.created_by) bits.push("by " + c.created_by);
+    const meta = document.createElement("span"); meta.className = "ac-meta"; meta.textContent = bits.join(" · ");
+
+    const spacer = document.createElement("span"); spacer.className = "ac-spacer";
+
+    const del = document.createElement("button"); del.className = "btn-mini danger"; del.type = "button"; del.textContent = "Delete";
+    del.addEventListener("click", async () => {
+      if (!confirm("Delete code " + c.code + "? Anyone holding it won't be able to redeem it.")) return;
+      del.disabled = true;
+      const r = await window.api.adminCodeDelete(c.id).catch(() => null);
+      if (r && r.ok) { toast("Code deleted."); loadAdminCodes(); }
+      else { del.disabled = false; toast((r && r.error) || "Couldn't delete that code.", "err"); }
+    });
+
+    row.appendChild(code); row.appendChild(tokens); row.appendChild(uses);
+    if (bits.length) row.appendChild(meta);
+    row.appendChild(spacer); row.appendChild(del);
+    if (c.note) { const n = document.createElement("div"); n.className = "ac-note"; n.textContent = c.note; row.appendChild(n); }
+    return row;
+  }
+
+  async function loadAdminCodes() {
+    if (!adminCodes || !currentUser || !currentUser.is_admin) return;
+    adminCodes.innerHTML = '<div class="bm-empty">Loading…</div>';
+    const r = await window.api.adminCodesList().catch(() => null);
+    if (!r || !r.ok) { adminCodes.innerHTML = '<div class="bm-empty">Couldn\'t load codes.</div>'; return; }
+    adminCodes.innerHTML = "";
+    if (!r.codes.length) { adminCodes.innerHTML = '<div class="bm-empty">No codes yet — create one above.</div>'; return; }
+    r.codes.forEach((c) => adminCodes.appendChild(adminCodeRow(c)));
+  }
+
+  if (codeCreateBtn) codeCreateBtn.addEventListener("click", async () => {
+    const codeEl = document.getElementById("codeCode");
+    const tokensEl = document.getElementById("codeTokens");
+    const maxEl = document.getElementById("codeMaxUses");
+    const expEl = document.getElementById("codeExpires");
+    const noteEl = document.getElementById("codeNote");
+
+    codeCreateBtn.disabled = true;
+    const r = await window.api.adminCodeCreate({
+      code: codeEl.value, tokens: tokensEl.value,
+      max_uses: maxEl.value, expires_at: expEl.value, note: noteEl.value,
+    }).catch(() => null);
+    codeCreateBtn.disabled = false;
+
+    if (r && r.ok) {
+      codeEl.value = ""; noteEl.value = ""; expEl.value = "";
+      toast("Code " + r.code.code + " created.");
+      loadAdminCodes();
+    } else toast((r && r.error) || "Couldn't create that code.", "err");
+  });
+
+  /* ---------- redeem codes: member page ---------- */
+  const redeemInput = document.getElementById("redeemInput");
+  const redeemBtn = document.getElementById("redeemBtn");
+  const redeemMsg = document.getElementById("redeemMsg");
+  const redeemBalance = document.getElementById("redeemBalance");
+
+  function renderCodesPage() {
+    if (redeemBalance && currentUser) redeemBalance.textContent = currentUser.tokens;
+  }
+
+  async function submitRedeem() {
+    if (!redeemInput) return;
+    const code = redeemInput.value.trim().toUpperCase();
+    redeemMsg.className = "redeem-msg";
+    if (!code) { redeemMsg.classList.add("err"); redeemMsg.textContent = "Enter a code first."; redeemInput.focus(); return; }
+
+    redeemBtn.disabled = true; redeemBtn.textContent = "Redeeming…"; redeemMsg.textContent = "";
+    const r = await window.api.codesRedeem(code).catch(() => null);
+    redeemBtn.disabled = false; redeemBtn.textContent = "Redeem";
+
+    if (r && r.ok) {
+      currentUser = r.user;
+      redeemInput.value = "";
+      redeemMsg.classList.add("ok");
+      redeemMsg.textContent = "Redeemed — " + r.tokens + (r.tokens === 1 ? " token" : " tokens") + " added to your wallet.";
+      renderCodesPage(); renderAccount(); renderProfile();
+      toast("+" + r.tokens + (r.tokens === 1 ? " token" : " tokens") + "!");
+    } else {
+      redeemMsg.classList.add("err");
+      redeemMsg.textContent = (r && r.error) || "Couldn't redeem that code.";
+    }
+  }
+  if (redeemBtn) {
+    redeemBtn.addEventListener("click", submitRedeem);
+    redeemInput.addEventListener("keydown", (e) => { if (e.key === "Enter") submitRedeem(); });
+  }
+
   function adminUserRow(u) {
     const row = document.createElement("div"); row.className = "admin-user";
     const ava = document.createElement("div"); ava.className = "au-ava";
@@ -2691,6 +2900,7 @@
     if (p === "profile") renderProfile();
     else if (p === "bookmarks") loadBookmarks();
     else if (p === "members") loadMembers();
+    else if (p === "codes") renderCodesPage();
     else if (p === "admin") loadAdmin();
     else if (p === "home") loadAnnouncements();
   }));
