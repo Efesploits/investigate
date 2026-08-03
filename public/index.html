@@ -1211,7 +1211,10 @@ you cant run by your own footprints.
   .dstat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #747f8d; margin-right: 5px; vertical-align: middle; flex-shrink: 0; }
   .mp-discord { font-size: .82rem; color: var(--muted); margin-top: 6px; display: flex; align-items: center; }
 
-  .save-bar { display: flex; justify-content: center; margin: 2px 0 12px; }
+  .save-bar { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 2px 0 12px; flex-wrap: wrap; }
+  .save-hint { font-size: .76rem; color: var(--muted); }
+  .save-hint.err { color: #ff8a8a; }
+  .save-hint .save-link { color: var(--accent); font-weight: 800; cursor: pointer; text-decoration: underline; margin-left: 4px; }
   #saveSearchBtn.saved { background: rgba(45,190,110,.16); border-color: rgba(60,210,125,.6); color: #7ff0ae; }
   #saveSearchBtn.saved svg { color: #7ff0ae; }
   #saveSearchBtn:disabled { cursor: default; }
@@ -1790,6 +1793,7 @@ you cant run by your own footprints.
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v4H3zM3 8v12h18V8M9 8v12M15 8v12"/></svg>
           Save to Table
         </button>
+        <span class="save-hint" id="saveHint" style="display:none"></span>
       </div>
 
       <div id="graphView">
@@ -2131,6 +2135,7 @@ you cant run by your own footprints.
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script src="/lanyard.js"></script>
+<script src="/cropper.js"></script>
 <script>
   /* ---------- settings (persisted in localStorage) ---------- */
   const SETTINGS_KEY = "m3-settings";
@@ -3384,26 +3389,6 @@ you cant run by your own footprints.
     currentUser = null; setAuthMode("login"); applyAuthGate(); toast("Logged out.");
   }
 
-  // read an image file and downscale it to a compact dataURL
-  function fileToDataURL(file, maxDim, quality) {
-    return new Promise((resolve, reject) => {
-      const rd = new FileReader();
-      rd.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          let w = img.width, h = img.height;
-          const scale = Math.min(1, maxDim / Math.max(w, h));
-          w = Math.round(w * scale); h = Math.round(h * scale);
-          const c = document.createElement("canvas"); c.width = w; c.height = h;
-          c.getContext("2d").drawImage(img, 0, 0, w, h);
-          resolve(c.toDataURL("image/jpeg", quality || 0.85));
-        };
-        img.onerror = reject; img.src = rd.result;
-      };
-      rd.onerror = reject; rd.readAsDataURL(file);
-    });
-  }
-
   const phBanner = document.getElementById("phBanner");
   const phAva = document.getElementById("phAva");
   const phName = document.getElementById("phName");
@@ -3504,14 +3489,22 @@ you cant run by your own footprints.
   const avaFile = document.getElementById("avaFile");
   document.getElementById("editBanner").addEventListener("click", () => bannerFile.click());
   document.getElementById("editAva").addEventListener("click", () => avaFile.click());
-  bannerFile.addEventListener("change", () => uploadImage(bannerFile, "banner", 1280, 0.82));
-  avaFile.addEventListener("change", () => uploadImage(avaFile, "avatar", 256, 0.9));
-  async function uploadImage(input, field, maxDim, q) {
+  // Banners crop to 3:1 and pictures to a square (shown circular everywhere),
+  // so what you frame in the cropper is what everyone else ends up seeing.
+  const CROP_OPTS = {
+    banner: { aspect: 3, round: false, out: 1200, quality: 0.82, title: "Crop your banner" },
+    avatar: { aspect: 1, round: true, out: 512, quality: 0.9, title: "Crop your picture" },
+  };
+  bannerFile.addEventListener("change", () => uploadImage(bannerFile, "banner"));
+  avaFile.addEventListener("change", () => uploadImage(avaFile, "avatar"));
+  async function uploadImage(input, field) {
     const file = input.files && input.files[0]; input.value = "";
     if (!file) return;
     if (file.size > 12 * 1024 * 1024) { toast("Image too large (max 12MB).", "err"); return; }
     let dataUrl;
-    try { dataUrl = await fileToDataURL(file, maxDim, q); } catch (_) { toast("Couldn't read that image.", "err"); return; }
+    try { dataUrl = await Cropper.open(file, CROP_OPTS[field]); }
+    catch (_) { toast("Couldn't read that image.", "err"); return; }
+    if (!dataUrl) return;            // cancelled
     const body = {}; body[field] = dataUrl;
     const r = await fetch("/api/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json()).catch(() => null);
     if (r && r.ok) { currentUser = r.user; renderProfile(); renderAccount(); toast((field === "banner" ? "Banner" : "Picture") + " updated."); }
@@ -3543,7 +3536,45 @@ you cant run by your own footprints.
   let captured = null;     // result snapshot filled while a search runs
 
   const saveSearchBtn = document.getElementById("saveSearchBtn");
+  const saveHint = document.getElementById("saveHint");
   const SAVE_BTN_HTML = saveSearchBtn.innerHTML;
+
+  // How full the Table is, remembered from the last call that told us. Shown
+  // next to the button so a full Table is obvious BEFORE clicking — a toast
+  // alone was too easy to miss, which made the button look broken.
+  let tableUsed = null, tableLimit = null;
+  function setTableCounts(used, limit) {
+    if (typeof used === "number") tableUsed = used;
+    if (typeof limit === "number") tableLimit = limit;
+    renderSaveHint();
+  }
+  function renderSaveHint(msg, isErr) {
+    if (!saveHint) return;
+    if (msg) {
+      saveHint.textContent = msg;
+      saveHint.className = "save-hint" + (isErr ? " err" : "");
+      saveHint.style.display = "";
+    } else if (tableUsed == null || tableLimit == null) {
+      saveHint.style.display = "none";
+      return;
+    } else {
+      const left = tableLimit - tableUsed;
+      saveHint.className = "save-hint" + (left > 0 ? "" : " err");
+      saveHint.textContent = left > 0
+        ? left + " of " + tableLimit + " slots free"
+        : "Table is full (" + tableLimit + ") — delete one to make room";
+      saveHint.style.display = "";
+    }
+    // when there's no room, offer the way out instead of a dead end
+    if (tableLimit != null && tableUsed != null && tableUsed >= tableLimit) {
+      const link = document.createElement("span");
+      link.className = "save-link";
+      link.textContent = "Open Table";
+      link.addEventListener("click", () => { showPage("bookmarks"); loadBookmarks(); });
+      saveHint.appendChild(link);
+    }
+  }
+
   saveSearchBtn.addEventListener("click", async () => {
     if (!lastSearch || saveSearchBtn.disabled) return;
     saveSearchBtn.disabled = true;
@@ -3554,6 +3585,8 @@ you cant run by your own footprints.
         data: { ultra: lastSearch.ultra, summary: lastSearch.summary, results: lastSearch.results || null },
       }),
     }).then((r) => r.json()).catch(() => null);
+    // the server reports capacity on success AND on refusal — keep both
+    if (r && r.limit != null) setTableCounts(r.used, r.limit);
     if (r && r.ok) {
       // confirm on the button itself as well as in a toast
       saveSearchBtn.classList.add("saved");
@@ -3566,7 +3599,9 @@ you cant run by your own footprints.
         saveSearchBtn.disabled = false;
       }, 2200);
     } else {
-      toast((r && r.error) || "Couldn't save.", "err");
+      const msg = (r && r.error) || "Couldn't save — check your connection.";
+      renderSaveHint(msg, true);
+      toast(msg, "err");
       saveSearchBtn.disabled = false;
     }
   });
@@ -3652,6 +3687,7 @@ you cant run by your own footprints.
     if (!r || !r.ok) { bookmarksList.innerHTML = '<div class="bm-empty">Couldn\'t load the table.</div>'; return; }
     if (bmLimit) bmLimit.textContent = r.limit != null ? r.limit : 10;
     if (bmUsed) bmUsed.textContent = r.bookmarks.length;
+    setTableCounts(r.bookmarks.length, r.limit);
     if (!r.bookmarks.length) { bookmarksList.innerHTML = '<div class="bm-empty">The table is empty — run a search and press “Save to Table”.</div>'; return; }
     bookmarksList.innerHTML = "";
     r.bookmarks.forEach((bm) => {
