@@ -14,53 +14,60 @@ pinned: false
 Scores a photograph against a list of captions with
 [geolocal/StreetCLIP](https://huggingface.co/geolocal/StreetCLIP). The
 investigation tool asks the questions and ranks the answers; this only runs the
-model, because that is the part that needs 400MB of weights and more RAM than a
-small web dyno has.
+model, because that is the part that needs 400MB of weights and a GPU to be
+quick.
 
-Shipped as a **Gradio** Space because Hugging Face's Docker Space tier is paid;
-Gradio is FastAPI underneath, so the real endpoint is a plain `POST /` and the
-Gradio page at `/ui` is just a manual check.
+Shipped as a **Gradio** Space on Hugging Face's free **ZeroGPU** tier (its
+Docker and CPU-basic tiers are paid). ZeroGPU only lends the GPU to a
+`@spaces.GPU` function called through Gradio's queue, so the scorer is a Gradio
+API endpoint named `score`, and the Node client speaks Gradio's call protocol.
 
-## Setting it up (free, about five minutes)
+## Setting it up (free)
 
 1. Create a Space at <https://huggingface.co/new-space> — **Gradio** SDK, blank
-   template, **CPU basic** hardware (the free tier).
-2. Upload `app.py` and `requirements.txt` from this folder. Keep the `README.md`
-   the template generated (its `sdk_version` is guaranteed valid), or upload
-   this one.
-3. Wait for the build. The first scan afterwards pulls the weights and takes
-   about a minute; every scan after that is warm.
-4. In the Space's **Settings → Variables and secrets**, add a secret
-   `GEOINT_CLIP_KEY` with a long random string. Skipping this leaves the Space
-   open for anyone to use as free compute.
-5. On the web server (Render → Environment):
+   template. On the free tier the hardware is **ZeroGPU** automatically.
+2. Upload `app.py` and `requirements.txt` from this folder (leave the
+   template's generated `README.md` — its `sdk_version` is guaranteed valid).
+3. Wait for the build (it installs PyTorch, so give it a few minutes). The
+   first scan afterwards pulls the weights (~1 min); the GPU makes the rest
+   quick.
+4. On the web server (Render → Environment):
 
    ```
    GEOINT_CLIP_URL = https://<your-name>-<space-name>.hf.space/
-   GEOINT_CLIP_KEY = <the same random string>
    ```
 
-That is the whole integration — the tool picks the engine up on its own and the
-GEOINT page stops saying image matching is unconfigured.
+That is the whole integration — the tool detects a `*.hf.space` URL, talks to
+it the Gradio way on its own, and the GEOINT page stops saying image matching
+is unconfigured.
 
-A free Space sleeps after about 48 hours idle and takes ~30s to wake, which the
-client's 90s scan timeout already allows for.
+A free Space sleeps after ~48h idle and takes ~30s to wake, which the client's
+90s scan timeout already allows for.
+
+### Locking it down (optional)
+
+The Space is public by default — fine, but anyone who finds the URL can spend
+your ZeroGPU quota. To gate it, set the Space **private** (Settings →
+Visibility), make a read token at <https://huggingface.co/settings/tokens>, and
+set `GEOINT_CLIP_KEY = <that token>` on Render. The client sends it as a bearer
+token on every call.
 
 ## The API
 
 ```
-POST /
-{ "image": "<base64 jpeg/png>", "labels": ["A Street View photo in France.", ...] }
-
-200 { "logits": [12.4, 9.8, ...], "model": "geolocal/StreetCLIP" }
+POST /gradio_api/call/score   {"data": ["<base64 image>", "<json labels>"]}
+  -> {"event_id": "..."}
+GET  /gradio_api/call/score/<event_id>
+  -> SSE; the completed result is the string
+     "{\"logits\": [12.4, 9.8, ...], \"model\": \"geolocal/StreetCLIP\"}"
 ```
 
 Raw logits, one per label, in the order given — no softmax, because the caller
 batches several independent questions into one request and normalises each on
-its own. `GET /` is a health check; `/ui` is a human-facing test page.
+its own. The `/` page is a human-facing tester.
 
-Any service answering that shape works; this Space is just the free one. Point
-`GEOINT_CLIP_URL` elsewhere and nothing else changes.
+If you host the scorer elsewhere with a plain `{image,labels} -> {logits}` POST,
+point `GEOINT_CLIP_URL` at it and set `GEOINT_CLIP_PROTOCOL=plain`.
 
 ## Licensing
 

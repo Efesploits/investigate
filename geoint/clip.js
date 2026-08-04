@@ -113,28 +113,111 @@ async function scoreLocal(buf, labels) {
   return out;
 }
 
-/* ---------------- remote backend ---------------- */
+/* ---------------- remote backend ----------------
+ *
+ * Two shapes of remote, chosen automatically:
+ *
+ *   gradio  A Hugging Face Gradio Space (the free ZeroGPU tier). Its API is a
+ *           two-step dance — POST the inputs to get an event id, then read the
+ *           result off a Server-Sent-Events stream — because on ZeroGPU the GPU
+ *           is only granted to a function called through Gradio's queue.
+ *
+ *   plain   Any endpoint that just answers {image,labels} -> {logits} in one
+ *           POST. Simpler; used for a self-hosted scorer or a paid CPU Space.
+ *
+ * A URL on *.hf.space (without an explicit API path) is treated as gradio; set
+ * GEOINT_CLIP_PROTOCOL=plain|gradio to override the guess.
+ */
+function remoteProtocol() {
+  const forced = String(process.env.GEOINT_CLIP_PROTOCOL || "").toLowerCase();
+  if (forced === "plain" || forced === "gradio") return forced;
+  try {
+    const u = new URL(process.env.GEOINT_CLIP_URL);
+    if (/\.hf\.space$/i.test(u.hostname) && !/\/(gradio_)?api\//.test(u.pathname)) return "gradio";
+  } catch (_) { /* fall through */ }
+  return "plain";
+}
+
+function authHeaders(base) {
+  const h = Object.assign({ "Content-Type": "application/json" }, base || {});
+  // a public Space needs no key; a private one takes an HF token as the bearer
+  if (process.env.GEOINT_CLIP_KEY) h.Authorization = "Bearer " + process.env.GEOINT_CLIP_KEY;
+  return h;
+}
+
+async function scorePlain(buf, labels, signal) {
+  const url = process.env.GEOINT_CLIP_URL;
+  const out = [];
+  for (let i = 0; i < labels.length; i += MAX_LABELS) {
+    const r = await fetch(url, {
+      method: "POST", headers: authHeaders({ Accept: "application/json" }), signal,
+      body: JSON.stringify({ image: buf.toString("base64"), labels: labels.slice(i, i + MAX_LABELS) }),
+    });
+    if (!r.ok) throw new Error("clip service " + r.status);
+    const j = await r.json();
+    const lg = j && (j.logits || j.scores);
+    if (!Array.isArray(lg)) throw new Error("clip service returned no logits");
+    out.push(...lg.map(Number));
+  }
+  return out;
+}
+
+// Pull the final payload out of a Gradio SSE stream. Frames are blank-line
+// separated; the one that matters carries `event: complete` and a `data:` line
+// holding the output list — for this endpoint, one JSON string.
+function gradioResult(sse) {
+  let done = null;
+  for (const frame of sse.split(/\r?\n\r?\n/)) {
+    const ev = /(^|\n)event:\s*(\S+)/.exec(frame);
+    const dm = /(^|\n)data:\s*([\s\S]*)$/.exec(frame);
+    if (!dm) continue;
+    const name = ev ? ev[2] : "";
+    if (name === "error") throw new Error("clip service error: " + dm[2].slice(0, 200));
+    if (name === "complete" || !ev) done = dm[2];
+  }
+  if (done == null) throw new Error("clip service sent no result");
+  let arr;
+  try { arr = JSON.parse(done); } catch (_) { throw new Error("clip service result unparseable"); }
+  const payload = Array.isArray(arr) ? arr[0] : arr;
+  const obj = typeof payload === "string" ? JSON.parse(payload) : payload;
+  if (obj && obj.error) throw new Error("clip service: " + obj.error);
+  if (!obj || !Array.isArray(obj.logits)) throw new Error("clip service returned no logits");
+  return obj.logits.map(Number);
+}
+
+async function scoreGradio(buf, labels, signal) {
+  const base = process.env.GEOINT_CLIP_URL.replace(/\/+$/, "");
+  const endpoint = base + "/gradio_api/call/score";
+  const out = [];
+  for (let i = 0; i < labels.length; i += MAX_LABELS) {
+    const chunk = labels.slice(i, i + MAX_LABELS);
+    // step 1: enqueue, get an event id
+    const post = await fetch(endpoint, {
+      method: "POST", headers: authHeaders(), signal,
+      body: JSON.stringify({ data: [buf.toString("base64"), JSON.stringify(chunk)] }),
+    });
+    if (!post.ok) throw new Error("clip service " + post.status);
+    const txt = (await post.text()).trim();
+    let eventId;
+    try { eventId = JSON.parse(txt).event_id; } catch (_) { eventId = txt; }
+    if (!eventId) throw new Error("clip service gave no event id");
+    // step 2: read the result off the SSE stream
+    const get = await fetch(endpoint + "/" + eventId, {
+      headers: authHeaders({ Accept: "text/event-stream" }), signal,
+    });
+    if (!get.ok) throw new Error("clip service " + get.status);
+    out.push(...gradioResult(await get.text()));
+  }
+  return out;
+}
 
 async function scoreRemote(buf, labels) {
-  const url = process.env.GEOINT_CLIP_URL;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 90000);   // a cold Space takes a while to wake
   try {
-    const headers = { "Content-Type": "application/json", Accept: "application/json" };
-    if (process.env.GEOINT_CLIP_KEY) headers.Authorization = "Bearer " + process.env.GEOINT_CLIP_KEY;
-    const out = [];
-    for (let i = 0; i < labels.length; i += MAX_LABELS) {
-      const r = await fetch(url, {
-        method: "POST", headers, signal: controller.signal,
-        body: JSON.stringify({ image: buf.toString("base64"), labels: labels.slice(i, i + MAX_LABELS) }),
-      });
-      if (!r.ok) throw new Error("clip service " + r.status);
-      const j = await r.json();
-      const lg = j && (j.logits || j.scores);
-      if (!Array.isArray(lg)) throw new Error("clip service returned no logits");
-      out.push(...lg.map(Number));
-    }
-    return out;
+    return remoteProtocol() === "gradio"
+      ? await scoreGradio(buf, labels, controller.signal)
+      : await scorePlain(buf, labels, controller.signal);
   } finally {
     clearTimeout(timer);
   }

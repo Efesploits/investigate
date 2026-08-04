@@ -36,35 +36,26 @@ echo "Ensuring Space $REPO_ID exists (gradio) ..."
 huggingface-cli repo create "$SPACE_NAME" --type space --space_sdk gradio -y \
   || echo "  (already exists — will re-upload)"
 
-# --- generate a key and set it as a Space secret -----------------------------
-# token_urlsafe(32) is ~43 random chars; identical on both sides by construction
-KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
-python - "$REPO_ID" "$KEY" <<'PY'
-import sys
-from huggingface_hub import add_space_secret
-repo_id, key = sys.argv[1], sys.argv[2]
-add_space_secret(repo_id=repo_id, key="GEOINT_CLIP_KEY", value=key)
-print("Set secret GEOINT_CLIP_KEY on", repo_id)
-PY
-
 # --- upload the service (everything here except this script) ------------------
+# A public Gradio Space needs no secret; the client talks to it over the Gradio
+# API. To lock it down later, make the Space private and set GEOINT_CLIP_KEY to
+# an HF read token on Render — see README.md.
 echo "Uploading service files ..."
 huggingface-cli upload "$REPO_ID" "$HERE" . --repo-type space \
   --exclude "deploy.sh" \
   --commit-message "Deploy GEOINT StreetCLIP scorer"
 
-# --- the two values Render needs ---------------------------------------------
+# --- the value Render needs --------------------------------------------------
 # hf.space subdomain = owner and space joined by '-', lowercased, '_' -> '-'
 HOST="$(printf '%s' "$REPO_ID" | tr '/_' '--' | tr '[:upper:]' '[:lower:]')"
 echo
 echo "======================================================================"
 echo " Space building:  https://huggingface.co/spaces/$REPO_ID"
-echo " Watch the 'Building' badge finish. The FIRST scan after it goes live"
-echo " pulls the 400MB model (~1 min); every scan after that is warm."
+echo " It's on ZeroGPU (free). The build installs PyTorch, so give it a few"
+echo " minutes; the first scan pulls the model (~1 min), the GPU does the rest."
 echo
-echo " Then add these on Render -> your web service -> Environment,"
+echo " Then add this on Render -> your web service -> Environment,"
 echo " and let it redeploy:"
 echo
 echo "   GEOINT_CLIP_URL   https://$HOST.hf.space/"
-echo "   GEOINT_CLIP_KEY   $KEY"
 echo "======================================================================"

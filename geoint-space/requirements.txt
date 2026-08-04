@@ -1,5 +1,7 @@
-# gradio itself is provided by the Space's SDK (see sdk_version in README.md),
-# and it brings fastapi + uvicorn with it — so only the model stack is listed.
-transformers==4.48.0
-torch==2.5.1
-pillow==11.1.0
+# The free Gradio tier runs on ZeroGPU, which only accepts torch 2.8–2.11 and
+# schedules the GPU through the `spaces` package. gradio itself comes from the
+# Space SDK (and brings fastapi/uvicorn); the model stack is what we add.
+torch==2.8.0
+spaces
+transformers
+pillow
