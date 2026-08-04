@@ -1,5 +1,5 @@
-fastapi==0.115.6
-uvicorn==0.34.0
+# gradio itself is provided by the Space's SDK (see sdk_version in README.md),
+# and it brings fastapi + uvicorn with it — so only the model stack is listed.
 transformers==4.48.0
 torch==2.5.1
 pillow==11.1.0

@@ -11,21 +11,25 @@ Deliberately no softmax here. Probabilities only mean something within a single
 question, and the caller is the one that knows where its questions begin and
 end — it asks about countries, regions and scene attributes in a single batch.
 
-Deploy: see README.md. Free CPU hardware is enough; the first request after a
-sleep pays for the model load, everything after it is warm.
+Packaging note: Hugging Face's *Docker* Space tier is paid, so this ships as a
+*Gradio* Space (free, more RAM). Gradio is FastAPI underneath, so the real
+work is a plain FastAPI POST route on `/` — exactly the contract the Node
+server already speaks, unchanged — and a small Gradio page is mounted at `/ui`
+only so the Space has a friendly face. Deploy: see README.md.
 """
 import base64
 import io
 import os
 
+import gradio as gr
 import torch
 from fastapi import FastAPI, HTTPException, Request
 from PIL import Image
 from transformers import CLIPModel, CLIPProcessor
 
 MODEL_ID = os.environ.get("STREETCLIP_MODEL", "geolocal/StreetCLIP")
-# Set a value here and in the caller's GEOINT_CLIP_KEY to stop a public Space
-# from being used as somebody else's free GPU.
+# Set this here (as a Space secret) and in the Node server's GEOINT_CLIP_KEY so a
+# public Space can't be used as someone else's free compute.
 API_KEY = os.environ.get("GEOINT_CLIP_KEY", "")
 MAX_LABELS = 512
 
@@ -42,6 +46,14 @@ def _load():
         _processor = CLIPProcessor.from_pretrained(MODEL_ID)
         _model = CLIPModel.from_pretrained(MODEL_ID).eval()
     return _model, _processor
+
+
+def _score(image: "Image.Image", labels):
+    model, processor = _load()
+    inputs = processor(text=labels, images=image, return_tensors="pt", padding=True, truncation=True)
+    with torch.no_grad():
+        logits = model(**inputs).logits_per_image[0]
+    return [float(v) for v in logits]
 
 
 @app.get("/")
@@ -66,16 +78,49 @@ async def score(request: Request):
     if not raw:
         raise HTTPException(status_code=400, detail="image required")
 
-    if "," in raw[:64] and raw.lstrip().startswith("data:"):
+    if raw.lstrip().startswith("data:") and "," in raw[:64]:
         raw = raw.split(",", 1)[1]
     try:
         image = Image.open(io.BytesIO(base64.b64decode(raw))).convert("RGB")
     except Exception:
         raise HTTPException(status_code=400, detail="could not read that image")
 
-    model, processor = _load()
-    inputs = processor(text=labels, images=image, return_tensors="pt", padding=True, truncation=True)
-    with torch.no_grad():
-        logits = model(**inputs).logits_per_image[0]
+    return {"logits": _score(image, labels), "model": MODEL_ID}
 
-    return {"logits": [float(v) for v in logits], "model": MODEL_ID}
+
+# ---- a friendly page at /ui, so the Space isn't a blank 404 to a human ------
+def _demo(image, labels_text):
+    labels = [ln.strip() for ln in (labels_text or "").splitlines() if ln.strip()]
+    if image is None or not labels:
+        return {}
+    logits = _score(image, labels)
+    mx = max(logits)
+    exp = [pow(2.718281828, v - mx) for v in logits]
+    s = sum(exp) or 1.0
+    return {lab: e / s for lab, e in zip(labels, exp)}
+
+
+with gr.Blocks(title="GEOINT StreetCLIP") as demo:
+    gr.Markdown(
+        "# GEOINT · StreetCLIP scorer\n"
+        "The API the investigation tool calls is `POST /` — this page is just a "
+        "manual check. Drop an image, list a few candidate captions (one per "
+        "line), and see how the model scores them."
+    )
+    with gr.Row():
+        _img = gr.Image(type="pil", label="Image")
+        _lab = gr.Textbox(
+            lines=6, label="Captions (one per line)",
+            value="A Street View photo in France.\nA Street View photo in Japan.\n"
+                  "A Street View photo in Brazil.\nA Street View photo in Norway.",
+        )
+    _out = gr.Label(label="Scores")
+    gr.Button("Score").click(_demo, [_img, _lab], _out)
+
+app = gr.mount_gradio_app(app, demo, path="/ui")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    # HF proxies the Space on 7860; keep an override for local runs.
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 7860)))

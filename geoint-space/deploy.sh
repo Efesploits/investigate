@@ -32,8 +32,8 @@ echo "Logged in as: $WHO"
 REPO_ID="$WHO/$SPACE_NAME"
 
 # --- create the Space (harmless if it already exists) ------------------------
-echo "Ensuring Space $REPO_ID exists (docker) ..."
-huggingface-cli repo create "$SPACE_NAME" --type space --space_sdk docker -y \
+echo "Ensuring Space $REPO_ID exists (gradio) ..."
+huggingface-cli repo create "$SPACE_NAME" --type space --space_sdk gradio -y \
   || echo "  (already exists — will re-upload)"
 
 # --- generate a key and set it as a Space secret -----------------------------
