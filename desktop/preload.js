@@ -38,6 +38,8 @@ contextBridge.exposeInMainWorld("api", {
   adminDeleteUser: (id) => ipcRenderer.invoke("admin:deleteUser", id),
   adminLogs: (limit) => ipcRenderer.invoke("admin:logs", limit),
   codesRedeem: (code) => ipcRenderer.invoke("codes:redeem", code),
+  geointAnalyze: (payload) => ipcRenderer.invoke("geoint:analyze", payload),
+  geointStreetview: (lat, lon) => ipcRenderer.invoke("geoint:streetview", { lat, lon }),
   adminCodesList: () => ipcRenderer.invoke("admin:codesList"),
   adminCodeCreate: (payload) => ipcRenderer.invoke("admin:codeCreate", payload),
   adminCodeDelete: (id) => ipcRenderer.invoke("admin:codeDelete", id),

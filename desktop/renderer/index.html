@@ -921,6 +921,193 @@
   .admin-users { display: flex; flex-direction: column; gap: 8px; }
   .admin-user { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border: 1px solid var(--border); border-radius: 11px; background: var(--panel); flex-wrap: wrap; }
 
+  /* ================= GEOINT =================
+     Entering GEOINT swings the sidebar over to the right and drops the whole
+     room a few stops darker — it should feel like a different mode, not just
+     another tab. */
+  body.geoint-mode .sidebar {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+    margin-left: -250px;          /* reclaim the space so the map runs full-bleed */
+  }
+  body.geoint-mode { background: #04050a; }
+  body.geoint-mode .content { max-width: none; }
+  #app, .sidebar, .content { transition: background-color .5s ease; }
+  body.geoint-mode .content::before {
+    content: ""; position: fixed; inset: 0; background: radial-gradient(120% 90% at 50% 0%, rgba(0,0,0,.35), rgba(0,0,0,.82));
+    pointer-events: none; z-index: 0; animation: geoDim .6s ease both;
+  }
+  @keyframes geoDim { from { opacity: 0 } to { opacity: 1 } }
+  body.geoint-mode #page-geoint { position: relative; z-index: 1; }
+  .nav-geoint svg { color: var(--accent); }
+
+  .geo-head h1 { margin-bottom: 2px; }
+  /* buttons sit under the title, not beside it: the account chip is pinned to
+     the top-right corner and anything up there collides with it */
+  .geo-headbtns { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .geo-title { letter-spacing: 7px; text-shadow: 0 0 26px rgb(var(--accent-rgb) / .35); }
+  .geo-sub-line { display: flex; align-items: center; gap: 8px; font-size: .78rem; letter-spacing: .3px; }
+  .geo-tick { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
+    box-shadow: 0 0 8px var(--accent); animation: geoTick 2.2s ease-in-out infinite; }
+  @keyframes geoTick { 0%,100% { opacity: .3 } 50% { opacity: 1 } }
+
+  /* the room itself: a faint survey grid, scan lines and a heavy vignette */
+  body.geoint-mode .content::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5;
+    background-image:
+      linear-gradient(rgba(var(--accent-rgb) / .05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(var(--accent-rgb) / .05) 1px, transparent 1px),
+      repeating-linear-gradient(0deg, rgba(255,255,255,.022) 0 1px, transparent 1px 3px);
+    background-size: 46px 46px, 46px 46px, 100% 3px;
+    animation: geoDrift 24s linear infinite;
+  }
+  @keyframes geoDrift { from { background-position: 0 0, 0 0, 0 0 } to { background-position: 46px 46px, 46px 46px, 0 0 } }
+
+  /* ---- radar intro ---- */
+  /* Deliberately monochrome, whatever theme the app is on: this reads as
+     instrumentation, and colour would only soften it. */
+  .geo-radar {
+    position: fixed; inset: 0; z-index: 150; display: none;
+    flex-direction: column; align-items: center; justify-content: center; gap: 26px;
+    background: radial-gradient(60% 60% at 50% 45%, #0b0b0b 0%, #040404 55%, #000 100%);
+    cursor: pointer;
+  }
+  .geo-radar.show { display: flex; animation: radarIn .35s ease both; }
+  .geo-radar.out { animation: radarOut .5s ease both; }
+  @keyframes radarIn { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes radarOut { from { opacity: 1 } to { opacity: 0 } }
+
+  .radar-scope { position: relative; width: min(320px, 62vw); aspect-ratio: 1; border-radius: 50%;
+    overflow: hidden; animation: radarBoot .6s cubic-bezier(.2,.9,.25,1) both; }
+  @keyframes radarBoot { from { transform: scale(.8); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+
+  /* PHASE 1 — a line grows out of the dot and turns, slow at first, winding up.
+     PHASE 2 (.armed) — the scope builds itself around it at full speed.
+     The wind-up ends on 1080deg (a whole number of turns) so handing over to
+     the steady spin is seamless rather than a visible snap. */
+  .radar-arm { position: absolute; inset: 0; transform-origin: 50% 50%;
+    animation: armSpinUp 2.2s cubic-bezier(.5,0,.75,.4) both; }
+  @keyframes armSpinUp { from { transform: rotate(0deg) } to { transform: rotate(1080deg) } }
+  .radar-scope.armed .radar-arm { animation: radarSpin 1.15s linear infinite; }
+  @keyframes radarSpin { to { transform: rotate(360deg) } }
+  .arm-line { position: absolute; left: 50%; top: 50%; width: 50%; height: 1px; transform-origin: 0 50%;
+    background: linear-gradient(90deg, rgba(255,255,255,.95), rgba(255,255,255,.15) 70%, rgba(255,255,255,0));
+    box-shadow: 0 0 10px rgba(255,255,255,.45);
+    transform: scaleX(0); animation: lineGrow .8s cubic-bezier(.2,.8,.3,1) .1s forwards; }
+  @keyframes lineGrow { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+  .arm-wedge { position: absolute; inset: 0; border-radius: 50%; opacity: 0; transition: opacity .5s ease;
+    background: conic-gradient(from 0deg, rgba(255,255,255,.34) 0deg, rgba(255,255,255,.08) 26deg, transparent 66deg, transparent 360deg); }
+  .radar-scope.armed .arm-wedge { opacity: 1; }
+
+  .radar-ring, .radar-cross, .radar-blip { opacity: 0; transition: opacity .55s ease; }
+  .radar-scope.armed .radar-ring, .radar-scope.armed .radar-cross { opacity: 1; }
+  .radar-ring { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.16); }
+  .radar-ring.r1 { width: 33%; height: 33%; } .radar-ring.r2 { width: 63%; height: 63%; } .radar-ring.r3 { width: 88%; height: 88%; }
+  .radar-scope.armed { box-shadow: 0 0 70px rgba(255,255,255,.09), inset 0 0 60px rgba(255,255,255,.05); }
+  .radar-scope.armed::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); }
+  .radar-cross { position: absolute; background: rgba(255,255,255,.12); }
+  .radar-cross.h { left: 0; right: 0; top: 50%; height: 1px; }
+  .radar-cross.v { top: 0; bottom: 0; left: 50%; width: 1px; }
+  .radar-core { position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px;
+    border-radius: 50%; background: #fff; box-shadow: 0 0 12px 3px rgba(255,255,255,.5); }
+  .radar-blip { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #fff;
+    box-shadow: 0 0 10px 2px rgba(255,255,255,.7); }
+  .radar-scope.armed .radar-blip.b1 { animation: blip 1.15s ease-out .25s infinite; }
+  .radar-scope.armed .radar-blip.b2 { animation: blip 1.15s ease-out .72s infinite; }
+  .radar-scope.armed .radar-blip.b3 { animation: blip 1.15s ease-out 1.0s infinite; }
+  .radar-blip.b1 { left: 68%; top: 34%; } .radar-blip.b2 { left: 31%; top: 62%; } .radar-blip.b3 { left: 58%; top: 71%; }
+  @keyframes blip { 0% { opacity: 1; transform: scale(.5) } 60% { opacity: .5 } 100% { opacity: 0; transform: scale(1.7) } }
+  /* one bright pulse at the moment the scope comes alive, which also hides the
+     seam where the arm changes speed */
+  .radar-flash { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.55), transparent 62%); opacity: 0; }
+  .radar-scope.armed .radar-flash { animation: radarFlash .55s ease-out both; }
+  @keyframes radarFlash { 0% { opacity: .85; transform: scale(.4) } 100% { opacity: 0; transform: scale(1.1) } }
+
+  .radar-readout { text-align: center; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .radar-readout b { display: block; font-size: .82rem; letter-spacing: 6px; color: #fff;
+    text-shadow: 0 0 18px rgba(255,255,255,.35); }
+  .radar-readout span { display: block; margin-top: 9px; font-size: .7rem; letter-spacing: 2.2px;
+    color: rgba(255,255,255,.45); min-height: 1em; }
+  .radar-readout span::after { content: "_"; animation: geoTick 1s steps(1) infinite; }
+  .radar-skip { position: fixed; bottom: 26px; font-size: .62rem; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(255,255,255,.22); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  /* readouts read like instruments, not a form */
+  .geo-info .geo-k, .geo-status, .geo-badgeline { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .geo-mapwrap { box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / .07), 0 24px 70px -30px rgb(var(--accent-rgb) / .25); }
+  .geo-info { box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / .05); }
+  .geo-stage { display: grid; grid-template-columns: minmax(0,1fr) minmax(260px,310px); gap: 16px; margin-top: 18px; align-items: start; }
+  /* the sidebar already eats ~250px, so stack well before a normal phone
+     breakpoint or the map ends up a sliver next to the info column */
+  @media (max-width: 1150px) { .geo-stage { grid-template-columns: minmax(0,1fr); } }
+  .geo-mapwrap { position: relative; height: min(62vh, 520px); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: #05070a; }
+  .geo-view { position: absolute; inset: 0; }
+  .geo-street { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .geo-toggle { position: absolute; right: 10px; top: 10px; z-index: 6; display: flex; gap: 3px; padding: 3px;
+    border-radius: 999px; background: rgba(8,10,14,.86); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(6px); }
+  .geo-toggle button { border: none; background: transparent; color: rgba(255,255,255,.62); font-family: inherit;
+    font-weight: 800; font-size: .7rem; padding: 6px 13px; border-radius: 999px; cursor: pointer; letter-spacing: .4px; }
+  .geo-toggle button.active { background: var(--accent); color: #000; }
+  .geo-status { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; text-align: center; padding: 10px;
+    font-size: .74rem; color: rgba(255,255,255,.66); letter-spacing: 1.4px; text-transform: uppercase; font-weight: 700;
+    background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.72)); pointer-events: none; }
+
+  .geo-info { border: 1px solid var(--border); border-radius: 14px; background: var(--panel); padding: 16px; min-height: 120px; }
+  .geo-badgeline { display: inline-flex; align-items: center; gap: 7px; font-size: .66rem; font-weight: 800; letter-spacing: .6px;
+    text-transform: uppercase; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel2); }
+  .geo-badgeline.found { color: #7ff0ae; border-color: rgba(60,210,125,.5); }
+  .geo-badgeline.none { color: #ffb570; border-color: rgba(255,150,80,.45); }
+  .geo-addr { font-size: .92rem; font-weight: 700; line-height: 1.45; margin: 12px 0 4px; }
+  .geo-rows { display: flex; flex-direction: column; gap: 1px; margin-top: 12px; }
+  .geo-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+  .geo-row:last-child { border-bottom: none; }
+  .geo-k { font-size: .66rem; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 800; flex-shrink: 0; width: 84px; }
+  .geo-v { font-size: .8rem; flex: 1; min-width: 0; word-break: break-word; }
+  .geo-v.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .3px; }
+  .geo-copy { flex-shrink: 0; border: 1px solid var(--border); background: var(--panel2); color: var(--muted);
+    font-family: inherit; font-size: .62rem; font-weight: 800; padding: 4px 8px; border-radius: 6px; cursor: pointer; text-transform: uppercase; }
+  .geo-copy:hover { border-color: #666; color: var(--text); }
+  .geo-copy.done { color: #7ff0ae; border-color: rgba(60,210,125,.5); }
+  .geo-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .geo-actions .btn-mini { flex: 1; justify-content: center; }
+  .geo-sec { font-size: .66rem; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); font-weight: 800; margin: 16px 0 2px; }
+  .geo-empty { color: var(--muted); font-size: .84rem; line-height: 1.55; }
+
+  /* upload dialog — same instrument language as the scope: mono, monochrome,
+     corner brackets, and a scan line crawling over the drop target */
+  .geo-modal { max-width: 470px; position: relative; background: #08090b;
+    border-color: rgba(255,255,255,.14); box-shadow: 0 30px 90px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.03); }
+  .geo-modal::before, .geo-modal::after { content: ""; position: absolute; width: 16px; height: 16px; pointer-events: none; }
+  .geo-modal::before { left: 9px; top: 9px; border-left: 1px solid rgba(255,255,255,.35); border-top: 1px solid rgba(255,255,255,.35); }
+  .geo-modal::after { right: 9px; bottom: 9px; border-right: 1px solid rgba(255,255,255,.35); border-bottom: 1px solid rgba(255,255,255,.35); }
+  .geo-modal .dc-head h2 { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1rem; letter-spacing: 3px; text-transform: uppercase; }
+  .geo-modal .m-sub { font-size: .76rem; }
+  .geo-modal .dc-label { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .geo-badge { background: #0d0f12 !important; border: 1px solid rgba(255,255,255,.28);
+    box-shadow: inset 0 0 22px rgba(255,255,255,.08) !important; }
+  .geo-badge svg { color: #fff; }
+
+  .geo-drop { position: relative; border: 1px dashed rgba(255,255,255,.2); border-radius: 13px; background: #0b0c0f;
+    min-height: 155px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+    overflow: hidden; margin-bottom: 16px; transition: border-color .2s ease, background .2s ease; }
+  .geo-drop:hover, .geo-drop.over { border-color: rgba(255,255,255,.55); background: #0e1013; }
+  /* a slow scan line, so the target never looks inert */
+  .geo-drop::after { content: ""; position: absolute; left: 0; right: 0; height: 1px; top: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+    animation: geoScanline 3.4s ease-in-out infinite; pointer-events: none; }
+  @keyframes geoScanline { 0% { top: 4% } 50% { top: 96% } 100% { top: 4% } }
+  .geo-drop-inner { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 22px; text-align: center; }
+  .geo-drop-inner svg { width: 28px; height: 28px; color: rgba(255,255,255,.6); margin-bottom: 2px; }
+  .geo-drop-inner b { font-size: .78rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 2.4px; text-transform: uppercase; }
+  .geo-drop-inner span { color: var(--muted); font-size: .7rem; letter-spacing: .4px; }
+  .geo-preview { width: 100%; max-height: 230px; object-fit: contain; display: block; background: #000; }
+  .geo-note { color: var(--muted); font-size: .7rem; line-height: 1.5; margin: 9px 0 0; min-height: 1em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .3px; }
+  .geo-modal .m-submit { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 2px; text-transform: uppercase; font-size: .78rem; }
+
   /* ---- redeem codes: member page ---- */
   .redeem-card { max-width: 520px; padding: 22px; border: 1px solid var(--border); border-radius: 16px; background: var(--panel);
     -webkit-backdrop-filter: blur(16px) saturate(175%) brightness(1.08); backdrop-filter: blur(16px) saturate(175%) brightness(1.08); }
@@ -1441,6 +1628,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
       Investigate
     </div>
+    <div class="nav-item nav-geoint" data-page="geoint">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9S14.5 18.3 12 21c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>
+      GEOINT
+    </div>
     <div class="nav-item" data-page="bookmarks">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v4H3zM3 8v12h18V8M9 8v12M15 8v12"/></svg>
       Table
@@ -1728,6 +1919,33 @@
       </div>
     </section>
 
+    <!-- GEOINT (locate a photograph) -->
+    <section class="page" id="page-geoint">
+      <div class="geo-head">
+        <div>
+          <h1 class="geo-title">GEOINT</h1>
+          <p class="sub geo-sub-line"><span class="geo-tick"></span>Where was this taken? Read a photograph's own location data, then put it on the map.</p>
+        </div>
+        <div class="geo-headbtns">
+          <button class="btn-mini" id="geoNew" type="button">New scan</button>
+          <button class="btn-mini" id="geoExit" type="button">✕ Exit GEOINT</button>
+        </div>
+      </div>
+
+      <div class="geo-stage" id="geoStage">
+        <div class="geo-mapwrap">
+          <div class="geo-view" id="geoMap"></div>
+          <iframe class="geo-street" id="geoStreet" allowfullscreen referrerpolicy="no-referrer-when-downgrade" style="display:none"></iframe>
+          <div class="geo-toggle" id="geoToggle" style="display:none">
+            <button type="button" class="active" data-view="map">Map</button>
+            <button type="button" data-view="street">Street</button>
+          </div>
+          <div class="geo-status" id="geoStatus"></div>
+        </div>
+        <aside class="geo-info" id="geoInfo"></aside>
+      </div>
+    </section>
+
     <!-- CODES (redeem for tokens) -->
     <section class="page" id="page-codes">
       <h1>Codes</h1>
@@ -1824,6 +2042,51 @@
       <div class="mp-status" id="mpStatus"></div>
       <div class="mp-bio" id="mpBio"></div>
     </div>
+  </div>
+</div>
+
+<!-- ===================== GEOINT RADAR INTRO ===================== -->
+<div class="geo-radar" id="geoRadar">
+  <div class="radar-scope" id="radarScope">
+    <span class="radar-ring r1"></span><span class="radar-ring r2"></span><span class="radar-ring r3"></span>
+    <span class="radar-cross h"></span><span class="radar-cross v"></span>
+    <span class="radar-arm"><span class="arm-wedge"></span><span class="arm-line"></span></span>
+    <span class="radar-blip b1"></span><span class="radar-blip b2"></span><span class="radar-blip b3"></span>
+    <span class="radar-core"></span>
+    <span class="radar-flash"></span>
+  </div>
+  <div class="radar-readout">
+    <b>GEOSPATIAL INTELLIGENCE</b>
+    <span id="radarLine">INITIALISING SCOPE</span>
+  </div>
+  <div class="radar-skip">click to skip</div>
+</div>
+
+<!-- ===================== GEOINT UPLOAD ===================== -->
+<div class="modal-back" id="geoModal">
+  <div class="dc-modal geo-modal">
+    <button class="mp-close" id="geoClose" type="button" aria-label="Close">✕</button>
+    <div class="dc-head">
+      <span class="dc-badge geo-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9S14.5 18.3 12 21c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg></span>
+      <div><h2>Locate target</h2><p class="m-sub">Drop a picture in. Its own location data is read first — that's the part that gives an exact answer.</p></div>
+    </div>
+
+    <div class="geo-drop" id="geoDrop">
+      <input type="file" id="geoFile" accept="image/*" hidden>
+      <div class="geo-drop-inner" id="geoDropInner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5M12 4v13"/></svg>
+        <b>Drop target image</b>
+        <span>or click to browse · JPEG keeps its location data</span>
+      </div>
+      <img class="geo-preview" id="geoPreview" alt="" style="display:none">
+    </div>
+
+    <label class="dc-label" for="geoRegion">Narrow the search <span style="text-transform:none;letter-spacing:0;font-weight:600;opacity:.7">optional</span></label>
+    <input class="dc-input" id="geoRegion" type="text" maxlength="80" autocomplete="off" placeholder="Country, state or city it was probably taken in">
+    <p class="geo-note" id="geoNote"></p>
+
+    <button class="m-submit" id="geoScan" type="button" disabled>Scan · 10 tokens</button>
+    <div class="m-err" id="geoErr"></div>
   </div>
 </div>
 
@@ -1963,6 +2226,7 @@
 
 <script src="lanyard.js"></script>
 <script src="cropper.js"></script>
+<script src="geomap.js"></script>
 <script>
   /* ---------- settings (persisted in localStorage) ---------- */
   const SETTINGS_KEY = "m3-settings";
@@ -2232,6 +2496,8 @@
     navItems.forEach((n) => n.classList.toggle("active", n.dataset.page === p));
     document.querySelectorAll(".page").forEach((s) => s.classList.remove("show"));
     document.getElementById("page-" + p).classList.add("show");
+    // GEOINT is its own mode: sidebar slides away, the room goes dark
+    document.body.classList.toggle("geoint-mode", p === "geoint");
   }
   navItems.forEach((n) => n.addEventListener("click", () => showPage(n.dataset.page)));
   document.getElementById("goDatabase").addEventListener("click", () => showPage("database"));
@@ -2931,6 +3197,295 @@
     return row;
   }
 
+  /* ================= GEOINT =================
+     Read a photograph's own location data, then land it on the dark map. */
+  const GEOINT_COST = 10;
+  const geoModal = document.getElementById("geoModal");
+  const geoFile = document.getElementById("geoFile");
+  const geoDrop = document.getElementById("geoDrop");
+  const geoPreview = document.getElementById("geoPreview");
+  const geoDropInner = document.getElementById("geoDropInner");
+  const geoScanBtn = document.getElementById("geoScan");
+  const geoErr = document.getElementById("geoErr");
+  const geoNote = document.getElementById("geoNote");
+  const geoRegion = document.getElementById("geoRegion");
+  const geoInfo = document.getElementById("geoInfo");
+  const geoStatusEl = document.getElementById("geoStatus");
+  const geoToggle = document.getElementById("geoToggle");
+  const geoStreet = document.getElementById("geoStreet");
+  let geoMap = null, geoPicked = null, geoResult = null;
+
+  /* radar boot sequence — the way into GEOINT mode */
+  const geoRadar = document.getElementById("geoRadar");
+  const radarLine = document.getElementById("radarLine");
+  const radarScope = document.getElementById("radarScope");
+  let radarTimers = [];
+  function radarStop(then) {
+    radarTimers.forEach(clearTimeout); radarTimers = [];
+    if (!geoRadar.classList.contains("show")) { if (then) then(); return; }
+    geoRadar.classList.add("out");
+    const done = () => {
+      geoRadar.classList.remove("show", "out");
+      radarScope.classList.remove("armed");   // next run starts from the bare line again
+      geoRadar.removeEventListener("animationend", done);
+      if (then) then();
+    };
+    geoRadar.addEventListener("animationend", done);
+    radarTimers.push(setTimeout(done, 700)); // animationend can be throttled in a background tab
+  }
+  function radarRun(then) {
+    radarTimers.forEach(clearTimeout); radarTimers = [];
+    geoRadar.classList.remove("out");
+    radarScope.classList.remove("armed");
+    geoRadar.classList.add("show");
+    radarLine.textContent = "CALIBRATING";
+    radarTimers.push(setTimeout(() => { radarLine.textContent = "SWEEPING"; }, 900));
+    // hand over to the full scope exactly when the wind-up finishes (2.2s)
+    radarTimers.push(setTimeout(() => {
+      radarScope.classList.add("armed");
+      radarLine.textContent = "SCOPE ONLINE";
+    }, 2200));
+    radarTimers.push(setTimeout(() => { radarLine.textContent = "AWAITING IMAGE"; }, 3000));
+    radarTimers.push(setTimeout(() => radarStop(then), 3550));
+  }
+  if (geoRadar) geoRadar.addEventListener("click", () => radarStop(() => { if (!geoResult) openGeoModal(); }));
+
+  function geoEnsureMap() {
+    if (!geoMap && window.GeoMap) geoMap = GeoMap.create(document.getElementById("geoMap"), { zoom: 16 });
+    return geoMap;
+  }
+  function geoSetStatus(text) { if (geoStatusEl) geoStatusEl.textContent = text || ""; }
+
+  function openGeoModal() {
+    geoPicked = null;
+    geoPreview.style.display = "none"; geoPreview.removeAttribute("src");
+    geoDropInner.style.display = "";
+    geoErr.textContent = "";
+    geoScanBtn.disabled = true;
+    geoScanBtn.textContent = "Scan · " + GEOINT_COST + " tokens";
+    geoNote.textContent = currentUser
+      ? "You have " + currentUser.tokens + " token" + (currentUser.tokens === 1 ? "" : "s") + "."
+      : "";
+    geoModal.classList.add("show");
+  }
+  function closeGeoModal() { geoModal.classList.remove("show"); }
+
+  function geoPick(file) {
+    if (!file || !/^image\//.test(file.type)) { geoErr.textContent = "That isn't an image."; return; }
+    if (file.size > 25 * 1024 * 1024) { geoErr.textContent = "Image too large (25MB max)."; return; }
+    geoErr.textContent = "";
+    geoPicked = file;
+    const rd = new FileReader();
+    // NOTE: the preview is only for looking at — the ORIGINAL file bytes get
+    // sent, because re-encoding an image throws its location data away.
+    rd.onload = () => {
+      geoPreview.src = rd.result;
+      geoPreview.style.display = "";
+      geoDropInner.style.display = "none";
+      geoScanBtn.disabled = false;
+      geoNote.textContent = file.name + " · " + Math.max(1, Math.round(file.size / 1024)) + " KB";
+    };
+    rd.readAsDataURL(file);
+  }
+
+  if (geoDrop) {
+    geoDrop.addEventListener("click", () => geoFile.click());
+    geoFile.addEventListener("change", () => { geoPick(geoFile.files && geoFile.files[0]); geoFile.value = ""; });
+    ["dragenter", "dragover"].forEach((ev) => geoDrop.addEventListener(ev, (e) => { e.preventDefault(); geoDrop.classList.add("over"); }));
+    ["dragleave", "drop"].forEach((ev) => geoDrop.addEventListener(ev, () => geoDrop.classList.remove("over")));
+    geoDrop.addEventListener("drop", (e) => {
+      e.preventDefault();
+      geoPick(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+    });
+  }
+  if (geoModal) {
+    document.getElementById("geoClose").addEventListener("click", closeGeoModal);
+    geoModal.addEventListener("click", (e) => { if (e.target === geoModal) closeGeoModal(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && geoModal.classList.contains("show")) closeGeoModal(); });
+  }
+  const geoNewBtn = document.getElementById("geoNew");
+  if (geoNewBtn) geoNewBtn.addEventListener("click", openGeoModal);
+  // the sidebar is gone in GEOINT mode, so this is the way back out
+  const geoExitBtn = document.getElementById("geoExit");
+  if (geoExitBtn) geoExitBtn.addEventListener("click", () => { radarStop(); closeGeoModal(); showPage("home"); });
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const rd = new FileReader();
+      rd.onload = () => resolve(String(rd.result));
+      rd.onerror = reject;
+      rd.readAsDataURL(file);   // raw bytes, EXIF intact
+    });
+  }
+
+  if (geoScanBtn) geoScanBtn.addEventListener("click", async () => {
+    if (!geoPicked) return;
+    geoScanBtn.disabled = true; geoScanBtn.textContent = "Scanning…"; geoErr.textContent = "";
+
+    let dataUrl;
+    try { dataUrl = await fileToBase64(geoPicked); }
+    catch (_) { geoErr.textContent = "Couldn't read that file."; geoScanBtn.disabled = false; geoScanBtn.textContent = "Scan · " + GEOINT_COST + " tokens"; return; }
+
+    closeGeoModal();
+    showPage("geoint");
+    geoEnsureMap();
+    if (geoMap) geoMap.searching(true);
+    geoInfo.innerHTML = '<div class="geo-empty">Reading the file…</div>';
+    // a running readout while the scan is out — the dot breathes alongside it
+    const scanLines = ["READING FILE HEADERS", "PARSING EXIF BLOCK", "TRIANGULATING", "RESOLVING ADDRESS"];
+    let si = 0;
+    geoSetStatus(scanLines[0]);
+    const scanTicker = setInterval(() => { si = (si + 1) % scanLines.length; geoSetStatus(scanLines[si]); }, 900);
+    geoShowMapView();
+    geoToggle.style.display = "none";
+
+    const r = await window.api.geointAnalyze({ image: dataUrl, filename: geoPicked.name, region: geoRegion.value.trim() || null }).catch(() => null);
+
+    clearInterval(scanTicker);
+    geoScanBtn.disabled = false; geoScanBtn.textContent = "Scan · " + GEOINT_COST + " tokens";
+
+    if (!r || !r.ok) {
+      const msg = (r && r.error) || "The scan failed.";
+      geoSetStatus("");
+      if (geoMap) geoMap.searching(false);
+      geoInfo.innerHTML = "";
+      const box = document.createElement("div"); box.className = "geo-empty"; box.textContent = msg;
+      geoInfo.appendChild(box);
+      toast(msg, "err");
+      return;
+    }
+
+    if (typeof r.tokens === "number" && currentUser) { currentUser.tokens = r.tokens; renderAccount(); renderProfile(); }
+    geoResult = r;
+    renderGeoResult(r);
+  });
+
+  function geoCopyRow(label, value, mono) {
+    const row = document.createElement("div"); row.className = "geo-row";
+    const k = document.createElement("span"); k.className = "geo-k"; k.textContent = label;
+    const v = document.createElement("span"); v.className = "geo-v" + (mono ? " mono" : ""); v.textContent = value;
+    row.appendChild(k); row.appendChild(v);
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "geo-copy"; btn.textContent = "Copy";
+    btn.addEventListener("click", async () => {
+      await nicCopy(value);
+      btn.textContent = "Copied"; btn.classList.add("done");
+      setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1200);
+    });
+    row.appendChild(btn);
+    return row;
+  }
+  function geoPlainRow(label, value) {
+    const row = document.createElement("div"); row.className = "geo-row";
+    const k = document.createElement("span"); k.className = "geo-k"; k.textContent = label;
+    const v = document.createElement("span"); v.className = "geo-v"; v.textContent = value;
+    row.appendChild(k); row.appendChild(v);
+    return row;
+  }
+
+  function renderGeoResult(r) {
+    geoInfo.innerHTML = "";
+    const p = r.place || {};
+    const m = r.metadata || {};
+
+    const badge = document.createElement("span");
+    badge.className = "geo-badgeline " + (r.found ? "found" : "none");
+    badge.textContent = r.found
+      ? (r.source === "exif" ? "Located · EXIF GPS" : "Located · image match")
+      : "No location in this file";
+    geoInfo.appendChild(badge);
+
+    if (r.found) {
+      const coordStr = r.coords.lat.toFixed(6) + ", " + r.coords.lon.toFixed(6);
+      if (p.address) {
+        const a = document.createElement("div"); a.className = "geo-addr"; a.textContent = p.address;
+        geoInfo.appendChild(a);
+      }
+      const rows = document.createElement("div"); rows.className = "geo-rows";
+      rows.appendChild(geoCopyRow("Coords", coordStr, true));
+      if (p.street) rows.appendChild(geoCopyRow("Street", p.street));
+      if (p.city) rows.appendChild(geoCopyRow("City", p.city));
+      if (p.state) rows.appendChild(geoPlainRow("Region", p.state));
+      if (p.country) rows.appendChild(geoPlainRow("Country", p.country));
+      if (p.postcode) rows.appendChild(geoCopyRow("Postcode", p.postcode));
+      if (r.confidence != null) rows.appendChild(geoPlainRow("Confidence", Math.round(r.confidence * 100) + "%"));
+      geoInfo.appendChild(rows);
+
+      const actions = document.createElement("div"); actions.className = "geo-actions";
+      const open = document.createElement("button"); open.type = "button"; open.className = "btn-mini";
+      open.textContent = "Open on maps";
+      open.addEventListener("click", () => window.open("https://www.google.com/maps/search/?api=1&query=" + r.coords.lat + "," + r.coords.lon, "_blank", "noopener"));
+      actions.appendChild(open);
+      const copyAll = document.createElement("button"); copyAll.type = "button"; copyAll.className = "btn-mini";
+      copyAll.textContent = "Copy address";
+      copyAll.addEventListener("click", async () => { await nicCopy(p.address || coordStr); toast("Address copied."); });
+      actions.appendChild(copyAll);
+      geoInfo.appendChild(actions);
+    } else {
+      const why = document.createElement("div"); why.className = "geo-empty";
+      why.textContent = r.vision_configured
+        ? "This picture carries no GPS tag, and the image-matching service couldn't place it either."
+        : "This picture carries no GPS tag — social networks strip that out when a photo is uploaded. Recognising a place from the image itself needs an image-matching service, which isn't configured on this server.";
+      geoInfo.appendChild(why);
+    }
+
+    // whatever else the file gave up is worth showing either way
+    const metaBits = [
+      ["Taken", m.taken_at ? new Date(m.taken_at).toLocaleString() : null],
+      ["Camera", m.camera], ["Lens", m.lens], ["Software", m.software],
+      ["ISO", m.iso != null ? String(m.iso) : null],
+      ["Aperture", m.f_number != null ? "f/" + m.f_number : null],
+      ["Shutter", m.exposure != null ? (m.exposure < 1 ? "1/" + Math.round(1 / m.exposure) : m.exposure + "s") : null],
+      ["Focal", m.focal_length != null ? m.focal_length + "mm" : null],
+      ["Altitude", m.altitude != null ? Math.round(m.altitude) + " m" : null],
+      ["Heading", m.heading != null ? Math.round(m.heading) + "°" : null],
+      ["Size", m.width && m.height ? m.width + " × " + m.height : null],
+      ["File", m.bytes ? Math.max(1, Math.round(m.bytes / 1024)) + " KB" : null],
+    ].filter((x) => x[1]);
+
+    const sec = document.createElement("div"); sec.className = "geo-sec";
+    sec.textContent = metaBits.length ? "Metadata" : "No metadata survived in this file";
+    geoInfo.appendChild(sec);
+    if (metaBits.length) {
+      const mrows = document.createElement("div"); mrows.className = "geo-rows";
+      metaBits.forEach(([k, v]) => mrows.appendChild(geoPlainRow(k, v)));
+      geoInfo.appendChild(mrows);
+    }
+
+    if (r.found) {
+      geoSetStatus("");
+      geoEnsureMap();
+      if (geoMap) geoMap.locate({ lat: r.coords.lat, lon: r.coords.lon, zoom: 16 });
+      geoToggle.style.display = r.streetview ? "" : "none";
+    } else {
+      if (geoMap) geoMap.searching(false);
+      geoSetStatus("No coordinates to plot");
+    }
+  }
+
+  /* map / street-view switch */
+  function geoShowMapView() {
+    geoStreet.style.display = "none";
+    geoStreet.removeAttribute("src");
+    document.getElementById("geoMap").style.display = "";
+    if (geoMap) geoMap.invalidate();
+    [].forEach.call(geoToggle.querySelectorAll("button"), (b) => b.classList.toggle("active", b.dataset.view === "map"));
+  }
+  async function geoShowStreetView() {
+    if (!geoResult || !geoResult.found) return;
+    const r = await window.api.geointStreetview(geoResult.coords.lat, geoResult.coords.lon).catch(() => null);
+    if (!r || !r.ok) { toast((r && r.error) || "Street View unavailable.", "err"); return; }
+    document.getElementById("geoMap").style.display = "none";
+    geoStreet.src = r.url;
+    geoStreet.style.display = "";
+    [].forEach.call(geoToggle.querySelectorAll("button"), (b) => b.classList.toggle("active", b.dataset.view === "street"));
+  }
+  if (geoToggle) geoToggle.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-view]");
+    if (!b) return;
+    if (b.dataset.view === "street") geoShowStreetView(); else geoShowMapView();
+  });
+
   // load each tab's data when it opens
   navItems.forEach((n) => n.addEventListener("click", () => {
     const p = n.dataset.page;
@@ -2938,6 +3493,7 @@
     else if (p === "bookmarks") loadBookmarks();
     else if (p === "members") loadMembers();
     else if (p === "codes") renderCodesPage();
+    else if (p === "geoint") radarRun(() => { if (!geoResult) openGeoModal(); });
     else if (p === "admin") loadAdmin();
     else if (p === "home") loadAnnouncements();
   }));

@@ -16,9 +16,14 @@ const PROD = process.env.NODE_ENV === "production";
 
 const SEARCH_COST = 1;
 const ULTRA_COST = 3;
+const GEOINT_COST = 10;
 
 app.set("trust proxy", 1);
-app.use(express.json({ limit: "8mb" }));
+// GEOINT needs the ORIGINAL file bytes (re-encoding an image destroys its EXIF),
+// so that one route gets a bigger ceiling than everything else.
+const jsonStandard = express.json({ limit: "8mb" });
+const jsonLarge = express.json({ limit: "26mb" });
+app.use((req, res, next) => (req.path === "/api/geoint/analyze" ? jsonLarge : jsonStandard)(req, res, next));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -549,6 +554,220 @@ app.get("/api/osint", requireAuth, requireSearch, async (req, res) => {
   } finally {
     clearTimeout(timer);
   }
+});
+
+/* ============================= GEOINT =============================
+ * Work out where a photograph was taken.
+ *
+ * The reliable path is the photo's own EXIF: a GPS-tagged image carries the
+ * exact coordinates, which we then reverse-geocode into a street address.
+ * Most pictures that have been through a social network no longer have that
+ * — those platforms strip EXIF on upload — so the honest answer there is
+ * "no location in this file", plus whatever other metadata survived.
+ *
+ * Recognising a place from image CONTENT alone is a machine-learning problem
+ * (what Picarta / GeoSpy do); it is not something Google Maps can be queried
+ * for. If a provider is configured via GEOINT_VISION_URL the image is handed
+ * to it and its answer used, otherwise the UI falls back to letting the
+ * analyst pin the spot themselves.
+ * ================================================================= */
+const exifParser = require("exif-parser");
+
+const GEO_UA = "m3-investigation-tool/1.0 (geoint lookup)";
+
+// Most bodies repeat the manufacturer in the model ("Canon" + "Canon EOS 5D"),
+// so only prepend the make when the model doesn't already carry it.
+function cameraName(make, model) {
+  const mk = String(make || "").trim();
+  const md = String(model || "").trim();
+  if (!mk && !md) return null;
+  if (!md) return mk;
+  if (!mk) return md;
+  return md.toLowerCase().startsWith(mk.toLowerCase()) ? md : mk + " " + md;
+}
+
+// EXIF stores coordinates already signed by exif-parser, but altitude/heading
+// and the timestamp need a little shaping before they're fit to show.
+function readExif(buf) {
+  let tags = null, size = null;
+  try {
+    const parsed = exifParser.create(buf).parse();
+    tags = parsed.tags || {};
+    size = parsed.imageSize || null;
+  } catch (_) {
+    return { ok: false };
+  }
+  const num = (v) => (typeof v === "number" && isFinite(v) ? v : null);
+  const when = (v) => (typeof v === "number" && isFinite(v) ? new Date(v * 1000).toISOString() : null);
+
+  const lat = num(tags.GPSLatitude), lon = num(tags.GPSLongitude);
+  const hasFix = lat != null && lon != null && !(lat === 0 && lon === 0) &&
+                 Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
+
+  return {
+    ok: true,
+    coords: hasFix ? { lat, lon } : null,
+    altitude: num(tags.GPSAltitude),
+    heading: num(tags.GPSImgDirection),
+    taken_at: when(tags.DateTimeOriginal) || when(tags.CreateDate) || when(tags.ModifyDate),
+    camera: cameraName(tags.Make, tags.Model),
+    lens: tags.LensModel || null,
+    software: tags.Software || null,
+    iso: num(tags.ISO),
+    f_number: num(tags.FNumber),
+    exposure: num(tags.ExposureTime),
+    focal_length: num(tags.FocalLength),
+    orientation: num(tags.Orientation),
+    width: size ? size.width : null,
+    height: size ? size.height : null,
+  };
+}
+
+// Coordinates -> a human address. Google when a key is configured (better
+// coverage and street names), OpenStreetMap's Nominatim otherwise so the
+// feature works with no setup at all.
+async function reverseGeocode(lat, lon) {
+  const key = process.env.GOOGLE_MAPS_API_KEY;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    if (key) {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${encodeURIComponent(key)}`;
+      const r = await fetch(url, { signal: controller.signal });
+      const j = await r.json();
+      const best = j && j.results && j.results[0];
+      if (best) {
+        const part = (t) => {
+          const c = (best.address_components || []).find((x) => (x.types || []).includes(t));
+          return c ? c.long_name : null;
+        };
+        return {
+          provider: "google",
+          address: best.formatted_address || null,
+          street: [part("street_number"), part("route")].filter(Boolean).join(" ") || part("route"),
+          city: part("locality") || part("postal_town") || part("administrative_area_level_2"),
+          state: part("administrative_area_level_1"),
+          country: part("country"),
+          postcode: part("postal_code"),
+        };
+      }
+      return null;
+    }
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
+    const r = await fetch(url, { headers: { "User-Agent": GEO_UA, Accept: "application/json" }, signal: controller.signal });
+    const j = await r.json();
+    if (!j || j.error) return null;
+    const a = j.address || {};
+    return {
+      provider: "openstreetmap",
+      address: j.display_name || null,
+      street: [a.house_number, a.road].filter(Boolean).join(" ") || a.road || null,
+      city: a.city || a.town || a.village || a.municipality || a.county || null,
+      state: a.state || a.region || null,
+      country: a.country || null,
+      postcode: a.postcode || null,
+    };
+  } catch (_) {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Optional content-based locator. Configure GEOINT_VISION_URL (and usually
+// GEOINT_VISION_KEY) to point at a provider that takes an image and answers
+// with coordinates; anything shaped {lat, lon, confidence} is understood.
+async function visionLocate(base64, region) {
+  const url = process.env.GEOINT_VISION_URL;
+  if (!url) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 45000);
+  try {
+    const headers = { "Content-Type": "application/json", Accept: "application/json" };
+    if (process.env.GEOINT_VISION_KEY) headers.Authorization = "Bearer " + process.env.GEOINT_VISION_KEY;
+    const r = await fetch(url, {
+      method: "POST", headers, signal: controller.signal,
+      body: JSON.stringify({ image: base64, region: region || null }),
+    });
+    const j = await r.json();
+    const lat = Number(j && (j.lat != null ? j.lat : j.latitude));
+    const lon = Number(j && (j.lon != null ? j.lon : (j.lng != null ? j.lng : j.longitude)));
+    if (!isFinite(lat) || !isFinite(lon)) return null;
+    return { lat, lon, confidence: Number(j.confidence) || null };
+  } catch (_) {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+app.post("/api/geoint/analyze", requireAuth, async (req, res) => {
+  const b = req.body || {};
+  const raw = String(b.image || "");
+  const m = /^data:([\w/+.-]+);base64,(.+)$/.exec(raw);
+  const base64 = m ? m[2] : (/^[A-Za-z0-9+/=\s]+$/.test(raw) ? raw : null);
+  if (!base64) return res.status(400).json({ ok: false, error: "Send an image to analyse." });
+
+  let buf;
+  try { buf = Buffer.from(base64, "base64"); } catch (_) { buf = null; }
+  if (!buf || buf.length < 64) return res.status(400).json({ ok: false, error: "That image couldn't be read." });
+  if (buf.length > 25 * 1024 * 1024) return res.status(413).json({ ok: false, error: "Image too large (25MB max)." });
+
+  // Charge only once we know we have something we can actually work on.
+  const spent = await store.spendTokens(req.user.id, GEOINT_COST);
+  if (!spent) {
+    return res.status(402).json({ ok: false, error: "A GEOINT scan costs " + GEOINT_COST + " tokens.", need: GEOINT_COST, have: req.user.tokens });
+  }
+  store.addSearchLog({
+    user_id: req.user.id, username: req.user.username,
+    type: "geoint", query: (b.filename || "image").slice(0, 200), ultra: false, cost: GEOINT_COST,
+  }).catch(() => {});
+
+  const exif = readExif(buf);
+  const meta = exif.ok ? exif : {};
+  let coords = exif.ok ? exif.coords : null;
+  let source = coords ? "exif" : null;
+  let confidence = null;
+
+  if (!coords) {
+    const guess = await visionLocate(base64, b.region || null);
+    if (guess) { coords = { lat: guess.lat, lon: guess.lon }; source = "vision"; confidence = guess.confidence; }
+  }
+
+  const place = coords ? await reverseGeocode(coords.lat, coords.lon) : null;
+
+  res.json({
+    ok: true,
+    found: !!coords,
+    source,                       // "exif" | "vision" | null
+    confidence,
+    coords,
+    place,
+    metadata: {
+      taken_at: meta.taken_at || null, camera: meta.camera || null, lens: meta.lens || null,
+      software: meta.software || null, iso: meta.iso || null, f_number: meta.f_number || null,
+      exposure: meta.exposure || null, focal_length: meta.focal_length || null,
+      altitude: meta.altitude || null, heading: meta.heading || null,
+      width: meta.width || null, height: meta.height || null,
+      bytes: buf.length,
+    },
+    // tells the UI whether a content-based locator exists at all, so it can
+    // explain the "no GPS" outcome truthfully instead of implying a failure
+    vision_configured: !!process.env.GEOINT_VISION_URL,
+    streetview: !!process.env.GOOGLE_MAPS_API_KEY,
+    tokens: spent.tokens,
+    cost: GEOINT_COST,
+  });
+});
+
+// Street View needs Google's key; it stays server-side and is only ever used
+// to build the embed URL for a location the user has already located.
+app.get("/api/geoint/streetview", requireAuth, (req, res) => {
+  const key = process.env.GOOGLE_MAPS_API_KEY;
+  if (!key) return res.status(503).json({ ok: false, error: "Street View needs GOOGLE_MAPS_API_KEY on the server." });
+  const lat = Number(req.query.lat), lon = Number(req.query.lon);
+  if (!isFinite(lat) || !isFinite(lon)) return res.status(400).json({ ok: false, error: "Bad coordinates." });
+  res.json({ ok: true, url: `https://www.google.com/maps/embed/v1/streetview?key=${encodeURIComponent(key)}&location=${lat},${lon}&heading=0&pitch=0&fov=90` });
 });
 
 store.init()
