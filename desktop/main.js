@@ -256,6 +256,8 @@ relay("admin:logs", (limit) => serverFetch("/api/admin/logs?limit=" + (parseInt(
 relay("codes:redeem", (code) => serverFetch("/api/codes/redeem", { method: "POST", body: JSON.stringify({ code }) }));
 relay("geoint:analyze", (payload) => serverFetch("/api/geoint/analyze", { method: "POST", body: JSON.stringify(payload || {}) }));
 relay("geoint:streetview", ({ lat, lon }) => serverFetch("/api/geoint/streetview?lat=" + encodeURIComponent(lat) + "&lon=" + encodeURIComponent(lon)));
+relay("geoint:regions", () => serverFetch("/api/geoint/regions"));
+relay("geoint:pick", (payload) => serverFetch("/api/geoint/pick", { method: "POST", body: JSON.stringify(payload || {}) }));
 relay("admin:codesList", () => serverFetch("/api/admin/codes"));
 relay("admin:codeCreate", (payload) => serverFetch("/api/admin/codes", { method: "POST", body: JSON.stringify(payload || {}) }));
 relay("admin:codeDelete", (id) => serverFetch("/api/admin/codes/" + encodeURIComponent(id), { method: "DELETE" }));

@@ -5,3 +5,42 @@ services:
     plan: free
     buildCommand: npm install && npx puppeteer browsers install chrome
     startCommand: node server.js
+
+# ---------------------------------------------------------------------------
+# Optional environment variables — set these in the Render dashboard, not here
+# (this file is public). Nothing below is required to run.
+#
+# GEOINT — working out where a photograph was taken
+#   A photo that still carries GPS in its EXIF is placed exactly, with no setup
+#   at all. Recognising a place from the picture ITSELF needs the StreetCLIP
+#   model, which is 400MB and won't fit beside a small web service. Two homes
+#   for it:
+#
+#   GEOINT_CLIP_URL     RECOMMENDED. A Hugging Face Space running the scorer:
+#   GEOINT_CLIP_KEY     free, ~5 minutes to set up, no load on this server.
+#                       Instructions in geoint-space/README.md.
+#
+#   GEOINT_ENGINE=local Runs the model in this process instead. Needs ~1.2GB of
+#                       RAM and `npm i @huggingface/transformers`, so it will
+#                       NOT fit Render's free plan. Tunables:
+#                       GEOINT_LOCAL_THREADS  (default 4 — measured; handing it
+#                         every core makes scans erratic under traffic)
+#                       GEOINT_LOCAL_RECYCLE  (default 60 passes — bounds the
+#                         memory onnxruntime doesn't hand back)
+#
+#   StreetCLIP is licensed CC BY-NC 4.0 (non-commercial) and its model card
+#   discourages geolocating private images. Neither engine switches itself on.
+#
+#   GEOINT_VISION_URL   An alternative locator that answers with coordinates
+#   GEOINT_VISION_KEY   directly (Picarta, GeoSpy, your own). Tried first.
+#
+# GOOGLE_MAPS_API_KEY   Adds Street View and upgrades geocoding from
+#                       OpenStreetMap to Google. Everything works without it.
+#
+# Everything else
+#   JWT_SECRET                keeps sessions alive across restarts
+#   FIREBASE_SERVICE_ACCOUNT  durable storage (the JSON fallback is wiped on
+#                             every redeploy)
+#   START_TOKENS              tokens a new account starts with (default 10)
+#   TABLE_LIMIT               how many entries a member's Table holds
+# ---------------------------------------------------------------------------

@@ -1290,6 +1290,50 @@ you cant run by your own footprints.
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .3px; }
   .geo-modal .m-submit { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 2px; text-transform: uppercase; font-size: .78rem; }
 
+  /* country / region narrowing — two selects that cascade */
+  .geo-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 520px) { .geo-selects { grid-template-columns: 1fr; } }
+  .dc-select { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 10px;
+    border: 1px solid var(--border); background: #0b0c0f; color: var(--text); font-size: .82rem;
+    font-family: inherit; cursor: pointer; appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, rgba(255,255,255,.5) 50%), linear-gradient(135deg, rgba(255,255,255,.5) 50%, transparent 50%);
+    background-position: right 14px center, right 9px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+  .dc-select:focus { outline: none; border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .12); }
+  .dc-select:disabled { opacity: .45; cursor: default; }
+  .dc-select option, .dc-select optgroup { background: #0b0c0f; color: var(--text); }
+
+  /* ---- the shortlist the model comes back with ----
+     A photograph rarely pins to one place, so the panel shows the ranked
+     guesses and lets the analyst say which is right — clicking one moves the
+     map. The bar is the model's confidence, not a promise. */
+  .geo-cands { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
+  .geo-cand { border: 1px solid var(--border); border-radius: 11px; background: var(--panel2); padding: 10px 12px;
+    cursor: pointer; transition: border-color .18s ease, background .18s ease; }
+  .geo-cand:hover { border-color: #5c5c5c; background: #17181c; }
+  .geo-cand.on { border-color: rgb(var(--accent-rgb) / .75); background: rgb(var(--accent-rgb) / .08); }
+  .geo-cand-top { display: flex; align-items: center; gap: 9px; }
+  .geo-cand-rank { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .62rem; color: var(--muted);
+    font-weight: 800; width: 15px; flex-shrink: 0; }
+  .geo-cand-name { font-size: .86rem; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .geo-cand-pc { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .7rem; color: var(--muted); flex-shrink: 0; }
+  .geo-bar { height: 3px; border-radius: 2px; background: rgba(255,255,255,.09); margin-top: 8px; overflow: hidden; }
+  .geo-bar i { display: block; height: 100%; background: var(--accent); border-radius: 2px; transition: width .5s ease; }
+  .geo-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+  .geo-chip { border: 1px solid var(--border); background: #0d0e11; color: var(--muted); border-radius: 999px;
+    padding: 4px 10px; font-size: .68rem; cursor: pointer; transition: color .16s ease, border-color .16s ease; }
+  .geo-chip:hover { color: var(--text); border-color: #666; }
+  .geo-chip.on { color: var(--accent); border-color: rgb(var(--accent-rgb) / .7); }
+
+  /* what the model read off the picture — architecture, climate, writing */
+  .geo-scene { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .geo-tag { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--panel2);
+    border-radius: 8px; padding: 5px 9px; font-size: .7rem; }
+  .geo-tag em { font-style: normal; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .6rem; text-transform: uppercase; letter-spacing: .5px; }
+  .geo-tag b { font-weight: 700; }
+  .geo-caveat { color: var(--muted); font-size: .72rem; line-height: 1.55; margin-top: 12px;
+    border-left: 2px solid rgba(255,255,255,.12); padding-left: 10px; }
+
   /* ---- redeem codes: member page ---- */
   .redeem-card { max-width: 520px; padding: 22px; border: 1px solid var(--border); border-radius: 16px; background: var(--panel);
     -webkit-backdrop-filter: blur(16px) saturate(175%) brightness(1.08); backdrop-filter: blur(16px) saturate(175%) brightness(1.08); }
@@ -2255,8 +2299,11 @@ you cant run by your own footprints.
       <img class="geo-preview" id="geoPreview" alt="" style="display:none">
     </div>
 
-    <label class="dc-label" for="geoRegion">Narrow the search <span style="text-transform:none;letter-spacing:0;font-weight:600;opacity:.7">optional</span></label>
-    <input class="dc-input" id="geoRegion" type="text" maxlength="80" autocomplete="off" placeholder="Country, state or city it was probably taken in">
+    <label class="dc-label" for="geoCountry">Narrow the search <span style="text-transform:none;letter-spacing:0;font-weight:600;opacity:.7">optional — but it sharpens the answer</span></label>
+    <div class="geo-selects">
+      <select class="dc-select" id="geoCountry"><option value="">Any country</option></select>
+      <select class="dc-select" id="geoRegionSel" disabled><option value="">Any region</option></select>
+    </div>
     <p class="geo-note" id="geoNote"></p>
 
     <button class="m-submit" id="geoScan" type="button" disabled>Scan · 10 tokens</button>
@@ -4389,7 +4436,8 @@ you cant run by your own footprints.
   const geoScanBtn = document.getElementById("geoScan");
   const geoErr = document.getElementById("geoErr");
   const geoNote = document.getElementById("geoNote");
-  const geoRegion = document.getElementById("geoRegion");
+  const geoCountrySel = document.getElementById("geoCountry");
+  const geoRegionSel = document.getElementById("geoRegionSel");
   const geoInfo = document.getElementById("geoInfo");
   const geoStatusEl = document.getElementById("geoStatus");
   const geoToggle = document.getElementById("geoToggle");
@@ -4431,6 +4479,66 @@ you cant run by your own footprints.
   }
   if (geoRadar) geoRadar.addEventListener("click", () => radarStop(() => { if (!geoResult) openGeoModal(); }));
 
+  /* ---- country / region pickers ----
+     The list is ~250 countries and 5,000 subdivisions, so it's fetched once
+     and kept. Regions arrive already grouped by what they are, which is what
+     keeps a country like France (22 regions AND 96 departments) readable. */
+  let geoRegionData = null, geoRegionLoading = null;
+  function loadGeoRegions() {
+    if (geoRegionData) return Promise.resolve(geoRegionData);
+    if (geoRegionLoading) return geoRegionLoading;
+    geoRegionLoading = fetch("/api/geoint/regions")
+      .then((r) => r.json())
+      .then((r) => {
+        if (!r || !r.ok) throw new Error("regions unavailable");
+        geoRegionData = r.countries;
+        const frag = document.createDocumentFragment();
+        geoRegionData.forEach((c) => {
+          const o = document.createElement("option");
+          o.value = c.code; o.textContent = c.name;
+          frag.appendChild(o);
+        });
+        geoCountrySel.appendChild(frag);
+        return geoRegionData;
+      })
+      .catch(() => { geoRegionLoading = null; return null; });
+    return geoRegionLoading;
+  }
+
+  // ISO type names are singular ("Country", "Autonomous community"), and a
+  // bare +"s" turns half of them into nonsense
+  function geoPlural(t) {
+    if (/(s|x|z|ch|sh)$/i.test(t)) return t + "es";
+    if (/[^aeiou]y$/i.test(t)) return t.slice(0, -1) + "ies";
+    return t + "s";
+  }
+
+  function fillGeoRegionSelect(code) {
+    geoRegionSel.innerHTML = "";
+    const any = document.createElement("option");
+    any.value = ""; any.textContent = code ? "Anywhere in this country" : "Any region";
+    geoRegionSel.appendChild(any);
+    const c = code && geoRegionData && geoRegionData.find((x) => x.code === code);
+    if (!c || !c.groups.length) { geoRegionSel.disabled = true; return; }
+    c.groups.forEach((g) => {
+      // one group per admin level, so "Metropolitan region" and "department"
+      // don't get shuffled into one 131-line list
+      const grp = document.createElement("optgroup");
+      grp.label = g.items.length > 1 ? geoPlural(g.type) : g.type;
+      g.items.forEach((it) => {
+        const o = document.createElement("option");
+        o.value = it.c; o.textContent = it.n;
+        grp.appendChild(o);
+      });
+      geoRegionSel.appendChild(grp);
+    });
+    geoRegionSel.disabled = false;
+  }
+
+  if (geoCountrySel) {
+    geoCountrySel.addEventListener("change", () => fillGeoRegionSelect(geoCountrySel.value));
+  }
+
   function geoEnsureMap() {
     if (!geoMap && window.GeoMap) geoMap = GeoMap.create(document.getElementById("geoMap"), { zoom: 16 });
     return geoMap;
@@ -4447,6 +4555,7 @@ you cant run by your own footprints.
     geoNote.textContent = currentUser
       ? "You have " + currentUser.tokens + " token" + (currentUser.tokens === 1 ? "" : "s") + "."
       : "";
+    loadGeoRegions();
     geoModal.classList.add("show");
   }
   function closeGeoModal() { geoModal.classList.remove("show"); }
@@ -4513,7 +4622,7 @@ you cant run by your own footprints.
     if (geoMap) geoMap.searching(true);
     geoInfo.innerHTML = '<div class="geo-empty">Reading the file…</div>';
     // a running readout while the scan is out — the dot breathes alongside it
-    const scanLines = ["READING FILE HEADERS", "PARSING EXIF BLOCK", "TRIANGULATING", "RESOLVING ADDRESS"];
+    const scanLines = ["READING FILE HEADERS", "PARSING EXIF BLOCK", "MATCHING TERRAIN", "READING SIGNAGE", "RESOLVING ADDRESS"];
     let si = 0;
     geoSetStatus(scanLines[0]);
     const scanTicker = setInterval(() => { si = (si + 1) % scanLines.length; geoSetStatus(scanLines[si]); }, 900);
@@ -4522,7 +4631,11 @@ you cant run by your own footprints.
 
     const r = await fetch("/api/geoint/analyze", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: dataUrl, filename: geoPicked.name, region: geoRegion.value.trim() || null }),
+      body: JSON.stringify({
+        image: dataUrl, filename: geoPicked.name,
+        country: geoCountrySel.value || null,
+        region_code: geoRegionSel.value || null,
+      }),
     }).then((x) => x.json()).catch(() => null);
 
     clearInterval(scanTicker);
@@ -4573,13 +4686,17 @@ you cant run by your own footprints.
     const m = r.metadata || {};
 
     const badge = document.createElement("span");
-    badge.className = "geo-badgeline " + (r.found ? "found" : "none");
-    badge.textContent = r.found
-      ? (r.source === "exif" ? "Located · EXIF GPS" : "Located · image match")
-      : "No location in this file";
+    const shortlist = r.source === "ai" && r.candidates && r.candidates.length;
+    badge.className = "geo-badgeline " + (shortlist ? "" : (r.found ? "found" : "none"));
+    badge.textContent = !r.found && !shortlist ? "No location in this file"
+      : r.source === "exif" ? "Located · EXIF GPS"
+      : shortlist ? "Shortlist · read from the picture"
+      : "Located · image match";
     geoInfo.appendChild(badge);
 
-    if (r.found) {
+    if (shortlist) {
+      renderGeoShortlist(r);
+    } else if (r.found) {
       const coordStr = r.coords.lat.toFixed(6) + ", " + r.coords.lon.toFixed(6);
       if (p.address) {
         const a = document.createElement("div"); a.className = "geo-addr"; a.textContent = p.address;
@@ -4607,9 +4724,12 @@ you cant run by your own footprints.
       geoInfo.appendChild(actions);
     } else {
       const why = document.createElement("div"); why.className = "geo-empty";
-      why.textContent = r.vision_configured
-        ? "This picture carries no GPS tag, and the image-matching service couldn't place it either."
-        : "This picture carries no GPS tag — social networks strip that out when a photo is uploaded. Recognising a place from the image itself needs an image-matching service, which isn't configured on this server.";
+      const ai = r.ai || {};
+      why.textContent = ai.error
+        ? "This picture carries no GPS tag, and the image-matching service didn't answer (" + ai.error + ")."
+        : ai.available
+          ? "This picture carries no GPS tag, and nothing in the image itself was recognisable enough to place it."
+          : "This picture carries no GPS tag — social networks strip that out when a photo is uploaded. Recognising a place from the image itself needs the StreetCLIP engine, which isn't configured on this server.";
       geoInfo.appendChild(why);
     }
 
@@ -4637,14 +4757,131 @@ you cant run by your own footprints.
     }
 
     if (r.found) {
-      geoSetStatus("");
+      geoSetStatus(shortlist ? "BEST MATCH — PICK ANOTHER TO COMPARE" : "");
       geoEnsureMap();
-      if (geoMap) geoMap.locate({ lat: r.coords.lat, lon: r.coords.lon, zoom: 16 });
-      geoToggle.style.display = r.streetview ? "" : "none";
+      // a region is a shape, not a doorstep: don't zoom in as if it were one
+      if (geoMap) geoMap.locate({ lat: r.coords.lat, lon: r.coords.lon, zoom: shortlist ? (r.candidates[0].zoom || 7) : 16 });
+      geoToggle.style.display = r.streetview && !shortlist ? "" : "none";
     } else {
       if (geoMap) geoMap.searching(false);
       geoSetStatus("No coordinates to plot");
     }
+  }
+
+  /* ---- the shortlist ----
+     When the answer came from the picture rather than a GPS tag there is no
+     single right answer to present, so the analyst gets the ranked guesses and
+     says which one is right. Picking one resolves it and moves the map. */
+  function renderGeoShortlist(r) {
+    const wrap = document.createElement("div"); wrap.className = "geo-cands";
+
+    r.candidates.forEach((c, i) => {
+      const row = document.createElement("div");
+      row.className = "geo-cand" + (i === 0 ? " on" : "");
+
+      const top = document.createElement("div"); top.className = "geo-cand-top";
+      const rank = document.createElement("span"); rank.className = "geo-cand-rank"; rank.textContent = (i + 1) + ".";
+      const name = document.createElement("span"); name.className = "geo-cand-name"; name.textContent = c.country;
+      const pc = document.createElement("span"); pc.className = "geo-cand-pc";
+      pc.textContent = (c.confidence * 100).toFixed(c.confidence < 0.1 ? 1 : 0) + "%";
+      top.appendChild(rank); top.appendChild(name); top.appendChild(pc);
+      row.appendChild(top);
+
+      const bar = document.createElement("div"); bar.className = "geo-bar";
+      const fill = document.createElement("i");
+      fill.style.width = Math.max(2, Math.round(c.confidence * 100)) + "%";
+      bar.appendChild(fill); row.appendChild(bar);
+
+      // clicking the row takes the country on its own; the chips narrow it
+      row.addEventListener("click", (e) => {
+        if (e.target.closest(".geo-chip")) return;
+        geoChoose(row, { country_code: c.country_code, country: c.country }, c.country);
+      });
+
+      if (c.regions && c.regions.length) {
+        const chips = document.createElement("div"); chips.className = "geo-chips";
+        c.regions.forEach((sub) => {
+          const chip = document.createElement("button");
+          chip.type = "button"; chip.className = "geo-chip";
+          chip.textContent = sub.name;
+          chip.title = sub.type + " · " + Math.round(sub.confidence * 100) + "% within " + c.country;
+          chip.addEventListener("click", () => {
+            [].forEach.call(wrap.querySelectorAll(".geo-chip"), (x) => x.classList.remove("on"));
+            chip.classList.add("on");
+            geoChoose(row, { country_code: c.country_code, country: c.country, region_code: sub.code, region: sub.name },
+              sub.name + ", " + c.country);
+          });
+          chips.appendChild(chip);
+        });
+        row.appendChild(chips);
+      }
+      wrap.appendChild(row);
+    });
+    geoInfo.appendChild(wrap);
+
+    if (r.scene && r.scene.length) {
+      const sec = document.createElement("div"); sec.className = "geo-sec";
+      sec.textContent = "Read from the image";
+      geoInfo.appendChild(sec);
+      const tags = document.createElement("div"); tags.className = "geo-scene";
+      r.scene.forEach((s) => {
+        const t = document.createElement("span"); t.className = "geo-tag";
+        const k = document.createElement("em"); k.textContent = s.label;
+        const v = document.createElement("b"); v.textContent = s.value;
+        t.appendChild(k); t.appendChild(v);
+        t.title = Math.round(s.p * 100) + "% confident";
+        tags.appendChild(t);
+      });
+      geoInfo.appendChild(tags);
+    }
+
+    const actions = document.createElement("div"); actions.className = "geo-actions";
+    const open = document.createElement("button"); open.type = "button"; open.className = "btn-mini";
+    open.textContent = "Open on maps";
+    open.addEventListener("click", () => {
+      const c = geoResult && geoResult.coords;
+      if (!c) { toast("Pick a candidate first.", "err"); return; }
+      window.open("https://www.google.com/maps/search/?api=1&query=" + c.lat + "," + c.lon, "_blank", "noopener");
+    });
+    actions.appendChild(open);
+    const copyC = document.createElement("button"); copyC.type = "button"; copyC.className = "btn-mini";
+    copyC.textContent = "Copy coords";
+    copyC.addEventListener("click", async () => {
+      const c = geoResult && geoResult.coords;
+      if (!c) { toast("Pick a candidate first.", "err"); return; }
+      await nicCopy(c.lat.toFixed(6) + ", " + c.lon.toFixed(6));
+      toast("Coordinates copied.");
+    });
+    actions.appendChild(copyC);
+    geoInfo.appendChild(actions);
+
+    const note = document.createElement("div"); note.className = "geo-caveat";
+    note.textContent = "No GPS tag in this file, so this is the picture itself being recognised — "
+      + "architecture, landscape and signage matched against street-level imagery. It is a shortlist, not a fix: "
+      + "on test photographs the right country was top of this list about five times in six. Treat it as a lead.";
+    geoInfo.appendChild(note);
+  }
+
+  async function geoChoose(row, body, label) {
+    [].forEach.call(geoInfo.querySelectorAll(".geo-cand"), (x) => x.classList.remove("on"));
+    row.classList.add("on");
+    geoSetStatus("RESOLVING " + label.toUpperCase());
+    if (geoMap) geoMap.searching(true);
+    const r = await fetch("/api/geoint/pick", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    }).then((x) => x.json()).catch(() => null);
+    if (!r || !r.ok) {
+      geoSetStatus("");
+      if (geoMap) geoMap.searching(false);
+      toast((r && r.error) || "Couldn't place that on the map.", "err");
+      return;
+    }
+    geoResult = Object.assign({}, geoResult, { coords: r.coords, streetview: geoResult && geoResult.streetview });
+    geoEnsureMap();
+    if (geoMap) geoMap.locate({ lat: r.coords.lat, lon: r.coords.lon, zoom: r.zoom || 7 });
+    // only worth flagging when a region was asked for and couldn't be resolved
+    const fellBack = body.region_code && r.level === "country";
+    geoSetStatus(label.toUpperCase() + (fellBack ? " — ONLY THE COUNTRY COULD BE PLACED" : ""));
   }
 
   /* map / street-view switch */

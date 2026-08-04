@@ -557,21 +557,26 @@ app.get("/api/osint", requireAuth, requireSearch, async (req, res) => {
 });
 
 /* ============================= GEOINT =============================
- * Work out where a photograph was taken.
+ * Work out where a photograph was taken. Two routes, in order of how much
+ * they can be trusted:
  *
- * The reliable path is the photo's own EXIF: a GPS-tagged image carries the
- * exact coordinates, which we then reverse-geocode into a street address.
- * Most pictures that have been through a social network no longer have that
- * — those platforms strip EXIF on upload — so the honest answer there is
- * "no location in this file", plus whatever other metadata survived.
+ *   1. the file's own EXIF. A GPS-tagged image carries exact coordinates,
+ *      which reverse-geocode into a street address. Nothing beats it.
+ *   2. the picture itself. Most photographs that have been through a social
+ *      network have had their EXIF stripped, so what is left is recognising
+ *      the place from what is in frame — the architecture, the vegetation and
+ *      climate, the writing on the signs. That is StreetCLIP's job (see
+ *      geoint/locate.js), and unlike route 1 it produces a SHORTLIST rather
+ *      than an answer, because a single guess from one photograph is wrong
+ *      often enough that pretending otherwise would be dishonest.
  *
- * Recognising a place from image CONTENT alone is a machine-learning problem
- * (what Picarta / GeoSpy do); it is not something Google Maps can be queried
- * for. If a provider is configured via GEOINT_VISION_URL the image is handed
- * to it and its answer used, otherwise the UI falls back to letting the
- * analyst pin the spot themselves.
+ * Route 2 needs a model, which needs somewhere to run — see geoint/clip.js.
+ * When none is configured the UI says so plainly instead of implying failure.
  * ================================================================= */
 const exifParser = require("exif-parser");
+const geoRegions = require("./geoint/regions");
+const geoClip = require("./geoint/clip");
+const geoLocate = require("./geoint/locate");
 
 const GEO_UA = "m3-investigation-tool/1.0 (geoint lookup)";
 
@@ -728,21 +733,48 @@ app.post("/api/geoint/analyze", requireAuth, async (req, res) => {
   let coords = exif.ok ? exif.coords : null;
   let source = coords ? "exif" : null;
   let confidence = null;
+  let candidates = [], scene = [], aiError = null;
 
   if (!coords) {
+    // a purpose-built locator, if one is wired up, answers with coordinates
     const guess = await visionLocate(base64, b.region || null);
     if (guess) { coords = { lat: guess.lat, lon: guess.lon }; source = "vision"; confidence = guess.confidence; }
   }
+  if (!coords && geoClip.available()) {
+    try {
+      const read = await geoLocate.locate(buf, { country: b.country || null, region: b.region_code || null });
+      if (read && read.candidates.length) {
+        candidates = read.candidates;
+        scene = read.scene;
+        source = "ai";
+        // the leading candidate is pre-placed so the map has somewhere to open
+        const lead = candidates[0];
+        if (lead.coords) { coords = lead.coords; confidence = lead.confidence; }
+      }
+    } catch (e) {
+      // a sleeping Space or a bad key shouldn't read as "nothing in this photo"
+      aiError = e && e.message ? String(e.message).slice(0, 200) : "image matching failed";
+    }
+  }
 
-  const place = coords ? await reverseGeocode(coords.lat, coords.lon) : null;
+  // an exact fix deserves a street address; a region-level guess does not
+  const place = coords && source !== "ai" ? await reverseGeocode(coords.lat, coords.lon) : null;
 
   res.json({
     ok: true,
     found: !!coords,
-    source,                       // "exif" | "vision" | null
+    source,                       // "exif" | "vision" | "ai" | null
     confidence,
     coords,
     place,
+    candidates,                   // ranked shortlist when the answer came from the picture
+    scene,                        // what the model read off the image
+    ai: {
+      available: geoClip.available(),
+      engine: geoClip.engine(),
+      model: geoClip.available() ? geoClip.MODEL_ID : null,
+      error: aiError,
+    },
     metadata: {
       taken_at: meta.taken_at || null, camera: meta.camera || null, lens: meta.lens || null,
       software: meta.software || null, iso: meta.iso || null, f_number: meta.f_number || null,
@@ -753,10 +785,45 @@ app.post("/api/geoint/analyze", requireAuth, async (req, res) => {
     },
     // tells the UI whether a content-based locator exists at all, so it can
     // explain the "no GPS" outcome truthfully instead of implying a failure
-    vision_configured: !!process.env.GEOINT_VISION_URL,
+    vision_configured: !!process.env.GEOINT_VISION_URL || geoClip.available(),
     streetview: !!process.env.GOOGLE_MAPS_API_KEY,
     tokens: spent.tokens,
     cost: GEOINT_COST,
+  });
+});
+
+/* The country/region pickers. Static for the life of the process and ~200KB,
+ * so it's built once and allowed to sit in the browser cache. */
+let geoRegionCache = null;
+app.get("/api/geoint/regions", requireAuth, (req, res) => {
+  if (!geoRegionCache) {
+    geoRegionCache = JSON.stringify({ ok: true, countries: geoRegions.pickerList() });
+  }
+  res.set("Cache-Control", "private, max-age=86400");
+  res.type("application/json").send(geoRegionCache);
+});
+
+/* Resolve one shortlisted candidate to coordinates. Only the leading guess is
+ * geocoded during a scan, so choosing another lands here — and it's free,
+ * because the analyst already paid to be given the list. */
+app.post("/api/geoint/pick", requireAuth, async (req, res) => {
+  const b = req.body || {};
+  const c = b.country_code ? geoRegions.country(b.country_code) : null;
+  const country = c ? geoRegions.displayName(c) : String(b.country || "").slice(0, 120);
+  if (!country) return res.status(400).json({ ok: false, error: "Which country?" });
+
+  const sub = c && b.region_code ? geoRegions.subdivision(c.c, b.region_code) : null;
+  const region = sub ? sub.n : String(b.region || "").slice(0, 120) || null;
+
+  const pt = await geoLocate.geocodePlace({ country, region });
+  if (!pt) return res.status(404).json({ ok: false, error: "Couldn't place " + (region ? region + ", " : "") + country + " on the map." });
+  res.json({
+    ok: true,
+    coords: { lat: pt.lat, lon: pt.lon },
+    zoom: pt.zoom,
+    level: pt.level || "region",     // "country" when the region wouldn't resolve
+    label: [region, country].filter(Boolean).join(", "),
+    address: pt.display || null,
   });
 });
 
