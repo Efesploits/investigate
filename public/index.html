@@ -3,7 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <title>m3's investigation tool</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- viewport-fit=cover lets the page reach under the notch and the home
+     indicator; the safe-area insets in the stylesheet keep content clear of
+     both. Without it iOS letterboxes the page in landscape. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
 <!-- favicon: magnifying glass + eye -->
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -1895,6 +1901,152 @@ you cant run by your own footprints.
     .book { --pw: min(300px, 42vw, 40vh); }
     .book-ctl { bottom: 14px; }
     .bk-hint { display: none; }
+  }
+
+  /* ===================================================================
+     PHONES  (iOS + Android)
+     Written last so it wins without needing !important.
+
+     Three things were actually broken, found by measuring rather than by
+     eyeballing a narrow window:
+       1. every page scrolled sideways. `.content` is a flex item, and a flex
+          item's default min-width is auto — it refuses to shrink below its
+          own content, so one wide row (the redeem field + button, the profile
+          avatar row) pushed the entire page out to 436px on a 375px screen.
+       2. every input was under 16px, which is iOS's trigger to zoom the whole
+          page in when a field is focused, and it does not zoom back out.
+       3. buttons were 28-33px tall against a 44px recommended touch target.
+     =================================================================== */
+  @media (max-width: 760px) {
+    /* --- 1. nothing may force the page wider than the phone --- */
+    html, body { overflow-x: hidden; }
+    #app, .content, .page, .sidebar { min-width: 0; }
+    .content { max-width: 100%; padding: 20px 14px 40px; }
+    /* long unbroken strings — hashes, URLs, tokens — are everywhere in this
+       tool and are the other classic way a page grows sideways */
+    .content, .page, .card, .res-row, .geo-info, .bm-list { overflow-wrap: anywhere; }
+    img, svg, video, canvas, iframe, table { max-width: 100%; }
+    input, textarea, select { max-width: 100%; }
+
+    /* --- 2. iOS zooms in on any field smaller than 16px ---
+       Safari zooms the whole page when a field under 16px takes focus, and it
+       does not zoom back out afterwards. This has to beat every per-component
+       font-size in the sheet — a dozen of them set .84rem on their own inputs
+       — and enumerating those selectors would silently rot as components are
+       added, so the override is deliberate rather than lazy. Buttons are left
+       alone: only focusable fields trigger the zoom. */
+    input, textarea, select { font-size: 16px !important; }
+
+    /* --- 3. touch targets --- */
+    button, .nav-item, .btn-mini, .vt-btn, .ph-edit, .ph-logout, .prof-tab,
+    .geo-copy, .geo-chip, .tb-btn, .m-submit, .code-del {
+      min-height: 44px;
+    }
+    .geo-place { min-height: 40px; }
+    .btn-mini, .vt-btn, .prof-tab, .ph-edit, .ph-logout { padding-inline: 14px; }
+    /* a chip's text is short; centre it rather than letting 44px look empty */
+    .geo-chip, .btn-mini, .vt-btn, .prof-tab { display: inline-flex; align-items: center; justify-content: center; }
+
+    /* --- the shell: nav becomes a swipeable strip along the top --- */
+    #app.show { flex-direction: column; }
+    .sidebar {
+      width: 100%; height: auto; position: sticky; top: 0; z-index: 40;
+      flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 4px;
+      padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+      padding-left: max(10px, env(safe-area-inset-left, 0px));
+      padding-right: max(10px, env(safe-area-inset-right, 0px));
+      padding-top: max(8px, env(safe-area-inset-top, 0px));
+      overflow-x: auto; overflow-y: hidden;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none;
+      border-right: none; border-bottom: 1px solid var(--border);
+    }
+    .sidebar::-webkit-scrollbar { display: none; }
+    .sidebar .nav-item { flex: 0 0 auto; white-space: nowrap; }
+    .brand { flex: 0 0 auto; border-bottom: none; margin: 0; padding: 4px 8px; }
+    .nav-label { display: none; }
+    .footer-credit { display: none; }
+
+    /* The account chip is fixed, and on a 375px screen it is wide enough to
+       cover more than half the nav strip — measured at x=166..365, which put
+       most of the tabs underneath it and swallowed the taps. So the chip keeps
+       the top band to itself and the strip sticks below it. */
+    .topbar {
+      top: max(8px, env(safe-area-inset-top, 0px));
+      right: max(10px, env(safe-area-inset-right, 0px));
+    }
+    #app.show { padding-top: 56px; }
+    .sidebar { top: calc(56px + env(safe-area-inset-top, 0px)); }
+    .tb-btn .tb-name { display: none; }
+    h1 { font-size: 1.35rem; }
+    .sub { font-size: .82rem; }
+
+    /* --- the rows that were forcing the overflow --- */
+    .redeem-row { flex-direction: column; }
+    .redeem-row input, .redeem-row .m-submit { width: 100%; }
+    .redeem-card { padding: 16px; }
+    .ph-row { flex-wrap: wrap; row-gap: 10px; }
+    .prof-panel, .profile-hero { padding: 14px; }
+    form { flex-direction: column; }
+    form > * { width: 100%; }
+    .reset-row, .geo-headbtns, .geo-actions { flex-wrap: wrap; }
+    .code-fields { grid-template-columns: 1fr; }
+    .member-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+
+    /* wide data scrolls inside its own box, never the page */
+    .admin-users, .admin-logs, .admin-codes, .table-wrap, .nic-body {
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+
+    /* --- GEOINT on a phone --- */
+    .geo-stage { grid-template-columns: minmax(0,1fr); gap: 12px; }
+    /* dvh follows the URL bar as it hides, so the map isn't cut off */
+    .geo-mapwrap { height: min(52dvh, 420px); min-height: 260px; }
+    .geo-title { letter-spacing: 4px; }
+    .geo-modal { max-width: 100%; }
+    .geo-preview { max-height: 34dvh; }
+    .radar-scope { width: min(240px, 62vw); }
+    .radar-readout b { font-size: .72rem; letter-spacing: 4px; }
+    .geo-k { width: 68px; }
+
+    /* The shell slides aside for the Playbook and swings away entirely for
+       GEOINT. Both are desktop gestures that misfire on a phone: the book's
+       translate is what pushed the first-run screen sideways into a horizontal
+       scroll, and hiding the sidebar in GEOINT takes away the only navigation
+       there is, since here it's the strip along the top rather than a column
+       that can be spared. Fade, don't move; and keep the nav. */
+    body.book-mode .sidebar, body.book-mode .content { transform: none; }
+    body.geoint-mode .sidebar {
+      transform: none; opacity: 1; pointer-events: auto; margin-left: 0;
+    }
+
+    /* --- the Playbook: it is the first thing a new member meets --- */
+    .book { --pw: min(300px, 44vw, 32dvh); }
+    .book-ctl { bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+    .book-ctl button { min-height: 44px; padding-inline: 18px; }
+    /* ticking this is a required gate, so it gets a full-size target */
+    .tickbox { min-width: 44px; min-height: 44px; }
+    .agree-btn { min-height: 44px; padding-inline: 22px; }
+
+    /* --- effects a phone GPU shouldn't be asked to pay for --- */
+    /* a full-screen backdrop blur is resampled every frame it moves over */
+    .sidebar, .modal-back, .dc-modal, .redeem-card, .home-hero, .home-card {
+      -webkit-backdrop-filter: none; backdrop-filter: none;
+    }
+    .sidebar { background: var(--bg2); }
+  }
+
+  /* Landscape phones are short, not narrow: give the vertical things room. */
+  @media (max-width: 900px) and (orientation: landscape) and (max-height: 520px) {
+    .geo-mapwrap { height: 78dvh; min-height: 200px; }
+    .book { --pw: min(260px, 30vw, 46dvh); }
+    .content { padding-top: 12px; }
+  }
+
+  /* Touch devices get no hover, so hover-only affordances must not be the only
+     way to reach anything, and the sheen shouldn't sit half-swept. */
+  @media (hover: none) {
+    button.scan::after { display: none; }
+    .member-card:hover, .res-row:hover { transform: none; }
   }
 </style>
 </head>
