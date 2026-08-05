@@ -564,18 +564,9 @@ you cant run by your own footprints.
     border-radius: 10px; padding: 14px; font-size: .82rem; user-select: text; margin-top: 10px;
   }
 
-  @media (max-width: 720px) {
-    #app.show { flex-direction: column; }
-    .sidebar {
-      width: 100%; height: auto; position: static;
-      flex-direction: row; align-items: center; flex-wrap: wrap; padding: 12px;
-    }
-    .brand { border-bottom: none; margin: 0; padding: 6px 8px; }
-    .nav-label { display: none; }
-    .footer-credit { margin: 0; border-top: none; padding: 6px 8px; width: 100%; order: 99; }
-    .content { padding: 28px 18px; }
-    form { flex-direction: column; }
-  }
+  /* The old phone rules — which flattened the sidebar into a wrapping row and
+     hid its headings — are gone: the drawer at the end of this sheet replaces
+     them, and keeping both meant the two fought over the same properties. */
 
   /* ============ interactive effects (nav + forms) ============ */
   /* sidebar nav: sliding accent bar, hover glide, active glow */
@@ -913,6 +904,9 @@ you cant run by your own footprints.
   .graph-stage { height: 74vh; min-height: 600px; }
 
   .topbar { position: fixed; top: 14px; right: 18px; display: flex; align-items: center; gap: 10px; z-index: 60; }
+  /* the phone drawer's handle and backdrop: present in the markup at every
+     size, switched on only by the phone media query at the end of this sheet */
+  .nav-toggle, .nav-scrim { display: none; }
   .wallet { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px;
     border: 1px solid var(--border); background: rgba(20,20,20,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     font-weight: 800; font-size: .84rem; color: var(--text); }
@@ -1947,35 +1941,84 @@ you cant run by your own footprints.
     /* a chip's text is short; centre it rather than letting 44px look empty */
     .geo-chip, .btn-mini, .vt-btn, .prof-tab { display: inline-flex; align-items: center; justify-content: center; }
 
-    /* --- the shell: nav becomes a swipeable strip along the top --- */
-    #app.show { flex-direction: column; }
-    .sidebar {
-      width: 100%; height: auto; position: sticky; top: 0; z-index: 40;
-      flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 4px;
-      padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
-      padding-left: max(10px, env(safe-area-inset-left, 0px));
-      padding-right: max(10px, env(safe-area-inset-right, 0px));
-      padding-top: max(8px, env(safe-area-inset-top, 0px));
-      overflow-x: auto; overflow-y: hidden;
-      -webkit-overflow-scrolling: touch; scrollbar-width: none;
-      border-right: none; border-bottom: 1px solid var(--border);
-    }
-    .sidebar::-webkit-scrollbar { display: none; }
-    .sidebar .nav-item { flex: 0 0 auto; white-space: nowrap; }
-    .brand { flex: 0 0 auto; border-bottom: none; margin: 0; padding: 4px 8px; }
-    .nav-label { display: none; }
-    .footer-credit { display: none; }
+    /* --- the shell: the sidebar keeps its desktop shape and slides in ---
+       A drawer rather than a squashed-down strip, so the navigation reads the
+       same on a phone as it does on a desktop: same order, same icons, same
+       labels, same glass. It sits off-screen and travels on transform, which
+       is the one property that costs nothing to animate. */
+    #app.show { flex-direction: column; padding-top: 56px; }
 
-    /* The account chip is fixed, and on a 375px screen it is wide enough to
-       cover more than half the nav strip — measured at x=166..365, which put
-       most of the tabs underneath it and swallowed the taps. So the chip keeps
-       the top band to itself and the strip sticks below it. */
+    .sidebar {
+      position: fixed; z-index: 90;
+      top: 0; bottom: 0; left: 0;
+      width: min(282px, 82vw);
+      height: 100dvh;
+      flex-direction: column; align-items: stretch;
+      overflow-y: auto; overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      border-right: 1px solid var(--border);
+      padding-top: max(18px, env(safe-area-inset-top, 0px));
+      padding-bottom: max(18px, env(safe-area-inset-bottom, 0px));
+      padding-left: max(14px, env(safe-area-inset-left, 0px));
+      padding-right: 14px;
+      transform: translate3d(-102%, 0, 0);          /* 102% clears its own shadow */
+      transition: transform .32s cubic-bezier(.32,.72,.28,1);
+      will-change: transform;
+      box-shadow: 12px 0 34px rgba(0,0,0,.55);
+    }
+    body.nav-open .sidebar { transform: translate3d(0, 0, 0); }
+    /* the drawer is the one place a phone still gets the glass, because it is
+       small, and it is what makes it look like the desktop chrome */
+    .sidebar { -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%); }
+    .sidebar .nav-item { flex: 0 0 auto; }
+    .footer-credit { margin-top: auto; }
+
+    /* visibility rather than display, so the fade actually runs, and so a
+       closed scrim cannot eat taps meant for the page underneath */
+    .nav-scrim {
+      display: block; position: fixed; inset: 0; z-index: 80;
+      background: rgba(0,0,0,.55);
+      opacity: 0; visibility: hidden;
+      transition: opacity .32s ease, visibility 0s linear .32s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body.nav-open .nav-scrim { opacity: 1; visibility: visible; transition: opacity .32s ease; }
+
+    /* the handle, mirroring the account chip on the other corner */
+    .nav-toggle {
+      display: inline-flex; align-items: center; justify-content: center;
+      position: fixed; z-index: 95;
+      top: max(8px, env(safe-area-inset-top, 0px));
+      left: max(10px, env(safe-area-inset-left, 0px));
+      width: 44px; height: 44px; padding: 0;
+      border-radius: 12px; cursor: pointer;
+      border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+      background: color-mix(in srgb, var(--panel) 62%, transparent);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      color: var(--text);
+    }
+    .nav-burger { display: block; width: 18px; height: 13px; position: relative; }
+    .nav-burger i {
+      position: absolute; left: 0; width: 100%; height: 2px; border-radius: 2px;
+      background: currentColor;
+      transition: transform .28s cubic-bezier(.4,0,.2,1), opacity .18s ease;
+    }
+    .nav-burger i:nth-child(1) { top: 0; }
+    .nav-burger i:nth-child(2) { top: 5.5px; }
+    .nav-burger i:nth-child(3) { top: 11px; }
+    /* the three bars fold into a cross while the drawer is open */
+    body.nav-open .nav-burger i:nth-child(1) { transform: translateY(5.5px) rotate(45deg); }
+    body.nav-open .nav-burger i:nth-child(2) { opacity: 0; }
+    body.nav-open .nav-burger i:nth-child(3) { transform: translateY(-5.5px) rotate(-45deg); }
+
+    /* the page must not scroll behind an open drawer */
+    body.nav-open { overflow: hidden; }
+
+    /* the account chip stays in its corner, clear of the handle */
     .topbar {
       top: max(8px, env(safe-area-inset-top, 0px));
       right: max(10px, env(safe-area-inset-right, 0px));
     }
-    #app.show { padding-top: 56px; }
-    .sidebar { top: calc(56px + env(safe-area-inset-top, 0px)); }
     .tb-btn .tb-name { display: none; }
     h1 { font-size: 1.35rem; }
     .sub { font-size: .82rem; }
@@ -2008,16 +2051,22 @@ you cant run by your own footprints.
     .radar-readout b { font-size: .72rem; letter-spacing: 4px; }
     .geo-k { width: 68px; }
 
-    /* The shell slides aside for the Playbook and swings away entirely for
-       GEOINT. Both are desktop gestures that misfire on a phone: the book's
-       translate is what pushed the first-run screen sideways into a horizontal
-       scroll, and hiding the sidebar in GEOINT takes away the only navigation
-       there is, since here it's the strip along the top rather than a column
-       that can be spared. Fade, don't move; and keep the nav. */
-    body.book-mode .sidebar, body.book-mode .content { transform: none; }
+    /* The Playbook nudges the shell aside and GEOINT swings the sidebar out of
+       frame — both are desktop gestures aimed at a sidebar that occupies a
+       column. Here it's a drawer that is already off-screen, so those rules
+       would only fight it: the book's translate put the drawer 58px into view,
+       and GEOINT's opacity/pointer-events left it invisible but present.
+       The drawer answers to one thing only, which is whether it's open, and
+       the mode selectors are matched for specificity so it stays that way. */
+    body.book-mode .content { transform: none; }
+    body.book-mode .sidebar,
     body.geoint-mode .sidebar {
-      transform: none; opacity: 1; pointer-events: auto; margin-left: 0;
+      opacity: 1; pointer-events: auto; margin-left: 0;
+      transform: translate3d(-102%, 0, 0);
     }
+    body.nav-open .sidebar,
+    body.nav-open.book-mode .sidebar,
+    body.nav-open.geoint-mode .sidebar { transform: translate3d(0, 0, 0); }
 
     /* --- the Playbook: it is the first thing a new member meets --- */
     .book { --pw: min(300px, 44vw, 32dvh); }
@@ -2107,6 +2156,14 @@ you cant run by your own footprints.
 
 <!-- ===================== APP ===================== -->
 <div id="app">
+  <!-- Phone navigation: the sidebar keeps its desktop shape and slides in over
+       the page. Both live in the markup at every size; the stylesheet hides
+       them above 760px, so desktop is untouched. -->
+  <button class="nav-toggle" id="navToggle" type="button"
+          aria-label="Open menu" aria-controls="appSidebar" aria-expanded="false">
+    <span class="nav-burger" aria-hidden="true"><i></i><i></i><i></i></span>
+  </button>
+  <div class="nav-scrim" id="navScrim"></div>
   <div class="topbar" id="topbar">
     <div class="wallet" id="wallet" title="Search tokens" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2"/><path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3"/><path d="M16 12h5v4h-5a2 2 0 0 1 0-4z"/></svg>
@@ -2118,7 +2175,7 @@ you cant run by your own footprints.
     </button>
   </div>
 
-  <aside class="sidebar">
+  <aside class="sidebar" id="appSidebar">
     <div class="brand">
       <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <line x1="221" y1="211" x2="286" y2="276" stroke="var(--accent)" stroke-width="16" stroke-linecap="round"/>
@@ -2883,6 +2940,47 @@ you cant run by your own footprints.
     document.body.classList.toggle("geoint-mode", page === "geoint");
   }
   navItems.forEach((n) => n.addEventListener("click", () => showPage(n.dataset.page)));
+
+  /* ---------- the phone navigation drawer ----------
+     The sidebar keeps its desktop form and slides in over the page. Only the
+     open/closed flag lives here; the movement is the stylesheet's business. */
+  (function navDrawer() {
+    const toggle = document.getElementById("navToggle");
+    const scrim = document.getElementById("navScrim");
+    const sidebar = document.getElementById("appSidebar");
+    if (!toggle || !scrim || !sidebar) return;
+
+    const isOpen = () => document.body.classList.contains("nav-open");
+    function setOpen(open) {
+      document.body.classList.toggle("nav-open", open);
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    }
+    toggle.addEventListener("click", () => setOpen(!isOpen()));
+    scrim.addEventListener("click", () => setOpen(false));
+    // choosing a destination is the end of the errand
+    sidebar.addEventListener("click", (e) => { if (e.target.closest(".nav-item")) setOpen(false); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && isOpen()) setOpen(false); });
+    // a drawer left open while the window grows into a desktop would sit on top
+    // of the real sidebar, so it closes when the phone layout stops applying
+    matchMedia("(max-width: 760px)").addEventListener("change", (e) => { if (!e.matches) setOpen(false); });
+
+    /* Swiping it shut is the gesture people reach for first. Horizontal intent
+       only — a vertical drag is the page scrolling and must be left alone. */
+    let x0 = null, y0 = null, horizontal = null;
+    sidebar.addEventListener("touchstart", (e) => {
+      if (!isOpen() || e.touches.length !== 1) return;
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; horizontal = null;
+    }, { passive: true });
+    sidebar.addEventListener("touchmove", (e) => {
+      if (x0 === null) return;
+      const dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0;
+      if (horizontal === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) horizontal = Math.abs(dx) > Math.abs(dy);
+      if (horizontal && dx < -55) { setOpen(false); x0 = null; }
+    }, { passive: true });
+    sidebar.addEventListener("touchend", () => { x0 = null; }, { passive: true });
+  })();
+
   document.getElementById("goInvestigate").addEventListener("click", () => {
     showPage("investigate");
     document.getElementById("invQuery").focus();
