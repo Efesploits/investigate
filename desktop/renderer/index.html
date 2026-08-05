@@ -3776,7 +3776,7 @@
          — no round-trip to resolve a name into a point. */
       if (c.places && c.places.length) {
         const head = document.createElement("div"); head.className = "geo-subsec";
-        head.textContent = "Possible exact location";
+        head.textContent = "Closest town";
         row.appendChild(head);
         const list = document.createElement("div"); list.className = "geo-places";
         c.places.forEach((pl) => {
@@ -3845,8 +3845,10 @@
     const note = document.createElement("div"); note.className = "geo-caveat";
     note.textContent = "No GPS tag in this file, so this is the picture itself being recognised — "
       + "architecture, landscape and signage matched against street-level imagery, then narrowed to real towns. "
-      + "It is a shortlist, not a fix: on test photographs the right country topped the list about five times in six, "
-      + "and the right town came first in roughly seven cases in ten. Treat it as a lead, and check the alternatives.";
+      + "This finds a TOWN, not a street: each suggestion is that town's centre, and nothing here can read a "
+      + "house number off a photograph. On test pictures the right country topped the list about five times in "
+      + "six, and the right town came first in roughly seven cases in ten — so treat it as a lead, check the "
+      + "alternatives, and narrow the country yourself when you already know it.";
     geoInfo.appendChild(note);
   }
 

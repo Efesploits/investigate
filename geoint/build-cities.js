@@ -67,12 +67,19 @@ async function get(url) {
   };
 
   const byCountry = {};
-  let skipped = 0;
+  let skipped = 0, sections = 0;
   for (const line of rows) {
     const f = line.replace(/\r$/, "").split("\t");
-    const name = f[1], lat = Number(f[4]), lon = Number(f[5]);
+    const name = f[1], fcode = f[7], lat = Number(f[4]), lon = Number(f[5]);
     const cc = f[8], a1 = f[10], pop = parseInt(f[14], 10) || 0;
     if (!name || !cc || !isFinite(lat) || !isFinite(lon)) { skipped++; continue; }
+    /* PPLX is "section of a populated place" — East Village, Chinatown, the
+     * Upper West Side. They are neighbourhoods, not places a photograph can be
+     * said to be "in" as an answer, and because they sit on top of the city
+     * that contains them they crowd a shortlist with three names for one spot.
+     * The parent city is the honest answer, so they don't go in front of the
+     * model at all. */
+    if (fcode === "PPLX") { sections++; continue; }
     const region = admin1.get(cc + "." + a1) || null;
     // 4dp is ~11m, far finer than a town centroid needs, and it halves the file
     (byCountry[cc] || (byCountry[cc] = [])).push([
@@ -96,6 +103,6 @@ async function get(url) {
   const biggest = Object.entries(byCountry).sort((a, b) => b[1].length - a[1].length).slice(0, 5);
   console.log(`cities.json: ${total} cities across ${Object.keys(byCountry).length} countries, ` +
     `${regionNames.length} region names, ${(fs.statSync(file).size / 1048576).toFixed(2)} MB` +
-    (skipped ? ` (${skipped} rows skipped)` : ""));
+    ` (${sections} neighbourhoods dropped` + (skipped ? `, ${skipped} rows unusable` : "") + ")");
   console.log("  largest:", biggest.map(([cc, a]) => cc + "=" + a.length).join(" "));
 })().catch((e) => { console.error("FAILED:", e.message); process.exit(1); });

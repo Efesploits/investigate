@@ -106,6 +106,21 @@ const CITY_POOL = 120;
  * Higher weights scored better on that set but only by collapsing towards the
  * biggest city, which those photographs happen to be. */
 const POP_PRIOR = 0.6;
+/* Boroughs and satellite towns sit on top of the city they belong to, so an
+ * un-deduplicated shortlist spends all three of its slots describing one place
+ * — New York City, then Manhattan, then Brooklyn. Since the town stage is only
+ * accurate to a few tens of kilometres anyway, anything within this radius of a
+ * higher-ranked answer is the same answer, and the slot is better spent on a
+ * genuinely different candidate. */
+const SAME_PLACE_KM = 20;
+
+function distanceKm(a, b) {
+  const R = 6371, rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad, dLon = (b.lon - a.lon) * rad;
+  const h = Math.sin(dLat / 2) ** 2 +
+    Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
 
 /** Turn a country + region name into coordinates. Structured search beats a
  *  free-text one here — we know which field each part belongs in. */
@@ -281,14 +296,21 @@ async function locate(buf, hint) {
     const cityLogits = texts.length ? await clip.score(buf, texts) : [];
     for (const g of groups) {
       const p = clip.softmax(cityLogits.slice(g.from, g.from + g.pool.length));
-      towns.set(g.code, g.pool
+      const ranked = g.pool
         .map((c, i) => ({
           city: c,
           p: p[i],   // the model's own opinion, reported as-is
           rank: Math.log(Math.max(p[i], 1e-12)) + POP_PRIOR * Math.log(Math.max(c.population, 1)),
         }))
-        .sort((a, b) => b.rank - a.rank)
-        .slice(0, PER_COUNTRY));
+        .sort((a, b) => b.rank - a.rank);
+      // keep the best answer for each distinct spot, not the same spot thrice
+      const picked = [];
+      for (const cand of ranked) {
+        if (picked.length >= PER_COUNTRY) break;
+        if (picked.some((x) => distanceKm(x.city, cand.city) < SAME_PLACE_KM)) continue;
+        picked.push(cand);
+      }
+      towns.set(g.code, picked);
     }
   }
 
