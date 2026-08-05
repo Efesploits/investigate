@@ -2340,7 +2340,7 @@ you cant run by your own footprints.
       <div class="geo-drop-inner" id="geoDropInner">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5M12 4v13"/></svg>
         <b>Drop target image</b>
-        <span>or click to browse · JPEG keeps its location data</span>
+        <span>click to browse, or paste with Ctrl+V · JPEG keeps its location data</span>
       </div>
       <img class="geo-preview" id="geoPreview" alt="" style="display:none">
     </div>
@@ -4619,10 +4619,42 @@ you cant run by your own footprints.
       geoPreview.style.display = "";
       geoDropInner.style.display = "none";
       geoScanBtn.disabled = false;
-      geoNote.textContent = file.name + " · " + Math.max(1, Math.round(file.size / 1024)) + " KB";
+      // a pasted screenshot has no filename worth showing
+      const label = file.name && file.name !== "image.png" ? file.name : "pasted image";
+      geoNote.textContent = label + " · " + Math.max(1, Math.round(file.size / 1024)) + " KB";
     };
     rd.readAsDataURL(file);
   }
+
+  /* Paste straight in. A screenshot or an image copied out of a browser never
+     has to be saved to disk first — which is most of the pictures an analyst
+     actually starts from.
+     Bound to the document because a drop target can't hold focus, and only
+     acted on while GEOINT is what's on screen, so it can never swallow a paste
+     meant for a text field somewhere else. */
+  function geoClipboardImage(e) {
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].kind === "file" && /^image\//.test(items[i].type)) {
+        const f = items[i].getAsFile();
+        if (f) return f;
+      }
+    }
+    return null;
+  }
+  document.addEventListener("paste", (e) => {
+    const modalOpen = geoModal && geoModal.classList.contains("show");
+    const inGeoint = document.body.classList.contains("geoint-mode");
+    if (!modalOpen && !inGeoint) return;
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    const file = geoClipboardImage(e);
+    if (!file) return;
+    e.preventDefault();
+    if (!modalOpen) openGeoModal();     // pasting on the page is a way to start a scan
+    geoPick(file);
+    toast("Image pasted from clipboard.");
+  });
 
   if (geoDrop) {
     geoDrop.addEventListener("click", () => geoFile.click());

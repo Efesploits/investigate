@@ -1,5 +1,5 @@
 {
-  "version": "1.11.3",
+  "version": "1.11.4",
   "url": "https://investigate.onrender.com/download/investigate-client.exe",
-  "notes": "Smoother Playbook: the rules book no longer freezes on the way in or out — the rise flows straight into the tumble and the cover opens the instant it lands, with no dead pauses. Admins can now rename any member from the Admin tab."
+  "notes": "GEOINT: a new tab that works out where a photograph was taken. It reads the file’s own GPS tag when there is one, and otherwise recognises the picture itself — architecture, landscape and signage — narrowing to a shortlist of countries and then to real towns with coordinates you can copy. Drop a picture in, or just paste one with Ctrl+V. A Street view button drops straight into Google’s 360 view of whatever you pick. The whole mode is black and white with a bigger map. 10 tokens a scan."
 }
