@@ -1113,7 +1113,21 @@ you cant run by your own footprints.
     pointer-events: none;
     margin-left: -250px;          /* reclaim the space so the map runs full-bleed */
   }
-  body.geoint-mode { background: #04050a; }
+  /* GEOINT is monochrome on purpose. The app's teal accent reads as "product";
+     this mode should read as instrumentation. Re-pointing the accent variables
+     for the duration of the mode turns everything derived from them — bars,
+     focus rings, the map toggle, the survey grid — white in one move, without
+     touching how the rest of the app looks. */
+  body.geoint-mode {
+    --accent: #ffffff;
+    --accent-rgb: 255 255 255;
+    background: #030303;
+  }
+  /* the status colours are the only things that still carry hue; in here even
+     "found" and "not found" are said with brightness instead */
+  body.geoint-mode .geo-badgeline.found { color: #fff; border-color: rgba(255,255,255,.55); }
+  body.geoint-mode .geo-badgeline.none { color: rgba(255,255,255,.7); border-color: rgba(255,255,255,.26); }
+  body.geoint-mode .geo-copy.done { color: #fff; border-color: rgba(255,255,255,.6); }
   body.geoint-mode .content { max-width: none; }
   #app, .sidebar, .content { transition: background-color .5s ease; }
   body.geoint-mode .content::before {
@@ -1224,11 +1238,23 @@ you cant run by your own footprints.
   /* the sidebar already eats ~250px, so stack well before a normal phone
      breakpoint or the map ends up a sliver next to the info column */
   @media (max-width: 1150px) { .geo-stage { grid-template-columns: minmax(0,1fr); } }
-  .geo-mapwrap { position: relative; height: min(62vh, 520px); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: #05070a; }
+  /* the map is the point of the page, so it gets the room — tall enough to
+     read terrain at a glance, capped so it can't outgrow a big monitor */
+  .geo-mapwrap { position: relative; height: min(78vh, 760px); min-height: 420px;
+    border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: #060606; }
+  /* corner brackets, the same instrument language as the upload dialog and the
+     scope — they sit above the tiles so they read as a frame, not decoration */
+  .geo-mapwrap::before, .geo-mapwrap::after {
+    content: ""; position: absolute; width: 18px; height: 18px; z-index: 7; pointer-events: none;
+  }
+  .geo-mapwrap::before { left: 10px; top: 10px;
+    border-left: 1px solid rgba(255,255,255,.45); border-top: 1px solid rgba(255,255,255,.45); }
+  .geo-mapwrap::after { right: 10px; bottom: 10px;
+    border-right: 1px solid rgba(255,255,255,.45); border-bottom: 1px solid rgba(255,255,255,.45); }
   .geo-view { position: absolute; inset: 0; }
   .geo-street { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
   .geo-toggle { position: absolute; right: 10px; top: 10px; z-index: 6; display: flex; gap: 3px; padding: 3px;
-    border-radius: 999px; background: rgba(8,10,14,.86); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(6px); }
+    border-radius: 999px; background: rgba(10,10,10,.88); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(6px); }
   .geo-toggle button { border: none; background: transparent; color: rgba(255,255,255,.62); font-family: inherit;
     font-weight: 800; font-size: .7rem; padding: 6px 13px; border-radius: 999px; cursor: pointer; letter-spacing: .4px; }
   .geo-toggle button.active { background: var(--accent); color: #000; }
@@ -1259,7 +1285,7 @@ you cant run by your own footprints.
 
   /* upload dialog — same instrument language as the scope: mono, monochrome,
      corner brackets, and a scan line crawling over the drop target */
-  .geo-modal { max-width: 470px; position: relative; background: #08090b;
+  .geo-modal { max-width: 470px; position: relative; background: #090909;
     border-color: rgba(255,255,255,.14); box-shadow: 0 30px 90px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.03); }
   .geo-modal::before, .geo-modal::after { content: ""; position: absolute; width: 16px; height: 16px; pointer-events: none; }
   .geo-modal::before { left: 9px; top: 9px; border-left: 1px solid rgba(255,255,255,.35); border-top: 1px solid rgba(255,255,255,.35); }
@@ -1267,14 +1293,14 @@ you cant run by your own footprints.
   .geo-modal .dc-head h2 { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1rem; letter-spacing: 3px; text-transform: uppercase; }
   .geo-modal .m-sub { font-size: .76rem; }
   .geo-modal .dc-label { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-  .geo-badge { background: #0d0f12 !important; border: 1px solid rgba(255,255,255,.28);
+  .geo-badge { background: #0d0d0d !important; border: 1px solid rgba(255,255,255,.28);
     box-shadow: inset 0 0 22px rgba(255,255,255,.08) !important; }
   .geo-badge svg { color: #fff; }
 
-  .geo-drop { position: relative; border: 1px dashed rgba(255,255,255,.2); border-radius: 13px; background: #0b0c0f;
+  .geo-drop { position: relative; border: 1px dashed rgba(255,255,255,.2); border-radius: 13px; background: #0b0b0b;
     min-height: 155px; display: flex; align-items: center; justify-content: center; cursor: pointer;
     overflow: hidden; margin-bottom: 16px; transition: border-color .2s ease, background .2s ease; }
-  .geo-drop:hover, .geo-drop.over { border-color: rgba(255,255,255,.55); background: #0e1013; }
+  .geo-drop:hover, .geo-drop.over { border-color: rgba(255,255,255,.55); background: #101010; }
   /* a slow scan line, so the target never looks inert */
   .geo-drop::after { content: ""; position: absolute; left: 0; right: 0; height: 1px; top: 0;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
@@ -1294,13 +1320,13 @@ you cant run by your own footprints.
   .geo-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   @media (max-width: 520px) { .geo-selects { grid-template-columns: 1fr; } }
   .dc-select { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 10px;
-    border: 1px solid var(--border); background: #0b0c0f; color: var(--text); font-size: .82rem;
+    border: 1px solid var(--border); background: #0b0b0b; color: var(--text); font-size: .82rem;
     font-family: inherit; cursor: pointer; appearance: none;
     background-image: linear-gradient(45deg, transparent 50%, rgba(255,255,255,.5) 50%), linear-gradient(135deg, rgba(255,255,255,.5) 50%, transparent 50%);
     background-position: right 14px center, right 9px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
   .dc-select:focus { outline: none; border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .12); }
   .dc-select:disabled { opacity: .45; cursor: default; }
-  .dc-select option, .dc-select optgroup { background: #0b0c0f; color: var(--text); }
+  .dc-select option, .dc-select optgroup { background: #0b0b0b; color: var(--text); }
 
   /* ---- the shortlist the model comes back with ----
      A photograph rarely pins to one place, so the panel shows the ranked
@@ -1309,8 +1335,11 @@ you cant run by your own footprints.
   .geo-cands { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
   .geo-cand { border: 1px solid var(--border); border-radius: 11px; background: var(--panel2); padding: 10px 12px;
     cursor: pointer; transition: border-color .18s ease, background .18s ease; }
-  .geo-cand:hover { border-color: #5c5c5c; background: #17181c; }
-  .geo-cand.on { border-color: rgb(var(--accent-rgb) / .75); background: rgb(var(--accent-rgb) / .08); }
+  .geo-cand:hover { border-color: #5c5c5c; background: #171717; }
+  /* the chosen candidate gets a lit edge rather than a fill — reads as
+     "selected on an instrument" instead of a highlighted table row */
+  .geo-cand.on { border-color: rgb(var(--accent-rgb) / .75); background: rgb(var(--accent-rgb) / .07);
+    box-shadow: inset 2px 0 0 rgb(var(--accent-rgb) / .9); }
   .geo-cand-top { display: flex; align-items: center; gap: 9px; }
   .geo-cand-rank { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .62rem; color: var(--muted);
     font-weight: 800; width: 15px; flex-shrink: 0; }
@@ -1319,7 +1348,7 @@ you cant run by your own footprints.
   .geo-bar { height: 3px; border-radius: 2px; background: rgba(255,255,255,.09); margin-top: 8px; overflow: hidden; }
   .geo-bar i { display: block; height: 100%; background: var(--accent); border-radius: 2px; transition: width .5s ease; }
   .geo-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
-  .geo-chip { border: 1px solid var(--border); background: #0d0e11; color: var(--muted); border-radius: 999px;
+  .geo-chip { border: 1px solid var(--border); background: #0d0d0d; color: var(--muted); border-radius: 999px;
     padding: 4px 10px; font-size: .68rem; cursor: pointer; transition: color .16s ease, border-color .16s ease; }
   .geo-chip:hover { color: var(--text); border-color: #666; }
   .geo-chip.on { color: var(--accent); border-color: rgb(var(--accent-rgb) / .7); }
