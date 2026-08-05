@@ -1353,6 +1353,23 @@ you cant run by your own footprints.
   .geo-chip:hover { color: var(--text); border-color: #666; }
   .geo-chip.on { color: var(--accent); border-color: rgb(var(--accent-rgb) / .7); }
 
+  /* ---- the towns ----
+     The point of the whole exercise: an actual place, with coordinates that
+     came with it. These plot instantly on click because nothing needs looking
+     up — no geocoder in the loop. */
+  .geo-places { display: flex; flex-direction: column; gap: 2px; margin-top: 9px; }
+  .geo-place { display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left;
+    border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer;
+    padding: 5px 8px; border-radius: 8px; font-family: inherit; font-size: .72rem; transition: background .16s ease, color .16s ease; }
+  .geo-place:hover { background: rgba(255,255,255,.05); color: var(--text); }
+  .geo-place.on { border-color: rgb(var(--accent-rgb) / .5); background: rgb(var(--accent-rgb) / .07); color: var(--text); }
+  .geo-place b { font-weight: 700; font-size: .78rem; }
+  .geo-place em { font-style: normal; opacity: .7; }
+  .geo-place span { margin-left: auto; flex-shrink: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .62rem; letter-spacing: .2px; opacity: .8; }
+  .geo-subsec { font-size: .58rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+    font-weight: 800; margin: 11px 0 1px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; opacity: .75; }
+
   /* what the model read off the picture — architecture, climate, writing */
   .geo-scene { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .geo-tag { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--panel2);
@@ -4709,6 +4726,24 @@ you cant run by your own footprints.
     return row;
   }
 
+  /* Drop straight into the 360 view. With a Maps key on the server the pano
+     loads inside the map frame; without one, Google's own panorama URL needs no
+     key at all and opens in a tab — so the button always does something rather
+     than being dead weight on an unconfigured server. */
+  function geoStreetButton() {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "btn-mini";
+    b.textContent = "Street view";
+    b.addEventListener("click", () => {
+      const c = geoResult && geoResult.coords;
+      if (!c) { toast("Pick a location first.", "err"); return; }
+      if (geoResult.streetview) { geoShowStreetView(); return; }
+      window.open("https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" + c.lat + "," + c.lon,
+        "_blank", "noopener");
+    });
+    return b;
+  }
+
   function renderGeoResult(r) {
     geoInfo.innerHTML = "";
     const p = r.place || {};
@@ -4746,6 +4781,7 @@ you cant run by your own footprints.
       open.textContent = "Open on maps";
       open.addEventListener("click", () => window.open("https://www.google.com/maps/search/?api=1&query=" + r.coords.lat + "," + r.coords.lon, "_blank", "noopener"));
       actions.appendChild(open);
+      actions.appendChild(geoStreetButton());
       const copyAll = document.createElement("button"); copyAll.type = "button"; copyAll.className = "btn-mini";
       copyAll.textContent = "Copy address";
       copyAll.addEventListener("click", async () => { await nicCopy(p.address || coordStr); toast("Address copied."); });
@@ -4823,7 +4859,7 @@ you cant run by your own footprints.
 
       // clicking the row takes the country on its own; the chips narrow it
       row.addEventListener("click", (e) => {
-        if (e.target.closest(".geo-chip")) return;
+        if (e.target.closest(".geo-chip") || e.target.closest(".geo-place")) return;
         geoChoose(row, { country_code: c.country_code, country: c.country }, c.country);
       });
 
@@ -4843,6 +4879,36 @@ you cant run by your own footprints.
           chips.appendChild(chip);
         });
         row.appendChild(chips);
+      }
+
+      /* the towns. These already carry coordinates, so choosing one is instant
+         — no round-trip to resolve a name into a point. */
+      if (c.places && c.places.length) {
+        const head = document.createElement("div"); head.className = "geo-subsec";
+        head.textContent = "Possible exact location";
+        row.appendChild(head);
+        const list = document.createElement("div"); list.className = "geo-places";
+        c.places.forEach((pl) => {
+          const b = document.createElement("button");
+          b.type = "button"; b.className = "geo-place";
+          const nm = document.createElement("b"); nm.textContent = pl.name;
+          b.appendChild(nm);
+          if (pl.region) { const rg = document.createElement("em"); rg.textContent = pl.region; b.appendChild(rg); }
+          const co = document.createElement("span");
+          co.textContent = pl.coords.lat.toFixed(4) + ", " + pl.coords.lon.toFixed(4);
+          b.appendChild(co);
+          b.title = Math.round(pl.confidence * 100) + "% within " + c.country
+            + (pl.population ? " · pop. " + pl.population.toLocaleString() : "");
+          b.addEventListener("click", (e) => {
+            e.stopPropagation();
+            [].forEach.call(wrap.querySelectorAll(".geo-place"), (x) => x.classList.remove("on"));
+            [].forEach.call(wrap.querySelectorAll(".geo-chip"), (x) => x.classList.remove("on"));
+            b.classList.add("on");
+            geoPlot(row, pl.coords, [pl.name, c.country].filter(Boolean).join(", "));
+          });
+          list.appendChild(b);
+        });
+        row.appendChild(list);
       }
       wrap.appendChild(row);
     });
@@ -4873,6 +4939,7 @@ you cant run by your own footprints.
       window.open("https://www.google.com/maps/search/?api=1&query=" + c.lat + "," + c.lon, "_blank", "noopener");
     });
     actions.appendChild(open);
+    actions.appendChild(geoStreetButton());
     const copyC = document.createElement("button"); copyC.type = "button"; copyC.className = "btn-mini";
     copyC.textContent = "Copy coords";
     copyC.addEventListener("click", async () => {
@@ -4886,9 +4953,23 @@ you cant run by your own footprints.
 
     const note = document.createElement("div"); note.className = "geo-caveat";
     note.textContent = "No GPS tag in this file, so this is the picture itself being recognised — "
-      + "architecture, landscape and signage matched against street-level imagery. It is a shortlist, not a fix: "
-      + "on test photographs the right country was top of this list about five times in six. Treat it as a lead.";
+      + "architecture, landscape and signage matched against street-level imagery, then narrowed to real towns. "
+      + "It is a shortlist, not a fix: on test photographs the right country topped the list about five times in six, "
+      + "and the right town came first in roughly seven cases in ten. Treat it as a lead, and check the alternatives.";
     geoInfo.appendChild(note);
+  }
+
+  /* A town already knows where it is, so this is the fast path: no request, no
+     geocoder, just move the map. */
+  function geoPlot(row, coords, label) {
+    [].forEach.call(geoInfo.querySelectorAll(".geo-cand"), (x) => x.classList.remove("on"));
+    row.classList.add("on");
+    geoResult = Object.assign({}, geoResult, {
+      coords, found: true, streetview: geoResult && geoResult.streetview,
+    });
+    geoEnsureMap();
+    if (geoMap) geoMap.locate({ lat: coords.lat, lon: coords.lon, zoom: 12 });
+    geoSetStatus(label.toUpperCase());
   }
 
   async function geoChoose(row, body, label) {
@@ -4905,7 +4986,9 @@ you cant run by your own footprints.
       toast((r && r.error) || "Couldn't place that on the map.", "err");
       return;
     }
-    geoResult = Object.assign({}, geoResult, { coords: r.coords, streetview: geoResult && geoResult.streetview });
+    // picking a candidate IS finding it — street view and the copy actions
+    // key off this rather than the original scan verdict
+    geoResult = Object.assign({}, geoResult, { coords: r.coords, found: true, streetview: geoResult && geoResult.streetview });
     geoEnsureMap();
     if (geoMap) geoMap.locate({ lat: r.coords.lat, lon: r.coords.lon, zoom: r.zoom || 7 });
     // only worth flagging when a region was asked for and couldn't be resolved
@@ -4922,13 +5005,17 @@ you cant run by your own footprints.
     [].forEach.call(geoToggle.querySelectorAll("button"), (b) => b.classList.toggle("active", b.dataset.view === "map"));
   }
   async function geoShowStreetView() {
-    if (!geoResult || !geoResult.found) return;
+    // coordinates are what the pano needs; a shortlist whose lead candidate
+    // could not be placed still gets here once the analyst picks a town
+    if (!geoResult || !geoResult.coords) return;
     const r = await fetch("/api/geoint/streetview?lat=" + geoResult.coords.lat + "&lon=" + geoResult.coords.lon)
       .then((x) => x.json()).catch(() => null);
     if (!r || !r.ok) { toast((r && r.error) || "Street View unavailable.", "err"); return; }
     document.getElementById("geoMap").style.display = "none";
     geoStreet.src = r.url;
     geoStreet.style.display = "";
+    // the shortlist keeps the toggle hidden; in the pano it is the way back
+    geoToggle.style.display = "";
     [].forEach.call(geoToggle.querySelectorAll("button"), (b) => b.classList.toggle("active", b.dataset.view === "street"));
   }
   if (geoToggle) geoToggle.addEventListener("click", (e) => {

@@ -96,6 +96,13 @@ async function recycleIfDue() {
   } catch (_) { /* going away anyway */ }
 }
 
+/* A note on speed, because the numbers look odd in profiling: the first few
+ * calls in a process run at roughly a third the latency of every call after.
+ * It tracks the retained memory above, not the batch shape — fixing the batch
+ * sizes was tried and changed nothing, and the slow figures are stable rather
+ * than noisy. Recycling bounds the memory but doesn't win the speed back, so
+ * this is accepted rather than solved: it only affects GEOINT_ENGINE=local,
+ * and the deployed path runs the model on a GPU Space where it doesn't arise. */
 async function scoreLocal(buf, labels) {
   const { model, processor, tokenizer, RawImage } = await loadLocal();
   const image = await RawImage.fromBlob(new Blob([buf]));
