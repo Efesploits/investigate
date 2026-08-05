@@ -227,9 +227,20 @@ you cant run by your own footprints.
     letter-spacing: 4px;
     cursor: pointer;
     opacity: 0;
-    animation: fadeUp .7s ease 4.6s forwards, pulse 2.4s ease-in-out 5.3s infinite;
+    position: relative;
+    animation: fadeUp .7s ease 4.6s forwards;
     transition: transform .15s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
   }
+  /* The glow breathes by fading a layer that already has the shadow painted on
+     it, rather than by animating box-shadow itself — a shadow is a paint
+     property, so animating it redraws the button and its blur radius every
+     frame, while opacity is handled by the compositor. */
+  .enter-btn::after {
+    content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 22px 1px rgb(var(--accent-rgb) / .18);
+    opacity: 0; animation: softGlow 2.4s ease-in-out 5.3s infinite;
+  }
+  @keyframes softGlow { 0%,100% { opacity: 0 } 50% { opacity: 1 } }
   .enter-btn:hover {
     transform: translateY(-2px);
     background: var(--accent);
@@ -577,18 +588,24 @@ you cant run by your own footprints.
 
   /* inputs & selects: breathing focus glow */
   input[type=text], select.nic-select { transition: border-color .18s ease, box-shadow .25s ease, background .2s ease; }
-  input[type=text]:focus, select.nic-select:focus { animation: fieldGlow 2.4s ease-in-out infinite; }
-  @keyframes fieldGlow {
-    0%,100% { box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .07); }
-    50%     { box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .13), 0 0 20px -3px rgb(var(--accent-rgb) / .28); } }
+  /* The focus glow used to breathe on a loop. A box-shadow is a paint
+     property, so that repainted the field on every frame for as long as it had
+     focus — i.e. the entire time anyone was typing, competing with the
+     keystrokes. It settles into place instead now, via the transition above. */
+  input[type=text]:focus, select.nic-select:focus {
+    box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .13), 0 0 20px -3px rgb(var(--accent-rgb) / .28);
+  }
 
   /* scan / look up buttons: lift, glow, sheen sweep */
   button.scan { position: relative; overflow: hidden; transition: transform .16s ease, box-shadow .25s ease, filter .2s ease; }
+  /* the sheen slides on transform; `left` would relayout the button each frame */
   button.scan::after { content: ""; position: absolute; top: 0; bottom: 0; left: -80%; width: 45%;
     background: linear-gradient(100deg, transparent, rgba(0,0,0,.10) 42%, rgba(255,255,255,.5) 60%, transparent);
-    transform: skewX(-22deg); transition: left .6s cubic-bezier(.4,0,.2,1); pointer-events: none; }
+    transform: translateX(0) skewX(-22deg); transition: transform .6s cubic-bezier(.4,0,.2,1); pointer-events: none; }
   button.scan:hover { transform: translateY(-2px); box-shadow: 0 10px 26px -10px rgb(var(--accent-rgb) / .55); filter: brightness(1.04); }
-  button.scan:hover::after { left: 135%; }
+  /* -80% -> 135% of the button is 215% of it, and the sheen is 45% of that wide,
+     so in the sheen's own units the trip is 215/45 = 478%. */
+  button.scan:hover::after { transform: translateX(478%) skewX(-22deg); }
   button.scan:active { transform: translateY(0); box-shadow: 0 4px 12px -8px rgb(var(--accent-rgb) / .5); }
 
   /* result rows/cards: hover lift + accent edge */
@@ -604,7 +621,16 @@ you cant run by your own footprints.
   .nic-head::after { content: ""; position: absolute; bottom: 0; left: 0; height: 2px; width: 34%;
     background: linear-gradient(90deg, transparent, var(--accent), transparent); border-radius: 2px;
     box-shadow: 0 0 10px rgb(var(--accent-rgb) / .7); animation: scanSweep 3.6s cubic-bezier(.5,0,.5,1) infinite; }
-  @keyframes scanSweep { 0% { left: -34%; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
+  /* Travels on transform, not `left`. Moving an element by its offset makes the
+     browser re-run layout for the whole containing block every frame; a
+     transform is handed to the compositor and costs nothing.
+     The element is 34% of its parent wide, and translate percentages are
+     relative to the element itself — so a full parent width is 294% of it. */
+  @keyframes scanSweep {
+    0%   { transform: translateX(-100%); opacity: 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { transform: translateX(294%); opacity: 0; } }
 
   /* ============ background + liquid-glass sidebar + categories ============ */
   body { background:
@@ -723,14 +749,19 @@ you cant run by your own footprints.
     background: rgb(var(--accent-rgb) / .06); color: var(--accent);
     border: 1px solid rgb(var(--accent-rgb) / .5);
     letter-spacing: .3px;
-    animation: ultraGlow 2.8s ease-in-out infinite; }
+    box-shadow: 0 0 18px -2px rgb(var(--accent-rgb) / .18), inset 0 0 12px -6px rgb(var(--accent-rgb) / .32); }
   button.scan.ultra .ultra-ico { width: 14px; height: 14px; opacity: .9; animation: ultraSpark 2.4s steps(1) infinite; }
-  @keyframes ultraGlow {
-    0%,100% { box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0), inset 0 0 0 0 rgb(var(--accent-rgb) / 0); border-color: rgb(var(--accent-rgb) / .5); }
-    50%     { box-shadow: 0 0 18px -2px rgb(var(--accent-rgb) / .28), inset 0 0 12px -6px rgb(var(--accent-rgb) / .5); border-color: rgb(var(--accent-rgb) / .8); } }
+  /* The Ultra button's halo used to breathe on a loop through box-shadow and
+     border-color — both paint properties, so the button and its 18px blur were
+     redrawn every frame for as long as the page was open. It's a fixed halo
+     now; the life comes from the sparking icon and the sweep, which are both
+     free. */
   @keyframes ultraSpark { 0%,86%,100% { opacity: .9; } 90% { opacity: .35; } 95% { opacity: .9; } }
   button.scan.ultra::after { width: 55%; background: linear-gradient(90deg, transparent, rgb(var(--accent-rgb) / .35), transparent); animation: ultraSweep 3.4s ease-in-out infinite; }
-  @keyframes ultraSweep { 0% { left: -80%; } 55%,100% { left: 150%; } }
+  /* -80% -> 150% is 230% of the button; the sweep is 55% of it wide, so 418% of itself */
+  @keyframes ultraSweep {
+    0%      { transform: translateX(0) skewX(-22deg); }
+    55%,100%{ transform: translateX(418%) skewX(-22deg); } }
   button.scan.ultra:hover { transform: translateY(-2px); background: rgb(var(--accent-rgb) / .12); border-color: var(--accent);
     box-shadow: 0 10px 26px -12px rgb(var(--accent-rgb) / .5); filter: none; }
   button.scan.ultra:disabled { animation-play-state: paused; opacity: .5; }
@@ -1150,15 +1181,25 @@ you cant run by your own footprints.
 
   /* the room itself: a faint survey grid, scan lines and a heavy vignette */
   body.geoint-mode .content::after {
-    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5;
+    content: ""; position: fixed; inset: -138px; pointer-events: none; z-index: 0; opacity: .5;
     background-image:
       linear-gradient(rgba(var(--accent-rgb) / .05) 1px, transparent 1px),
       linear-gradient(90deg, rgba(var(--accent-rgb) / .05) 1px, transparent 1px),
       repeating-linear-gradient(0deg, rgba(255,255,255,.022) 0 1px, transparent 1px 3px);
     background-size: 46px 46px, 46px 46px, 100% 3px;
-    animation: geoDrift 24s linear infinite;
+    animation: geoDrift 72s linear infinite;
+    will-change: transform;
   }
-  @keyframes geoDrift { from { background-position: 0 0, 0 0, 0 0 } to { background-position: 46px 46px, 46px 46px, 0 0 } }
+  /* This was the single most expensive thing on the site: a fixed, full-screen
+     layer whose background-position was animated, which repaints every pixel of
+     the viewport on every frame for as long as GEOINT is open. Sliding the
+     whole layer on transform hands it to the compositor instead.
+     It travels 138px rather than one 46px cell because 138 is a whole number of
+     BOTH patterns — 3 grid cells and 46 of the 3px scan lines — so the loop
+     still closes seamlessly. The element is inset by that much so the far edge
+     never comes into view, and the duration scales with the distance to keep
+     the original speed. */
+  @keyframes geoDrift { from { transform: translate3d(0,0,0) } to { transform: translate3d(138px,138px,0) } }
 
   /* ---- radar intro ---- */
   /* Deliberately monochrome, whatever theme the app is on: this reads as
@@ -1302,10 +1343,15 @@ you cant run by your own footprints.
     overflow: hidden; margin-bottom: 16px; transition: border-color .2s ease, background .2s ease; }
   .geo-drop:hover, .geo-drop.over { border-color: rgba(255,255,255,.55); background: #101010; }
   /* a slow scan line, so the target never looks inert */
-  .geo-drop::after { content: ""; position: absolute; left: 0; right: 0; height: 1px; top: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+  /* The line is drawn at the top of a layer as tall as the drop zone, and the
+     layer slides on transform. Animating `top` instead re-ran layout for the
+     dialog on every frame, the whole time it was open. Because the layer is
+     full height, a translate percentage maps straight onto the zone's height. */
+  .geo-drop::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 100%;
+    background-image: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+    background-size: 100% 1px; background-repeat: no-repeat; background-position: 0 0;
     animation: geoScanline 3.4s ease-in-out infinite; pointer-events: none; }
-  @keyframes geoScanline { 0% { top: 4% } 50% { top: 96% } 100% { top: 4% } }
+  @keyframes geoScanline { 0%,100% { transform: translateY(4%) } 50% { transform: translateY(96%) } }
   .geo-drop-inner { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 22px; text-align: center; }
   .geo-drop-inner svg { width: 28px; height: 28px; color: rgba(255,255,255,.6); margin-bottom: 2px; }
   .geo-drop-inner b { font-size: .78rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
