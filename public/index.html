@@ -1196,7 +1196,19 @@ you cant run by your own footprints.
      Entering GEOINT swings the sidebar over to the right and drops the whole
      room a few stops darker — it should feel like a different mode, not just
      another tab. */
-  body.geoint-mode .sidebar {
+  /* ------------------------------------------------------------------
+     Everything that dims the room, hides the sidebar or re-colours the app
+     is gated on the GEOINT page ACTUALLY BEING ON SCREEN, not merely on the
+     mode class being present.
+
+     The class used to be the only condition, which made it a single point of
+     failure: any route that left `geoint-mode` on the body while showing some
+     other page buried that page under a near-black gradient with no sidebar
+     to navigate away with — the page looked empty, and the only way out was a
+     reload. Pinning the rules to `:has(#page-geoint.show)` means a stale class
+     is at worst invisible instead of trapping you.
+     ------------------------------------------------------------------ */
+  body.geoint-mode:has(#page-geoint.show) .sidebar {
     transform: translateX(-100%);
     opacity: 0;
     pointer-events: none;
@@ -1207,7 +1219,7 @@ you cant run by your own footprints.
      for the duration of the mode turns everything derived from them — bars,
      focus rings, the map toggle, the survey grid — white in one move, without
      touching how the rest of the app looks. */
-  body.geoint-mode {
+  body.geoint-mode:has(#page-geoint.show) {
     --accent: #ffffff;
     --accent-rgb: 255 255 255;
     background: #030303;
@@ -1217,14 +1229,16 @@ you cant run by your own footprints.
   body.geoint-mode .geo-badgeline.found { color: #fff; border-color: rgba(255,255,255,.55); }
   body.geoint-mode .geo-badgeline.none { color: rgba(255,255,255,.7); border-color: rgba(255,255,255,.26); }
   body.geoint-mode .geo-copy.done { color: #fff; border-color: rgba(255,255,255,.6); }
-  body.geoint-mode .content { max-width: none; }
+  body.geoint-mode:has(#page-geoint.show) .content { max-width: none; }
   #app, .sidebar, .content { transition: background-color .5s ease; }
-  body.geoint-mode .content::before {
+  body.geoint-mode:has(#page-geoint.show) .content::before {
     content: ""; position: fixed; inset: 0; background: radial-gradient(120% 90% at 50% 0%, rgba(0,0,0,.35), rgba(0,0,0,.82));
     pointer-events: none; z-index: 0; animation: geoDim .6s ease both;
   }
   @keyframes geoDim { from { opacity: 0 } to { opacity: 1 } }
-  body.geoint-mode #page-geoint { position: relative; z-index: 1; }
+  /* every page rides above the dim, not just GEOINT's — a page that ends up
+     underneath it is unreadable, and that is the failure this is guarding */
+  body.geoint-mode .page { position: relative; z-index: 1; }
   .nav-geoint svg { color: var(--accent); }
 
   .geo-head h1 { margin-bottom: 2px; }
@@ -1280,7 +1294,7 @@ you cant run by your own footprints.
   @keyframes geoTick { 0%,100% { opacity: .3 } 50% { opacity: 1 } }
 
   /* the room itself: a faint survey grid, scan lines and a heavy vignette */
-  body.geoint-mode .content::after {
+  body.geoint-mode:has(#page-geoint.show) .content::after {
     content: ""; position: fixed; inset: -138px; pointer-events: none; z-index: 0; opacity: .5;
     background-image:
       linear-gradient(rgba(var(--accent-rgb) / .05) 1px, transparent 1px),
@@ -2040,11 +2054,15 @@ you cant run by your own footprints.
   }
   body.fx-live .fx-glow { opacity: 1; }
   /* GEOINT is instrumentation — the room goes quiet while it's open */
-  body.geoint-mode .fx-canvas, body.geoint-mode .fx-glow,
+  body.geoint-mode:has(#page-geoint.show) .fx-canvas,
+  body.geoint-mode:has(#page-geoint.show) .fx-glow,
   body.book-mode .fx-canvas, body.book-mode .fx-glow { opacity: 0; }
 
-  /* everything real sits above the layer */
-  #app, #intro, #landing { position: relative; z-index: 1; }
+  /* Everything real sits above the layer. NB: only the two that are statically
+     positioned get `position: relative` — #intro is fixed, and listing it here
+     overrode that, which dropped the whole login splash back into the document
+     flow and pushed #app a screen and a half down the page. */
+  #app, #landing { position: relative; z-index: 1; }
   #intro { z-index: 50; background: transparent; }
   #landing { z-index: 40; }
 
