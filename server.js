@@ -131,11 +131,45 @@ app.get("/api/auth/me", (req, res) => {
 });
 
 /* ============================= profile ============================= */
+/* A picture or a banner is stored verbatim and then rendered in every OTHER
+   member's browser — on the home grid, in the profile viewer, in the admin
+   list. Storing an arbitrary string there is what turns "set your avatar" into
+   stored XSS: a value like  x" onerror="...  breaks out of the <img src="…">
+   it gets written into, and one shaped like  a'),url(…  breaks out of a
+   background-image: url('…'). The client is careful about how it renders these
+   now, but the desktop client renders the same records, so the value is
+   refused at the door rather than sanitised at each of the places it is shown.
+
+   What is legitimate: a data: URL from the cropper (it encodes JPEG), and a
+   Discord CDN https URL for a linked account. SVG is deliberately not on the
+   list — an SVG can carry script. */
+const IMG_DATA_RE = /^data:image\/(?:png|jpeg|jpg|gif|webp);base64,[A-Za-z0-9+/=]+$/;
+// no quotes, parentheses or backslashes: those are the characters that let a
+// URL escape the context it is printed into
+const IMG_HTTPS_RE = /^https:\/\/[A-Za-z0-9._~:/?#@!$&*+,;=%-]+$/;
+const IMAGE_MAX = 2_000_000;
+// null  -> clear it;  undefined -> the value was rejected
+function cleanImage(v) {
+  const s = String(v).trim();
+  if (!s) return null;                       // "" is how the UI resets one
+  if (s.length > IMAGE_MAX) return undefined;
+  return (IMG_DATA_RE.test(s) || IMG_HTTPS_RE.test(s)) ? s : undefined;
+}
+function applyImagePatch(b, patch) {
+  for (const field of ["banner", "avatar"]) {
+    if (typeof b[field] !== "string") continue;
+    const v = cleanImage(b[field]);
+    if (v === undefined) return field;        // name the one that was refused
+    patch[field] = v;
+  }
+  return null;
+}
+
 app.patch("/api/me", requireAuth, async (req, res) => {
   const patch = {};
   const b = req.body || {};
-  if (typeof b.banner === "string") patch.banner = b.banner.slice(0, 2_000_000) || null;
-  if (typeof b.avatar === "string") patch.avatar = b.avatar.slice(0, 2_000_000) || null;
+  const badImage = applyImagePatch(b, patch);
+  if (badImage) return res.status(400).json({ ok: false, error: "That " + badImage + " isn't a supported image." });
   if (typeof b.bio === "string") patch.bio = b.bio.slice(0, 300);
   if (typeof b.password === "string" && b.password) {
     if (b.password.length < 6) return res.status(400).json({ ok: false, error: "Password must be at least 6 characters." });
@@ -464,8 +498,8 @@ app.patch("/api/admin/users/:id", requireAuth, requireAdmin, async (req, res) =>
   const patch = {};
   if (b.role === "user" || b.role === "admin") patch.role = b.role;
   if (typeof b.tokens === "number" && b.tokens >= 0) patch.tokens = Math.floor(b.tokens);
-  if (typeof b.banner === "string") patch.banner = b.banner.slice(0, 2_000_000) || null;
-  if (typeof b.avatar === "string") patch.avatar = b.avatar.slice(0, 2_000_000) || null;
+  const badImage = applyImagePatch(b, patch);
+  if (badImage) return res.status(400).json({ ok: false, error: "That " + badImage + " isn't a supported image." });
   const updated = await store.updateUser(req.params.id, patch);
   if (!updated) return res.status(404).json({ ok: false, error: "No such user." });
   res.json({ ok: true, user: { ...store.publicUser(updated), is_admin: auth.isAdmin(updated) } });

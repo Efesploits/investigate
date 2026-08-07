@@ -30,6 +30,10 @@
     --accent-rgb: 56 224 208; --intro-bg-inner: #101a2b; --intro-bg-outer: #05070d;
   }
   * { box-sizing: border-box; }
+  /* The `hidden` attribute is only a display:none in the UA stylesheet, so any
+     author rule that sets a display beats it. Without this, elements the
+     script hides by setting `hidden` stay on screen. */
+  [hidden] { display: none !important; }
   html, body { height: 100%; }
   body {
     margin: 0;
@@ -44,7 +48,9 @@
     position: fixed; inset: 0; display: flex; flex-direction: column;
     /* reserve a top band for the absolute tagline; `safe` keeps the centered
        stack from clipping/rising into it when the window is short */
-    align-items: center; justify-content: safe center; padding: 84px 16px 24px; box-sizing: border-box; gap: 26px; z-index: 50;
+    /* the bottom band is reserved for the absolutely-positioned credit line —
+       the sign-in card is taller than the two bare inputs it replaced */
+    align-items: center; justify-content: safe center; padding: 84px 16px 74px; box-sizing: border-box; gap: 26px; z-index: 50;
     /* on a short window the login form must stay reachable — scroll rather than
        clip it off the bottom edge */
     overflow-y: auto; overflow-x: hidden;
@@ -70,11 +76,11 @@
   @keyframes float { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-12px) rotate(1.5deg); } }
   .eye-inner {
     transform-box: fill-box; transform-origin: center; transform: scaleY(0); opacity: 0;
-    animation: eyeOpen .55s cubic-bezier(.3,1.15,.35,1) .9s forwards, blink 4s cubic-bezier(.6,0,.4,1) 3.6s infinite;
+    animation: eyeOpen .5s cubic-bezier(.3,1.15,.35,1) .25s forwards, blink 4s cubic-bezier(.6,0,.4,1) 2.2s infinite;
   }
   @keyframes eyeOpen { 0% { transform: scaleY(0); opacity: 0; } 1% { transform: scaleY(0); opacity: 1; } 60% { transform: scaleY(1.18); opacity: 1; } 100% { transform: scaleY(1); opacity: 1; } }
   @keyframes blink { 0%,88%,100% { transform: scaleY(1); } 92% { transform: scaleY(.08); } 95% { transform: scaleY(1); } }
-  .iris { transform-box: fill-box; transform-origin: center; animation: look 3s cubic-bezier(.45,.05,.35,1) 1.5s both; }
+  .iris { transform-box: fill-box; transform-origin: center; animation: look 2s cubic-bezier(.45,.05,.35,1) .55s both; }
   .iris.track { transition: transform .45s cubic-bezier(.22,.61,.36,1); }
   @keyframes look {
     0%,8% { transform: translate(0,0); }
@@ -83,16 +89,16 @@
     70%,80% { transform: translate(-14px,8px); }
     92%,100% { transform: translate(0,0); }
   }
-  .intro-title { font-size: clamp(1.4rem,4.5vw,2.2rem); font-weight: 800; margin: 0; text-align: center; color: var(--text); opacity: 0; animation: fadeUp .8s ease 3.7s forwards; }
-  .intro-sub { color: var(--muted); font-size: .8rem; letter-spacing: 3px; text-transform: uppercase; opacity: 0; margin: -14px 0 0; animation: fadeUp .8s ease 4s forwards; }
+  .intro-title { font-size: clamp(1.4rem,4.5vw,2.2rem); font-weight: 800; margin: 0; text-align: center; color: var(--text); opacity: 0; animation: fadeUp .7s ease .75s forwards; }
+  .intro-sub { color: var(--muted); font-size: .8rem; letter-spacing: 3px; text-transform: uppercase; opacity: 0; margin: -14px 0 0; animation: fadeUp .7s ease .92s forwards; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-  .print-tag { position: absolute; top: clamp(8px,3.5vh,50px); margin: 0; z-index: 3; color: var(--muted); font-size: clamp(.85rem,2.2vw,1.05rem); font-style: italic; letter-spacing: 2px; opacity: 0; animation: fadeUp 1s ease .5s forwards; }
+  .print-tag { position: absolute; top: clamp(8px,3.5vh,50px); margin: 0; z-index: 3; color: var(--muted); font-size: clamp(.85rem,2.2vw,1.05rem); font-style: italic; letter-spacing: 2px; opacity: 0; animation: fadeUp .8s ease .2s forwards; }
   .enter-btn {
     margin-top: 6px; padding: 12px 40px; border-radius: 999px;
     border: 1px solid rgb(var(--accent-rgb) / .55); background: transparent; color: var(--text);
     font-size: 1rem; font-weight: 700; letter-spacing: 4px; cursor: pointer; opacity: 0;
     position: relative;
-    animation: fadeUp .7s ease 4.6s forwards;
+    animation: fadeUp .7s ease 1.2s forwards;
     transition: transform .15s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
   }
   .enter-btn:hover { transform: translateY(-2px); background: var(--accent); color: #000; box-shadow: 0 0 26px rgb(var(--accent-rgb) / .25); }
@@ -103,10 +109,10 @@
   .enter-btn::after {
     content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
     box-shadow: 0 0 22px 1px rgb(var(--accent-rgb) / .18);
-    opacity: 0; animation: softGlow 2.4s ease-in-out 5.3s infinite;
+    opacity: 0; animation: softGlow 2.4s ease-in-out 2s infinite;
   }
   @keyframes softGlow { 0%,100% { opacity: 0 } 50% { opacity: 1 } }
-  .intro-credit { position: absolute; bottom: clamp(20px, 6vh, 48px); margin: 0; color: var(--muted); font-size: .72rem; letter-spacing: 1px; opacity: 0; animation: fadeUp .8s ease 5.1s forwards; }
+  .intro-credit { position: absolute; bottom: clamp(20px, 6vh, 48px); margin: 0; color: var(--muted); font-size: .72rem; letter-spacing: 1px; opacity: 0; animation: fadeUp .7s ease 1.15s forwards; }
 
   /* ambient dust drifting across the whole intro screen */
   .ambient-dust { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
@@ -743,7 +749,91 @@
   .tb-ava { width: 26px; height: 26px; border-radius: 50%; background: var(--panel2); display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 800; color: var(--accent); overflow: hidden; }
   .tb-ava img { width: 100%; height: 100%; object-fit: cover; }
 
-  .intro-auth { width: 100%; max-width: 300px; margin: 8px auto 0; position: relative; z-index: 1; }
+  /* ---------- login gate embedded in the intro splash ----------
+     The form is a real sign-in card now rather than two bare boxes: labelled
+     fields, a reveal for the password, a Caps Lock warning, a strength read
+     while registering, and a button that shows it is working. */
+  .intro-auth { width: 100%; max-width: 348px; margin: 4px auto 0; position: relative; z-index: 1; }
+  .auth-card {
+    padding: 20px 20px 18px; border-radius: 18px; text-align: left;
+    border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
+    background: color-mix(in srgb, var(--panel) 58%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: inset 1px 1px 0 rgba(255,255,255,.09), 0 26px 60px -28px rgba(0,0,0,.9);
+  }
+  .intro-auth .auth-tabs { margin-bottom: 16px; }
+  .intro-auth form { display: flex; flex-direction: column; gap: 13px; }
+
+  /* scoped to the gate: the database connection form already owns .fld */
+  .intro-auth .fld { display: flex; flex-direction: column; gap: 6px; }
+  .intro-auth .fld > label {
+    font-size: .68rem; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase;
+    color: var(--muted); padding-left: 2px;
+  }
+  .fld-box {
+    position: relative; display: flex; align-items: center; gap: 9px;
+    padding: 0 10px 0 12px; border-radius: 11px;
+    border: 1px solid var(--border); background: rgba(255,255,255,.045);
+    transition: border-color .18s ease, box-shadow .25s ease, background .2s ease;
+  }
+  .fld-box:focus-within { border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: rgba(255,255,255,.06);
+    box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .12); }
+  .fld-box.bad { border-color: #ff6b6b; box-shadow: 0 0 0 3px rgba(255,107,107,.13); }
+  .fld-ico { width: 16px; height: 16px; flex-shrink: 0; color: var(--muted); transition: color .18s ease; }
+  .fld-box:focus-within .fld-ico { color: var(--accent); }
+  /* the input carries no border of its own — the box around it is the control */
+  .intro-auth .fld-box input {
+    flex: 1; min-width: 0; width: 100%; box-sizing: border-box;
+    padding: 12px 0; border: none; background: transparent; outline: none;
+    color: var(--text); font-family: inherit; font-size: .92rem; letter-spacing: .2px;
+  }
+  .intro-auth .fld-box input::placeholder { color: #5a5a5a; }
+  /* Chrome paints its own colour over autofilled fields; a long inset shadow is
+     the only reliable way to keep the dark surface underneath */
+  .intro-auth .fld-box input:-webkit-autofill {
+    -webkit-text-fill-color: var(--text);
+    -webkit-box-shadow: 0 0 0 60px #101010 inset;
+    transition: background-color 9999s ease-in-out 0s;
+  }
+  .fld-eye {
+    flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; padding: 0; border-radius: 8px; cursor: pointer;
+    border: 1px solid transparent; background: transparent; color: var(--muted);
+    transition: color .16s ease, background .16s ease, border-color .16s ease;
+  }
+  .fld-eye:hover { color: var(--text); background: rgba(255,255,255,.06); }
+  .fld-eye[aria-pressed="true"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+  .fld-eye svg { width: 16px; height: 16px; }
+
+  /* how strong the new password is — shown while registering, never on log in */
+  .pw-meter { display: flex; align-items: center; gap: 9px; margin-top: 2px; }
+  .pw-meter .bar { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
+  .pw-meter .bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: #ff6b6b;
+    transition: width .3s cubic-bezier(.4,0,.2,1), background .3s ease; }
+  .pw-meter span { font-size: .66rem; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); min-width: 44px; text-align: right; }
+  .pw-meter.s1 .bar i { width: 25%;  background: #ff6b6b; }
+  .pw-meter.s2 .bar i { width: 50%;  background: #ffa64d; }
+  .pw-meter.s3 .bar i { width: 78%;  background: #ffd54d; }
+  .pw-meter.s4 .bar i { width: 100%; background: #35d07f; }
+  .pw-meter.s4 span { color: #35d07f; }
+
+  .fld-warn { display: flex; align-items: center; gap: 6px; margin: 0; font-size: .7rem; font-weight: 700; color: #ffd54d; }
+  .fld-warn svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+  .intro-auth .m-submit { margin-top: 4px; position: relative; display: flex; align-items: center; justify-content: center; gap: 9px; }
+  .intro-auth .m-submit .btn-spin {
+    display: none; width: 14px; height: 14px; flex-shrink: 0; border-radius: 50%;
+    border: 2px solid rgba(0,0,0,.25); border-top-color: #000; animation: gSpin .7s linear infinite;
+  }
+  .m-submit.loading .btn-spin { display: block; }
+  .m-submit.loading { cursor: progress; }
+
+  .intro-auth .m-err { text-align: left; display: flex; align-items: flex-start; gap: 7px; line-height: 1.45; }
+  .intro-auth .m-err:empty { display: none; margin-top: 0; min-height: 0; }
+  .intro-auth .m-err::before { content: "!"; flex-shrink: 0; width: 15px; height: 15px; border-radius: 50%;
+    background: #ff6b6b; color: #000; font-size: .68rem; font-weight: 900; line-height: 15px; text-align: center; margin-top: 1px; }
+  .intro-hint { color: var(--muted); font-size: .76rem; margin-top: 14px; text-align: center; position: relative; z-index: 1; line-height: 1.5; }
+
   .auth-tabs { position: relative; display: flex; gap: 4px; padding: 4px; background: var(--panel2);
     border: 1px solid var(--border); border-radius: 999px; margin-bottom: 14px; }
   /* the white pill physically slides between the two tabs */
@@ -808,14 +898,13 @@
   .hero-greet .hg-text { color: var(--text); font-size: 1.32rem; font-weight: 300; letter-spacing: .2px; }
   .hero-greet .hg-text b { color: var(--muted); font-weight: 300; }
   @keyframes greetIn { from { opacity: 0; transform: translateY(-6px); } }
-  .intro-auth form { display: flex; flex-direction: column; gap: 10px; }
-  .intro-auth input { width: 100%; box-sizing: border-box; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--border);
-    background: rgba(255,255,255,.045); color: var(--text); font-size: .9rem; text-align: center; }
-  .intro-auth input:focus { outline: none; border-color: #666; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .10); }
+  /* The gate's own layout moved up into the auth-card block. What stays here
+     is the submit button and the error line, which the Discord dialog, the
+     GEOINT upload dialog and the redeem row all share; their surface is set
+     once in the BUTTONS section at the end of this sheet. */
   .m-submit { margin-top: 4px; padding: 12px; border-radius: 10px; border: none; background: var(--accent); color: #000; font-weight: 800; font-size: .92rem; cursor: pointer; }
-  .m-submit:disabled { opacity: .6; cursor: not-allowed; }
-  .m-err { color: #ff6b6b; font-size: .82rem; min-height: 1em; text-align: center; }
-  .intro-hint { color: var(--muted); font-size: .76rem; margin-top: 12px; text-align: center; position: relative; z-index: 1; }
+  .m-submit:disabled { cursor: not-allowed; }
+  .m-err { color: #ff6b6b; font-size: .82rem; min-height: 1em; }
 
   /* Connect-Discord modal (liquid glass) */
   .dc-modal { position: relative; width: 100%; max-width: 430px; background: var(--panel); border: 1px solid var(--border);
@@ -991,6 +1080,47 @@
      the top-right corner and anything up there collides with it */
   .geo-headbtns { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
   .geo-title { letter-spacing: 7px; text-shadow: 0 0 26px rgb(var(--accent-rgb) / .35); }
+
+  /* ---- the readout's resting state ----
+     The panel used to be an empty box until a scan came back, which said
+     nothing about what the mode does or what it can and cannot tell you. It
+     opens with the briefing instead, in the same instrument language as the
+     scope. renderGeoResult() clears it on the first result and it never
+     returns for that scan. */
+  .geo-brief { font-size: .82rem; line-height: 1.6; color: var(--muted); }
+  .geo-brief-head { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
+  .geo-brief-head b {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem;
+    letter-spacing: 2.4px; text-transform: uppercase; color: var(--text); font-weight: 700;
+  }
+  .geo-brief-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
+    box-shadow: 0 0 9px var(--accent); animation: geoTick 2.2s ease-in-out infinite;
+  }
+  .geo-brief > p { margin: 0 0 12px; }
+  .geo-brief-steps {
+    list-style: none; margin: 0 0 12px; padding: 0; counter-reset: gb;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+  .geo-brief-steps li {
+    position: relative; padding-left: 26px; font-size: .78rem; line-height: 1.55;
+  }
+  .geo-brief-steps li::before {
+    counter-increment: gb; content: counter(gb);
+    position: absolute; left: 0; top: 1px; width: 17px; height: 17px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .6rem; font-weight: 800;
+    color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  .geo-brief-steps b { color: var(--text); font-weight: 700; }
+  .geo-brief-note {
+    font-size: .74rem; line-height: 1.5; margin: 0 0 16px;
+    border-left: 2px solid rgba(255,255,255,.14); padding-left: 10px;
+  }
+  .geo-brief-go {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 1.6px; text-transform: uppercase; font-size: .72rem;
+  }
   .geo-sub-line { display: flex; align-items: center; gap: 8px; font-size: .78rem; letter-spacing: .3px; }
   .geo-tick { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
     box-shadow: 0 0 8px var(--accent); animation: geoTick 2.2s ease-in-out infinite; }
@@ -1672,10 +1802,442 @@
     .book { --pw: min(270px, 40vw, 38vh); }
     .book-ctl { bottom: 14px; }
     .bk-hint { display: none; }
+
+    /* side by side, the eye ends up floating halfway down a tall paragraph;
+       stacked, it reads as a mark above the heading */
+    .hm-hero { flex-direction: column; align-items: flex-start; gap: 14px; }
+    .hm-hero .hero-eye { width: 58px; }
+    /* the balance and the button each get a full line — side by side there is
+       not enough width left for the label and it breaks mid-word */
+    .hm-wallet { width: 100%; flex-direction: column; align-items: stretch; gap: 12px; }
+    .hm-wallet .cta { width: 100%; justify-content: center; }
+    .hm-actions { grid-template-columns: minmax(0, 1fr); }
+    .sec-head { flex-wrap: wrap; }
+    .sec-head .rule { min-width: 20px; }
+    .ad-filter { width: 100%; }
+    .ad-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
+  /* ===================================================================
+     THE LIVING BACKGROUND
+     One fixed layer behind the whole product: a constellation canvas that
+     answers to the cursor, and a soft light that follows it.
+
+     Everything here obeys the same rule the rest of this sheet was tuned to —
+     nothing animates a paint property. The light is a pre-painted circle moved
+     with translate3d (compositor only), and the canvas is a single draw call
+     per frame. The layer is not created at all on a phone, on a coarse
+     pointer, or under prefers-reduced-motion, so the devices that can't afford
+     it never pay for it.
+     =================================================================== */
+  .fx { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  /* the login screen's own pool of light, moved off #intro so the constellation
+     can draw on top of it instead of being buried underneath */
+  .fx-veil {
+    position: absolute; inset: 0; opacity: 0;
+    background: radial-gradient(760px 620px at 50% 34%, var(--intro-bg-inner) 0%, var(--intro-bg-outer) 72%);
+    transition: opacity .8s ease;
+  }
+  body:not(.entered) .fx-veil { opacity: 1; }
+  .fx-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 1.2s ease; }
+  body.fx-live .fx-canvas { opacity: 1; }
+  /* the cursor's halo. Painted once, then only ever translated. */
+  .fx-glow {
+    position: absolute; top: 0; left: 0; width: 560px; height: 560px; margin: -280px 0 0 -280px;
+    border-radius: 50%; opacity: 0; transition: opacity .6s ease; will-change: transform;
+    background: radial-gradient(circle closest-side,
+      rgb(var(--accent-rgb) / .11), rgb(var(--accent-rgb) / .05) 42%, rgb(var(--accent-rgb) / 0) 72%);
+  }
+  body.fx-live .fx-glow { opacity: 1; }
+  /* GEOINT is instrumentation — the room goes quiet while it's open */
+  body.geoint-mode .fx-canvas, body.geoint-mode .fx-glow,
+  body.book-mode .fx-canvas, body.book-mode .fx-glow { opacity: 0; }
+
+  /* everything real sits above the layer */
+  /* the client has no landing page — it opens straight on the gate */
+  #app, #intro { position: relative; z-index: 1; }
+  #intro { z-index: 50; background: transparent; }
+  /* ===================================================================
+     BUTTONS
+     A flat white rectangle with black text on it is the bluntest thing this
+     sheet was doing. The app already had a better idea in it — the liquid-gel
+     pill that slides between the Log in / Register tabs, which is domed, lit
+     from above and has a floor shadow. That treatment is the house style now,
+     and every primary button wears it.
+
+     Three things give it a body: a vertical gradient so it reads as a curved
+     surface rather than a sticker, a bright specular line along the top edge,
+     and a coloured pool of light underneath it. On hover it lifts and the pool
+     spreads; a gloss sweeps across; the arrow leans the way it is about to
+     take you. Pressing it sinks. None of it animates a paint property except
+     the shadow at the moment of hover, which is a single transition rather
+     than a loop.
+     =================================================================== */
+  .lp-btn.primary, .lp-login, .cta, .m-submit,
+  button.scan:not(.ultra):not(.g-cancel) {
+    position: relative; overflow: hidden; border: none; color: #000;
+    background:
+      linear-gradient(180deg,
+        color-mix(in srgb, var(--accent) 74%, #fff) 0%,
+        var(--accent) 47%,
+        color-mix(in srgb, var(--accent) 85%, #000) 100%);
+    box-shadow:
+      inset 0 1.5px 0 rgba(255,255,255,.78),
+      inset 0 -2px 6px -3px rgba(0,0,0,.34),
+      0 6px 18px -9px rgb(var(--accent-rgb) / .55);
+    transition: transform .2s cubic-bezier(.34,1.28,.5,1), box-shadow .28s ease, filter .2s ease;
+  }
+  /* the gloss. 42% of the button wide, parked 60% off its left edge, so a full
+     pass is 160% of the button — which in the sweep's own units is 381%. */
+  .lp-btn.primary::after, .lp-login::after, .cta::after, .m-submit::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 42%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.6) 52%, transparent);
+    transform: translateX(0) skewX(-20deg); pointer-events: none;
+    transition: transform .62s cubic-bezier(.4,0,.2,1);
+  }
+  .lp-btn.primary:hover::after, .lp-login:hover::after,
+  .cta:hover::after, .m-submit:hover:not(:disabled)::after { transform: translateX(381%) skewX(-20deg); }
+
+  .lp-btn.primary:hover, .lp-login:hover, .cta:hover,
+  .m-submit:hover:not(:disabled), button.scan:not(.ultra):not(.g-cancel):hover:not(:disabled) {
+    transform: translateY(-2px); filter: brightness(1.03);
+    box-shadow:
+      inset 0 1.5px 0 rgba(255,255,255,.9),
+      inset 0 -2px 6px -3px rgba(0,0,0,.3),
+      0 14px 30px -12px rgb(var(--accent-rgb) / .72);
+  }
+  /* pressing it puts it back down on the surface */
+  .lp-btn.primary:active, .lp-login:active, .cta:active,
+  .m-submit:active:not(:disabled), button.scan:not(.ultra):not(.g-cancel):active:not(:disabled) {
+    transform: translateY(1px) scale(.988);
+    box-shadow: inset 0 2px 6px -2px rgba(0,0,0,.32), 0 3px 9px -6px rgb(var(--accent-rgb) / .5);
+  }
+  /* a disabled button should look inert, not merely faint */
+  .m-submit:disabled, button.scan:disabled {
+    background: var(--panel2); color: var(--muted);
+    box-shadow: inset 0 0 0 1px var(--border); filter: none; transform: none;
+  }
+  .m-submit:disabled::after, button.scan:disabled::after { display: none; }
+  /* ...except while it is working, where it should still read as the real
+     button with something happening inside it */
+  .m-submit.loading:disabled {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 74%, #fff) 0%, var(--accent) 47%, color-mix(in srgb, var(--accent) 85%, #000) 100%);
+    color: #000; box-shadow: inset 0 1.5px 0 rgba(255,255,255,.78), 0 6px 18px -9px rgb(var(--accent-rgb) / .55);
+  }
+
+  /* The icon rides in its own chip, cut into the face of the button. It is the
+     thing that stops these reading as a default rounded rectangle with a glyph
+     dropped next to the label — and it gives the arrow somewhere to move to. */
+  .lp-btn.primary > svg, .cta > svg, .lp-login > svg {
+    width: 24px; height: 24px; padding: 5px; box-sizing: border-box; border-radius: 50%;
+    background: rgba(0,0,0,.13); box-shadow: inset 0 1px 1px rgba(0,0,0,.14);
+    transition: transform .24s cubic-bezier(.34,1.3,.5,1), background .2s ease;
+  }
+  .lp-btn.ghost > svg { width: 24px; height: 24px; padding: 5px; box-sizing: border-box; border-radius: 50%;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    transition: transform .24s cubic-bezier(.34,1.3,.5,1), background .2s ease; }
+  .lp-btn.primary:hover > svg, .cta:hover > svg, .lp-login:hover > svg { background: rgba(0,0,0,.2); }
+  .lp-btn.ghost:hover > svg { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+  /* the arrow leans toward wherever the button is about to take you */
+  .lp-btn:not([download]):hover > svg, .cta:not([download]):hover > svg, .lp-login:hover > svg { transform: translateX(3px); }
+  .lp-btn[download]:hover > svg, .cta[download]:hover > svg { transform: translateY(2px); }
+
+  /* --- secondary / ghost buttons get the same care, in reverse --- */
+  .lp-btn.ghost, .btn-mini {
+    position: relative;
+    background-image: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,0) 62%);
+    transition: transform .18s cubic-bezier(.34,1.28,.5,1), border-color .2s ease, box-shadow .26s ease, background-color .2s ease;
+  }
+  .btn-mini:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+    box-shadow: 0 8px 20px -12px rgb(var(--accent-rgb) / .55), inset 0 1px 0 rgba(255,255,255,.1);
+  }
+  .btn-mini:active { transform: translateY(0); box-shadow: none; }
+  .btn-mini.danger:hover { border-color: #ff6b6b; box-shadow: 0 8px 20px -12px rgba(255,107,107,.5); }
+
+  /* --- the selected pill in a segmented control gets the gel too --- */
+  .vt-btn.active, .prof-tab.active {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--accent) 100%, #fff) 0%, var(--accent) 44%, color-mix(in srgb, var(--accent) 90%, #000) 100%);
+    box-shadow: 0 3px 10px -3px rgb(var(--accent-rgb) / .45), inset 0 1.5px 0 rgba(255,255,255,.7), inset 0 -2px 5px -2px rgba(0,0,0,.26);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lp-btn.primary::after, .lp-login::after, .cta::after, .m-submit::after { display: none; }
+    .lp-btn.primary, .lp-login, .cta, .m-submit, button.scan, .btn-mini { transition: box-shadow .2s ease; }
+    .lp-btn.primary:hover, .lp-login:hover, .cta:hover, .m-submit:hover, .btn-mini:hover { transform: none; }
+  }
+
+  /* The primary call to action. The client had no .cta of its own — its home
+     page used a bare .btn — so this is the shape the BUTTONS block above
+     paints onto, brought over from the site so the two builds match. */
+  .cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-top: 22px; padding: 12px 22px; border-radius: 10px; border: none;
+    background: var(--accent); color: #000;
+    font-family: inherit; font-weight: 800; font-size: .95rem; cursor: pointer;
+  }
+  a.cta { text-decoration: none; }
+  .db-note { color: var(--muted); font-size: .78rem; margin: 12px 0 0; letter-spacing: .3px; }
+
+  /* ===================================================================
+     SHARED PAGE FURNITURE
+     A page header and a section header, so every tab in the app opens the
+     same way instead of each one inventing its own arrangement of an h1.
+     =================================================================== */
+  .pg-head { display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap; margin: 0 0 24px; }
+  .pg-head-main { flex: 1; min-width: 240px; }
+  .pg-head h1 { margin: 0 0 6px; letter-spacing: -.5px; }
+  .pg-head .sub { margin: 0; }
+  .pg-head-side { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .pg-kicker {
+    display: inline-flex; align-items: center; gap: 8px; margin: 0 0 10px;
+    font-size: .66rem; font-weight: 800; letter-spacing: 2.2px; text-transform: uppercase; color: var(--accent);
+  }
+  .pg-kicker::before { content: ""; width: 16px; height: 2px; border-radius: 2px; background: var(--accent); opacity: .7; }
+
+  .sec-head { display: flex; align-items: center; gap: 12px; margin: 34px 0 14px; }
+  .sec-head h2 { margin: 0; font-size: 1.08rem; letter-spacing: -.2px; white-space: nowrap; }
+  .sec-head .rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+  .sec-head .sec-note { color: var(--muted); font-size: .8rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+  .sec-head .sec-note b { color: var(--text); font-weight: 800; }
+  .sec-head .sec-count {
+    font-size: .66rem; font-weight: 800; letter-spacing: .6px; padding: 3px 9px; border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  }
+
+  /* a placeholder that reads as "loading" without a spinner in the way */
+  .skel { position: relative; overflow: hidden; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; }
+  .skel::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.045) 50%, transparent 80%);
+    transform: translateX(-100%); animation: skelSweep 1.25s ease-in-out infinite;
+  }
+  @keyframes skelSweep { to { transform: translateX(100%); } }
+  @media (prefers-reduced-motion: reduce) { .skel::after { animation: none; } }
+
+  /* ===================================================================
+     HOME
+     A desk rather than a brochure: who you are, what you can spend, the four
+     things you'd actually want to open, then the noticeboard and the room.
+     =================================================================== */
+  .hm-hero {
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; gap: clamp(16px, 3vw, 28px);
+    padding: clamp(20px, 3vw, 30px); border-radius: 20px; margin-bottom: 16px;
+    border: 1px solid color-mix(in srgb, var(--accent) 14%, transparent);
+    background:
+      radial-gradient(110% 150% at 100% 0%, rgb(var(--accent-rgb) / .07), transparent 56%),
+      color-mix(in srgb, var(--panel) 55%, transparent);
+    -webkit-backdrop-filter: blur(18px) saturate(175%); backdrop-filter: blur(18px) saturate(175%);
+    box-shadow: inset 1px 1px 0 rgba(255,255,255,.08), 0 16px 40px -22px rgba(0,0,0,.8);
+  }
+  .hm-hero .hero-eye { width: clamp(64px, 11vw, 92px); height: auto; flex-shrink: 0;
+    filter: drop-shadow(0 0 22px rgb(var(--accent-rgb) / .18)); }
+  .hm-hero-txt { flex: 1; min-width: 0; }
+  .hm-hero h1 { font-size: clamp(1.35rem, 3vw, 1.85rem); margin: 0 0 8px; letter-spacing: -.6px; }
+  .hm-hero p { margin: 0; color: var(--muted); font-size: .89rem; line-height: 1.6; max-width: 58ch; }
+
+  /* the wallet, said plainly, next to the one button that spends from it */
+  .hm-wallet { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 16px; }
+  .hm-bal { display: inline-flex; align-items: baseline; gap: 7px; }
+  .hm-bal b { font-size: 1.5rem; font-weight: 800; color: var(--accent); line-height: 1; font-variant-numeric: tabular-nums; }
+  .hm-bal span { font-size: .74rem; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .hm-hero .cta { margin-top: 0; }
+
+  /* --- the four doors --- */
+  /* Explicit counts rather than auto-fit: four doors want to read as one row
+     or a tidy square, and auto-fit kept landing on three-plus-one. */
+  .hm-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 6px; }
+  @media (max-width: 1180px) { .hm-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 430px)  { .hm-actions { grid-template-columns: minmax(0, 1fr); } }
+  .hm-tile {
+    position: relative; overflow: hidden; text-align: left; cursor: pointer;
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 17px 18px 16px; border-radius: 15px; font-family: inherit;
+    border: 1px solid var(--border); background: color-mix(in srgb, var(--panel) 55%, transparent); color: var(--text);
+    transition: transform .2s cubic-bezier(.4,0,.2,1), border-color .2s ease, box-shadow .28s ease;
+  }
+  .hm-tile::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+    background: var(--accent); transform: scaleY(0); transform-origin: 50% 100%;
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+  }
+  .hm-tile:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+    box-shadow: 0 16px 34px -20px rgba(0,0,0,.9); }
+  .hm-tile:hover::before { transform: scaleY(1); }
+  .hm-tile-ico {
+    width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 8px; color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+  .hm-tile-ico svg { width: 17px; height: 17px; }
+  .hm-tile b { font-size: .93rem; font-weight: 800; letter-spacing: -.1px; }
+  .hm-tile span { font-size: .77rem; color: var(--muted); line-height: 1.45; }
+  .hm-tile em {
+    position: absolute; top: 14px; right: 14px; font-style: normal;
+    font-size: .58rem; font-weight: 800; letter-spacing: .7px; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 999px; color: var(--muted); border: 1px solid var(--border);
+  }
+
+  /* --- the noticeboard, when there is anything on it --- */
+  .hm-annwrap:has(.ann-list:empty) { display: none; }
+
+  /* --- members --- */
+  .member-card { position: relative; }
+  .member-card::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: inset 0 0 0 1px transparent; transition: box-shadow .2s ease;
+  }
+  .member-card:hover::after { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .mem-skel { height: 148px; }
+
+  /* ===================================================================
+     ADMIN
+     It was one long column of headings and raw rows. It is a console now:
+     what the room looks like at a glance, then each job in its own panel.
+     =================================================================== */
+  .ad-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
+  @media (max-width: 900px) { .ad-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .ad-stat {
+    padding: 15px 16px; border-radius: 14px; border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--panel) 55%, transparent);
+  }
+  .ad-stat b { display: block; font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ad-stat span { display: block; margin-top: 3px; font-size: .67rem; letter-spacing: 1.3px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+
+  .ad-panel {
+    padding: 18px; border-radius: 16px; margin-bottom: 14px;
+    border: 1px solid var(--border); background: color-mix(in srgb, var(--panel) 45%, transparent);
+  }
+  .ad-panel > .sec-head { margin-top: 0; }
+  .ad-panel-sub { color: var(--muted); font-size: .8rem; line-height: 1.55; margin: -6px 0 14px; }
+
+  /* a filter box that sits in a section header without shouting */
+  .ad-filter {
+    flex-shrink: 0; width: min(210px, 42vw); padding: 8px 12px; border-radius: 9px;
+    border: 1px solid var(--border); background: var(--panel2); color: var(--text);
+    font-family: inherit; font-size: .8rem; outline: none;
+    transition: border-color .18s ease, box-shadow .25s ease;
+  }
+  .ad-filter:focus { border-color: color-mix(in srgb, var(--accent) 50%, transparent); box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .1); }
+  .ad-filter::placeholder { color: #5c5c5c; }
+
+  /* member rows: the controls stop being a jumble of bare inputs */
+  .admin-users { gap: 7px; }
+  .admin-user {
+    gap: 11px; border-radius: 12px; padding: 10px 13px;
+    background: color-mix(in srgb, var(--panel) 62%, transparent);
+    transition: border-color .18s ease, background .18s ease;
+  }
+  .admin-user:hover { border-color: color-mix(in srgb, var(--accent) 24%, transparent); }
+  .admin-user.is-you { border-color: color-mix(in srgb, var(--accent) 34%, transparent); }
+  .au-ava { border: 1px solid var(--border); }
+  .au-role-tag {
+    font-size: .58rem; font-weight: 800; letter-spacing: .6px; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); margin-left: 7px;
+  }
+  .au-role-tag.admin { background: var(--accent); color: #000; border-color: var(--accent); }
+  .au-tokwrap { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: .74rem; }
+  .au-tokwrap svg { width: 14px; height: 14px; color: var(--accent); }
+  .au-ctrl select, .au-ctrl input { font-family: inherit; }
+
+  /* logs: a readable ledger instead of a wall */
+  .admin-logs { background: color-mix(in srgb, var(--panel) 40%, transparent); gap: 2px; }
+  .log-row { border: 1px solid transparent; transition: background .15s ease, border-color .15s ease; }
+  .log-row:hover { border-color: var(--border); }
+  .log-user { color: var(--text); }
+
+  /* codes */
+  .admin-code { border-radius: 12px; background: color-mix(in srgb, var(--panel) 62%, transparent); }
+  .admin-code:hover { border-color: color-mix(in srgb, var(--accent) 24%, transparent); }
+  .ac-code { cursor: pointer; border-bottom: 1px dashed color-mix(in srgb, var(--accent) 40%, transparent); }
+
+  /* the compose forms read as forms, with room to breathe */
+  .ann-compose, .code-compose { background: color-mix(in srgb, var(--panel2) 55%, transparent); border-radius: 12px; }
+  .ann-compose { padding: 14px; border: 1px solid var(--border); }
+  .ad-empty { color: var(--muted); font-size: .85rem; padding: 22px; text-align: center; border: 1px dashed var(--border); border-radius: 12px; }
+
+  /* ===================================================================
+     INVESTIGATE / DATABASE / TABLE / CODES / PROFILE
+     =================================================================== */
+  /* --- investigate: the search console over the board --- */
+  .inv-kicker { justify-content: center; }
+  #page-investigate .pg-kicker { display: flex; justify-content: center; }
+  .inv-note { text-align: center; margin: -4px 0 16px; opacity: .75; font-style: italic; }
+  #invForm select.nic-select {
+    background-image: linear-gradient(45deg, transparent 50%, rgba(255,255,255,.45) 50%), linear-gradient(135deg, rgba(255,255,255,.45) 50%, transparent 50%);
+    background-position: right 14px center, right 9px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+    appearance: none; padding-right: 32px; font-weight: 700;
+  }
+  /* the board says what it is waiting for instead of sitting empty */
+  .graph-stage::before {
+    content: "nothing on the board yet — run a search";
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: .84rem; letter-spacing: .4px; pointer-events: none;
+    opacity: 1; transition: opacity .3s ease;
+  }
+  .graph-stage:has(.g-node)::before, .graph-stage:has(.g-center:not(.hidden))::before { opacity: 0; }
+
+  /* --- database --- */
+  #page-database .card { display: flex; flex-direction: column; }
+  #page-database .lp-ico { width: 38px; height: 38px; margin-bottom: 13px; }
+  #page-database .lp-ico svg { width: 19px; height: 19px; }
+  .db-cta { margin-top: 24px; }
+  .db-cta .db-note { margin-top: 12px; }
+
+  /* --- table: how full it is, drawn rather than counted --- */
+  .tbl-meter { margin: -8px 0 22px; max-width: 420px; }
+  .tbl-meter-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 7px; }
+  .table-meter { margin: 0; }
+  .tbl-meter-free { color: var(--muted); font-size: .74rem; }
+  .tbl-bar { height: 5px; border-radius: 4px; background: var(--panel2); border: 1px solid var(--border); overflow: hidden; }
+  .tbl-bar i {
+    display: block; height: 100%; width: 0; border-radius: 4px; background: var(--accent);
+    transition: width .5s cubic-bezier(.4,0,.2,1), background .3s ease;
+  }
+  .tbl-bar i.full { background: #ff6b6b; }
+  .bm-entry { border-radius: 14px; }
+  .bm-item { border-radius: 14px; transition: border-color .18s ease; }
+  .bm-entry:hover .bm-item { border-color: color-mix(in srgb, var(--accent) 26%, transparent); }
+
+  /* --- codes --- */
+  .redeem-card { border-color: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .redeem-wallet {
+    padding: 12px 14px; border-radius: 12px; margin-bottom: 18px;
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  .redeem-wallet b { font-size: 1.25rem; }
+
+  /* --- profile --- */
+  .prof-card {
+    padding: 18px; border-radius: 16px; margin-bottom: 12px;
+    border: 1px solid var(--border); background: color-mix(in srgb, var(--panel) 45%, transparent);
+  }
+  .prof-field textarea { margin-bottom: 0; }
+  .prof-actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .prof-count { color: var(--muted); font-size: .74rem; font-variant-numeric: tabular-nums; }
+  .prof-count b { color: var(--text); font-weight: 700; }
+  .prof-count.near b { color: #ffa64d; }
+  .prof-hint { color: var(--muted); font-size: .78rem; line-height: 1.5; margin: -2px 0 10px; }
+  .profile-hero { border-color: color-mix(in srgb, var(--accent) 13%, transparent); border-radius: 18px; }
+  .ph-banner { height: 168px; }
+  .ph-name { letter-spacing: -.4px; }
 </style>
 </head>
 <body>
+
+<!-- ===================== LIVING BACKGROUND =====================
+     A constellation that answers to the cursor plus a light that follows it.
+     Built by script only where it can be afforded (see fxLayer() below). -->
+<div class="fx" id="fx" aria-hidden="true">
+  <div class="fx-veil"></div>
+  <canvas class="fx-canvas" id="fxCanvas"></canvas>
+  <div class="fx-glow" id="fxGlow"></div>
+</div>
 
 <!-- INTRO -->
 <div id="intro">
@@ -1699,17 +2261,44 @@
   <p class="intro-sub">osint · sql database client</p>
 
   <div class="intro-auth" id="introAuth">
-    <div class="auth-tabs" id="authTabs">
-      <span class="auth-slider" aria-hidden="true"></span>
-      <button class="auth-tab active" id="tabLogin" type="button">Log in</button>
-      <button class="auth-tab" id="tabRegister" type="button">Register</button>
+    <div class="auth-card">
+      <div class="auth-tabs" id="authTabs" role="tablist" aria-label="Sign in or register">
+        <span class="auth-slider" aria-hidden="true"></span>
+        <button class="auth-tab active" id="tabLogin" type="button" role="tab" aria-selected="true">Log in</button>
+        <button class="auth-tab" id="tabRegister" type="button" role="tab" aria-selected="false">Register</button>
+      </div>
+      <form id="authForm" autocomplete="on" novalidate>
+        <div class="fld">
+          <label for="authUser">Username</label>
+          <div class="fld-box" id="userBox">
+            <svg class="fld-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            <input id="authUser" name="username" type="text" autocomplete="username" spellcheck="false" autocapitalize="none" placeholder="your handle" required />
+          </div>
+        </div>
+
+        <div class="fld">
+          <label for="authPass">Password</label>
+          <div class="fld-box" id="passBox">
+            <svg class="fld-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <input id="authPass" name="password" type="password" autocomplete="current-password" placeholder="••••••••" required />
+            <button class="fld-eye" id="authPeek" type="button" aria-label="Show password" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="pw-meter" id="pwMeter" hidden><span class="bar"><i></i></span><span id="pwWord">weak</span></div>
+          <p class="fld-warn" id="capsWarn" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 4 12h4v4h8v-4h4z"/><path d="M8 20h8"/></svg>
+            Caps Lock is on
+          </p>
+        </div>
+
+        <button class="m-submit" id="authSubmit" type="submit">
+          <span class="btn-spin" aria-hidden="true"></span>
+          <span class="btn-label" id="authSubmitLabel">Log in</span>
+        </button>
+        <div class="m-err" id="authErr" role="alert" aria-live="polite"></div>
+      </form>
     </div>
-    <form id="authForm" autocomplete="on">
-      <input id="authUser" type="text" autocomplete="username" spellcheck="false" placeholder="username" />
-      <input id="authPass" type="password" autocomplete="current-password" placeholder="password" />
-      <button class="m-submit" id="authSubmit" type="submit">Log in</button>
-      <div class="m-err" id="authErr"></div>
-    </form>
     <p class="intro-hint" id="authHint">Create an account to get free tokens and start investigating.</p>
   </div>
 
@@ -1802,7 +2391,8 @@
     <!-- HOME -->
     <section class="page show" id="page-home">
       <div class="hero-greet" id="heroGreet"></div>
-      <div class="home-hero">
+
+      <div class="hm-hero">
         <svg class="hero-eye" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <line x1="221" y1="211" x2="286" y2="276" stroke="var(--accent)" stroke-width="16" stroke-linecap="round"/>
           <circle cx="150" cy="140" r="100" fill="#000"/>
@@ -1815,28 +2405,58 @@
           </g>
           <circle cx="150" cy="140" r="100" fill="none" stroke="var(--accent)" stroke-width="9"/>
         </svg>
-        <div>
-          <h1>m3's investigation tool — desktop</h1>
-          <p class="sub">Connect your own database and sweep every table for a username or any term. Everything runs locally; your credentials never leave this machine.</p>
+        <div class="hm-hero-txt">
+          <h1>The board is yours.</h1>
+          <p>The full tool, running on your own machine — so the social sweeps are quicker, and it can reach a database no website could. Nothing you connect to leaves this computer.</p>
+          <div class="hm-wallet">
+            <span class="hm-bal"><b id="hmTokens">0</b><span>tokens left</span></span>
+            <button class="cta" id="goInvestigate">
+              Start investigating
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
         </div>
       </div>
-      <div id="annList" class="ann-list"></div>
 
-      <div class="cards">
-        <div class="card"><h3>Every engine</h3><p>MySQL, PostgreSQL, SQLite — a host and a port, or just a file on disk.</p></div>
-        <div class="card"><h3>Full-text sweep</h3><p>Every text column in every table, read end to end. No SQL to write.</p></div>
-        <div class="card"><h3>Stays on this machine</h3><p>No servers, no uploads. It talks straight to your database and nowhere else.</p></div>
+      <!-- the doors worth opening. Each presses the matching sidebar entry so
+           every side-effect that hangs off navigation happens here too. -->
+      <div class="hm-actions" id="hmActions">
+        <button class="hm-tile" type="button" data-goto="investigate">
+          <span class="hm-tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+          <b>Investigate</b>
+          <span>Trace a name across the web</span>
+        </button>
+        <button class="hm-tile" type="button" data-goto="database">
+          <span class="hm-tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span>
+          <b>Your database</b>
+          <span>Sweep every table for a term</span>
+        </button>
+        <button class="hm-tile" type="button" data-goto="geoint">
+          <span class="hm-tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9S14.5 18.3 12 21c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg></span>
+          <b>GEOINT</b>
+          <span>Put a photograph on the map</span>
+        </button>
+        <button class="hm-tile" type="button" data-goto="bookmarks">
+          <span class="hm-tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v4H3zM3 8v12h18V8M9 8v12M15 8v12"/></svg></span>
+          <b>Your table</b>
+          <span>Everything you've saved</span>
+        </button>
       </div>
-      <div style="display:flex; gap:10px; margin-top:22px; flex-wrap:wrap">
-        <button class="btn" id="goInvestigate">Start investigating →</button>
-        <button class="btn ghost" id="goDatabase">Open database client →</button>
+
+      <div class="hm-annwrap">
+        <div class="sec-head">
+          <h2>Noticeboard</h2>
+          <span class="rule"></span>
+        </div>
+        <div id="annList" class="ann-list"></div>
       </div>
     </section>
 
     <!-- INVESTIGATE -->
     <section class="page" id="page-investigate">
-      <h1>Investigation</h1>
-      <p class="sub">Search by username, email or password. A username search also sweeps social platforms; every search checks the records.</p>
+      <p class="pg-kicker inv-kicker">Investigation</p>
+      <h1>What are we chasing?</h1>
+      <p class="sub">A username, an email or a password. A username also sweeps the social platforms; every search reads the records.</p>
 
       <form id="invForm">
         <select id="invType" class="nic-select" aria-label="Search type">
@@ -1919,8 +2539,13 @@
 
     <!-- DATABASE -->
     <section class="page" id="page-database">
-      <h1>Connect your own database</h1>
-      <p class="sub">Pick your engine, connect, then search. Text columns across every table are scanned for your term.</p>
+      <div class="pg-head">
+        <div class="pg-head-main">
+          <p class="pg-kicker">Local</p>
+          <h1>Connect your own database</h1>
+          <p class="sub">Pick your engine, connect, then search. Every text column in every table is read for your term — and none of it leaves this machine.</p>
+        </div>
+      </div>
 
       <div class="conn">
         <div class="grid">
@@ -2011,20 +2636,32 @@
       <input type="file" id="avaFile" accept="image/*" hidden>
 
       <div class="prof-panel">
-        <div class="prof-field">
-          <label for="bioInput">Bio</label>
-          <textarea id="bioInput" maxlength="300" rows="2" placeholder="Say something about yourself…"></textarea>
-          <button class="btn-mini" id="saveBio" type="button">Save bio</button>
+        <div class="prof-card">
+          <div class="prof-field">
+            <label for="bioInput">Bio</label>
+            <textarea id="bioInput" maxlength="300" rows="3" placeholder="Say something about yourself…"></textarea>
+            <div class="prof-actions">
+              <button class="btn-mini" id="saveBio" type="button">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></svg>
+                Save bio
+              </button>
+              <span class="prof-count"><b id="bioCount">0</b>/300</span>
+            </div>
+          </div>
         </div>
-        <div class="prof-field">
+        <div class="prof-card prof-field">
           <label>Profile picture &amp; banner</label>
+          <p class="prof-hint">Pictures crop to a circle, banners to a wide strip — what you frame is what everyone else sees.</p>
           <div class="reset-row">
             <button class="btn-mini" id="resetAva" type="button">Reset picture</button>
             <button class="btn-mini" id="resetBanner" type="button">Reset banner</button>
           </div>
         </div>
 
-        <h3 class="prof-sub">Connections</h3>
+        <div class="sec-head">
+          <h2>Connections</h2>
+          <span class="rule"></span>
+        </div>
         <div class="conn-card">
           <div class="conn-ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/></svg></div>
           <div class="conn-meta"><div class="conn-name">Discord</div><div class="conn-sub" id="discordSub">Show your live activity (music &amp; games) on the home page.</div></div>
@@ -2077,14 +2714,36 @@
           </div>
           <div class="geo-status" id="geoStatus"></div>
         </div>
-        <aside class="geo-info" id="geoInfo"></aside>
+        <aside class="geo-info" id="geoInfo">
+          <!-- the readout starts as a briefing rather than an empty box, so the
+               panel explains the mode instead of just waiting in silence -->
+          <div class="geo-brief">
+            <div class="geo-brief-head">
+              <span class="geo-brief-dot"></span>
+              <b>Standing by</b>
+            </div>
+            <p>Drop a photograph in and the file's own GPS tag is read first — that's the part that gives an exact answer.</p>
+            <ol class="geo-brief-steps">
+              <li><b>EXIF first.</b> A tag in the file pins it to a doorstep.</li>
+              <li><b>Then the picture.</b> No tag, and the image itself is matched — architecture, landscape, signage.</li>
+              <li><b>You decide.</b> That comes back as a ranked shortlist of countries and towns, not a single answer.</li>
+            </ol>
+            <p class="geo-brief-note">Social networks strip GPS out on upload, so a photo saved from one rarely carries a tag.</p>
+            <button class="m-submit geo-brief-go" id="geoBriefGo" type="button">Load a picture · 10 tokens</button>
+          </div>
+        </aside>
       </div>
     </section>
 
     <!-- CODES (redeem for tokens) -->
     <section class="page" id="page-codes">
-      <h1>Codes</h1>
-      <p class="sub">Got a code? Redeem it here and the tokens land straight in your wallet.</p>
+      <div class="pg-head">
+        <div class="pg-head-main">
+          <p class="pg-kicker">Wallet</p>
+          <h1>Codes</h1>
+          <p class="sub">Got a code? Redeem it here and the tokens land straight in your wallet.</p>
+        </div>
+      </div>
 
       <div class="redeem-card">
         <div class="redeem-wallet">
@@ -2102,28 +2761,61 @@
 
     <!-- USERS -->
     <section class="page" id="page-members">
-      <h1>Users</h1>
-      <p class="sub">Everyone with access to the tool. Click anyone to see their profile.</p>
-      <div class="members-head">
-        <div class="members-stat"><span class="dot-live"></span> <b id="statActive">0</b> online · <b id="statTotal">0</b> total</div>
+      <div class="pg-head">
+        <div class="pg-head-main">
+          <p class="pg-kicker">The room</p>
+          <h1>Members</h1>
+          <p class="sub">Everyone with access to the tool. Click anyone to see their profile.</p>
+        </div>
+      </div>
+      <div class="sec-head">
+        <h2>Everyone</h2>
+        <span class="rule"></span>
+        <span class="sec-note"><span class="dot-live"></span> <b id="statActive">0</b> online · <b id="statTotal">0</b> total</span>
       </div>
       <div class="member-grid" id="memberGrid"></div>
     </section>
 
     <!-- ADMIN (admins only) -->
     <section class="page" id="page-admin">
-      <h1>Admin</h1>
-      <p class="sub">Manage members and review search activity.</p>
-
-      <h3 class="prof-sub">Post an announcement</h3>
-      <div class="ann-compose">
-        <input type="text" id="annTitle" maxlength="120" placeholder="Title">
-        <textarea id="annBody" maxlength="2000" rows="3" placeholder="What does everyone need to know?"></textarea>
-        <button class="btn-mini" id="annPost" type="button">Publish</button>
+      <div class="pg-head">
+        <div class="pg-head-main">
+          <p class="pg-kicker">Console</p>
+          <h1>Admin</h1>
+          <p class="sub">Who's here, what they're spending it on, and everything you hand out.</p>
+        </div>
       </div>
 
-      <h3 class="prof-sub">Redeem codes</h3>
-      <div class="code-compose">
+      <div class="ad-stats">
+        <div class="ad-stat"><b id="adStatUsers">—</b><span>Members</span></div>
+        <div class="ad-stat"><b id="adStatAdmins">—</b><span>Admins</span></div>
+        <div class="ad-stat"><b id="adStatCodes">—</b><span>Live codes</span></div>
+        <div class="ad-stat"><b id="adStatSearches">—</b><span>Searches logged</span></div>
+      </div>
+
+      <div class="ad-panel">
+        <div class="sec-head">
+          <h2>Noticeboard</h2>
+          <span class="rule"></span>
+        </div>
+        <p class="ad-panel-sub">Anything you publish here shows on every member's home page.</p>
+        <div class="ann-compose">
+          <input type="text" id="annTitle" maxlength="120" placeholder="Title">
+          <textarea id="annBody" maxlength="2000" rows="3" placeholder="What does everyone need to know?"></textarea>
+          <button class="btn-mini" id="annPost" type="button">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>
+            Publish
+          </button>
+        </div>
+      </div>
+
+      <div class="ad-panel">
+        <div class="sec-head">
+          <h2>Redeem codes</h2>
+          <span class="rule"></span>
+        </div>
+        <p class="ad-panel-sub">Leave the code blank and one gets generated for you.</p>
+        <div class="code-compose">
         <div class="code-fields">
           <div class="code-field">
             <label for="codeCode">Code <span>optional</span></label>
@@ -2146,21 +2838,50 @@
             <input type="text" id="codeNote" maxlength="120" placeholder="What's it for?">
           </div>
         </div>
-        <button class="btn-mini" id="codeCreate" type="button">Create code</button>
+          <button class="btn-mini" id="codeCreate" type="button">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Create code
+          </button>
+        </div>
+        <div id="adminCodes" class="admin-codes"></div>
       </div>
-      <div id="adminCodes" class="admin-codes"></div>
 
-      <h3 class="prof-sub" style="margin-top:22px">Members</h3>
-      <div id="adminUsers" class="admin-users"></div>
-      <h3 class="prof-sub" style="margin-top:22px">Search logs</h3>
-      <div id="adminLogs" class="admin-logs"></div>
+      <div class="ad-panel">
+        <div class="sec-head">
+          <h2>Members</h2>
+          <span class="rule"></span>
+          <input class="ad-filter" id="adUserFilter" type="search" placeholder="Filter members…" autocomplete="off" aria-label="Filter members">
+        </div>
+        <div id="adminUsers" class="admin-users"></div>
+      </div>
+
+      <div class="ad-panel">
+        <div class="sec-head">
+          <h2>Search log</h2>
+          <span class="rule"></span>
+          <input class="ad-filter" id="adLogFilter" type="search" placeholder="Filter by user or query…" autocomplete="off" aria-label="Filter search log">
+        </div>
+        <div id="adminLogs" class="admin-logs"></div>
+      </div>
     </section>
 
     <!-- TABLE (saved investigation results) -->
     <section class="page" id="page-bookmarks">
-      <h1>Table</h1>
-      <p class="sub">Everything you've laid out on the table. Saved results stay here — no token spent to look again.</p>
-      <div class="table-meter"><span id="bmUsed">0</span> / <span id="bmLimit">10</span> slots used</div>
+      <div class="pg-head">
+        <div class="pg-head-main">
+          <p class="pg-kicker">Saved work</p>
+          <h1>Your table</h1>
+          <p class="sub">Everything you've laid out. A saved result keeps its whole snapshot, so looking again never costs another token.</p>
+        </div>
+      </div>
+
+      <div class="tbl-meter">
+        <div class="tbl-meter-top">
+          <span class="table-meter"><b id="bmUsed">0</b> of <b id="bmLimit">10</b> slots used</span>
+          <span class="tbl-meter-free" id="bmFree"></span>
+        </div>
+        <div class="tbl-bar"><i id="bmBar"></i></div>
+      </div>
       <div id="bookmarksList" class="bm-list"></div>
     </section>
   </main>
@@ -2382,6 +3103,7 @@
   let settings = loadSettings();
   function applyTheme() {
     document.documentElement.classList.toggle("color-theme", !settings.blackWhite);
+    if (window.__fxTheme) window.__fxTheme();
   }
   applyTheme();
 
@@ -2423,6 +3145,130 @@
   const clickSound = () => { thump({ freq: 120, dropTo: 42, type: "triangle", dur: .18, gain: .34 }); knock({ dur: .06, gain: .24, tone: 1000 }); };
   function attachSounds(el) { el.addEventListener("mouseenter", hoverSound); el.addEventListener("click", clickSound); }
   window.addEventListener("pointerdown", () => getCtx(), { once: true });
+
+  function fxLayer() {
+    const canvas = document.getElementById("fxCanvas");
+    const glow = document.getElementById("fxGlow");
+    if (!canvas || !glow) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!window.matchMedia("(pointer: fine)").matches) return;   // a finger has no hover to follow
+    if (window.innerWidth < 760) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let w = 0, h = 0, parts = [], rings = [];
+    // the accent is a theme variable, so the constellation is read from the
+    // stylesheet rather than hard-coded — and re-read when the theme changes
+    let tint = "244, 244, 244";
+    function readTint() {
+      const v = getComputedStyle(document.documentElement).getPropertyValue("--accent-rgb").trim();
+      if (v) tint = v.replace(/\s+/g, ", ");
+    }
+    readTint();
+    window.__fxTheme = readTint;      // applyTheme() calls this when it exists
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);   // retina past 2x buys nothing here
+      w = window.innerWidth; h = window.innerHeight;
+      canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // density scales with the window so a big monitor isn't sparse and a
+      // small one isn't soup — capped, because the join pass is O(n²)
+      const want = Math.max(28, Math.min(80, Math.round((w * h) / 24000)));
+      while (parts.length > want) parts.pop();
+      while (parts.length < want) {
+        parts.push({
+          x: Math.random() * w, y: Math.random() * h,
+          vx: (Math.random() - .5) * .22, vy: (Math.random() - .5) * .22,
+          r: .7 + Math.random() * 1.5,
+        });
+      }
+    }
+
+    // pointer state: where it is, and where the light has caught up to
+    let px = -9999, py = -9999, gx = -9999, gy = -9999, seen = false;
+    window.addEventListener("pointermove", (e) => {
+      px = e.clientX; py = e.clientY;
+      if (!seen) { seen = true; gx = px; gy = py; document.body.classList.add("fx-live"); }
+    }, { passive: true });
+    // a pointer that leaves the window shouldn't drag a light off the edge
+    window.addEventListener("pointerleave", () => { px = -9999; py = -9999; }, { passive: true });
+    // a click drops a ring into the field
+    window.addEventListener("pointerdown", (e) => {
+      if (rings.length > 5) return;
+      rings.push({ x: e.clientX, y: e.clientY, t: 0 });
+    }, { passive: true });
+
+    const LINK = 128;      // how close two points must be to thread together
+    const PUSH = 150;      // how close the cursor gets before points shy away
+
+    function frame() {
+      raf = requestAnimationFrame(frame);
+      if (document.hidden) return;
+
+      // the light eases toward the cursor rather than snapping to it
+      gx += (px - gx) * .08; gy += (py - gy) * .08;
+      if (seen) glow.style.transform = "translate3d(" + gx.toFixed(1) + "px," + gy.toFixed(1) + "px,0)";
+
+      ctx.clearRect(0, 0, w, h);
+
+      for (const p of parts) {
+        p.x += p.vx; p.y += p.vy;
+        // shove away from the cursor, softly, and only inside its reach
+        const dx = p.x - px, dy = p.y - py;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < PUSH * PUSH && d2 > 0.01) {
+          const d = Math.sqrt(d2), f = (1 - d / PUSH) * 1.1;
+          p.x += (dx / d) * f; p.y += (dy / d) * f;
+        }
+        // wrap rather than bounce, so the field never looks boxed in
+        if (p.x < -20) p.x = w + 20; else if (p.x > w + 20) p.x = -20;
+        if (p.y < -20) p.y = h + 20; else if (p.y > h + 20) p.y = -20;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, 6.283);
+        ctx.fillStyle = "rgba(" + tint + ", .34)";
+        ctx.fill();
+      }
+
+      // threads between neighbours, and brighter ones to the cursor itself
+      ctx.lineWidth = 1;
+      for (let i = 0; i < parts.length; i++) {
+        const a = parts[i];
+        for (let j = i + 1; j < parts.length; j++) {
+          const b = parts[j];
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 > LINK * LINK) continue;
+          ctx.strokeStyle = "rgba(" + tint + ", " + (.12 * (1 - Math.sqrt(d2) / LINK)).toFixed(3) + ")";
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        }
+        const cdx = a.x - px, cdy = a.y - py;
+        const cd2 = cdx * cdx + cdy * cdy;
+        if (cd2 < 200 * 200) {
+          ctx.strokeStyle = "rgba(" + tint + ", " + (.30 * (1 - Math.sqrt(cd2) / 200)).toFixed(3) + ")";
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(px, py); ctx.stroke();
+        }
+      }
+
+      // click rings, expanding and fading out
+      for (let i = rings.length - 1; i >= 0; i--) {
+        const r = rings[i];
+        r.t += 0.028;
+        if (r.t >= 1) { rings.splice(i, 1); continue; }
+        ctx.strokeStyle = "rgba(" + tint + ", " + (.34 * (1 - r.t)).toFixed(3) + ")";
+        ctx.lineWidth = 1.6 * (1 - r.t);
+        ctx.beginPath(); ctx.arc(r.x, r.y, 8 + r.t * 118, 0, 6.283); ctx.stroke();
+      }
+    }
+
+    let raf = null;
+    resize();
+    window.addEventListener("resize", resize, { passive: true });
+    raf = requestAnimationFrame(frame);
+  }
+  fxLayer();
 
   /* ---------- eye follows mouse ---------- */
   const irisEl = document.querySelector("#intro .iris"), glassSvg = document.querySelector("#intro .glass");
@@ -2491,13 +3337,57 @@
     setTimeout(() => { t.style.transition = "opacity .3s"; t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, 2600);
   }
   const initials = (n) => (n || "?").slice(0, 2).toUpperCase();
+  /* ---------- pictures that came off somebody else's account ----------
+     An avatar or banner is a plain string on a member record, and it gets
+     rendered here in everyone else's client. Building the <img> by hand —
+     '<img src="' + u.avatar + '">' — lets whatever is in that string close the
+     attribute and bring its own handler along; the same value dropped into a
+     background-image: url('…') can close the url() and add declarations. The
+     server refuses anything that isn't a real image now, but this side stops
+     treating the value as markup either way: it is checked, then assigned as a
+     property, which cannot be parsed as HTML or CSS. */
+  function safeImageUrl(v) {
+    if (typeof v !== "string") return "";
+    const s = v.trim();
+    if (!s) return "";
+    if (/^data:image\/(?:png|jpeg|jpg|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(s)) return s;
+    if (/^https:\/\/[A-Za-z0-9._~:/?#@!$&*+,;=%-]+$/.test(s)) return s;
+    return "";
+  }
+  function setAvatar(el, url, fallback) {
+    if (!el) return;
+    el.textContent = "";
+    const src = safeImageUrl(url);
+    if (!src) { el.textContent = fallback; return; }
+    const img = document.createElement("img");
+    img.src = src; img.alt = "";
+    el.appendChild(img);
+  }
+  function setBanner(el, url) {
+    if (!el) return;
+    const src = safeImageUrl(url);
+    el.style.backgroundImage = src ? 'url("' + src + '")' : "";
+  }
+
+  /* The balance is printed in four places — the top bar, the home hero, the
+     profile card and the Codes page. Each used to be written by whichever
+     function owned that screen, so spending a token updated the top bar and
+     left the rest showing a stale number. One writer, called by all of them. */
+  function paintTokens(n) {
+    const t = String(n);
+    if (walletCount) walletCount.textContent = t;
+    ["hmTokens", "phTokens", "redeemBalance"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = t;
+    });
+  }
+
   function renderAccount() {
     window.__authed = !!currentUser;
     if (currentUser) {
-      walletEl.style.display = ""; walletCount.textContent = currentUser.tokens;
+      walletEl.style.display = ""; paintTokens(currentUser.tokens);
       logoutBtn.style.display = ""; tbName.textContent = currentUser.username;
-      if (currentUser.avatar) tbAva.innerHTML = '<img src="' + currentUser.avatar + '" alt="">';
-      else tbAva.textContent = initials(currentUser.username);
+      setAvatar(tbAva, currentUser.avatar, initials(currentUser.username));
       if (typeof renderProfile === "function") renderProfile();
       renderHeroGreet();
     } else {
@@ -2515,8 +3405,7 @@
     if (!hg || !currentUser) return;
     hg.innerHTML = "";
     const ava = document.createElement("span"); ava.className = "hg-ava";
-    if (currentUser.avatar) ava.innerHTML = '<img src="' + currentUser.avatar + '" alt="">';
-    else ava.textContent = initials(currentUser.username);
+    setAvatar(ava, currentUser.avatar, initials(currentUser.username));
     const txt = document.createElement("span"); txt.className = "hg-text";
     txt.appendChild(document.createTextNode("Back at it again, "));
     const nm = document.createElement("b"); nm.textContent = currentUser.username;
@@ -2527,7 +3416,7 @@
   }
   function setTokens(n) {
     if (!currentUser) return;
-    currentUser.tokens = n; walletCount.textContent = n;
+    currentUser.tokens = n; paintTokens(n);
     walletEl.classList.remove("spend"); void walletEl.offsetWidth; walletEl.classList.add("spend");
   }
   async function refreshMe() {
@@ -2558,15 +3447,86 @@
     authMode = mode;
     tabLogin.classList.toggle("active", mode === "login");
     tabRegister.classList.toggle("active", mode === "register");
+    tabLogin.setAttribute("aria-selected", mode === "login" ? "true" : "false");
+    tabRegister.setAttribute("aria-selected", mode === "register" ? "true" : "false");
     if (authTabs) authTabs.classList.toggle("on-register", mode === "register");
     if (prev && prev !== mode) animateSlider(mode === "register" ? "right" : "left");
-    authSubmit.textContent = mode === "login" ? "Log in" : "Create account";
+    setSubmitLabel(mode === "login" ? "Log in" : "Create account");
     authPass.setAttribute("autocomplete", mode === "login" ? "current-password" : "new-password");
     authHint.textContent = mode === "login" ? "New here? Switch to Register to make an account." : "New accounts start with free tokens. Already have one? Log in.";
     authErr.textContent = "";
+    clearFieldErrors();
+    renderPwMeter();
   }
   tabLogin.addEventListener("click", () => setAuthMode("login"));
   tabRegister.addEventListener("click", () => setAuthMode("register"));
+
+  /* ---- the gate's own controls: reveal, Caps Lock, strength, busy state ---- */
+  const authSubmitLabel = document.getElementById("authSubmitLabel");
+  const authPeek = document.getElementById("authPeek");
+  const capsWarn = document.getElementById("capsWarn");
+  const pwMeter = document.getElementById("pwMeter");
+  const pwWord = document.getElementById("pwWord");
+  const userBox = document.getElementById("userBox");
+  const passBox = document.getElementById("passBox");
+
+  // the label lives in its own span so the busy spinner beside it survives —
+  // writing to authSubmit.textContent would wipe the button's children out
+  function setSubmitLabel(text) {
+    if (authSubmitLabel) authSubmitLabel.textContent = text;
+    else authSubmit.textContent = text;
+  }
+  function setAuthBusy(busy) {
+    authSubmit.disabled = busy;
+    authSubmit.classList.toggle("loading", busy);
+  }
+  function clearFieldErrors() {
+    if (userBox) userBox.classList.remove("bad");
+    if (passBox) passBox.classList.remove("bad");
+  }
+
+  if (authPeek) {
+    authPeek.addEventListener("click", () => {
+      const shown = authPass.type === "text";
+      authPass.type = shown ? "password" : "text";
+      authPeek.setAttribute("aria-pressed", shown ? "false" : "true");
+      authPeek.setAttribute("aria-label", shown ? "Show password" : "Hide password");
+      authPass.focus();
+    });
+  }
+
+  /* Caps Lock is the commonest reason a correct password is refused, and the
+     field is masked so there is nothing to see. getModifierState is only
+     meaningful on a real key event, hence both handlers. */
+  function checkCaps(e) {
+    if (!capsWarn || typeof e.getModifierState !== "function") return;
+    capsWarn.hidden = !e.getModifierState("CapsLock");
+  }
+  authPass.addEventListener("keydown", checkCaps);
+  authPass.addEventListener("keyup", checkCaps);
+  authPass.addEventListener("blur", () => { if (capsWarn) capsWarn.hidden = true; });
+
+  // a rough, honest read: length carries most of it, variety does the rest
+  function pwScore(v) {
+    if (!v) return 0;
+    let s = 0;
+    if (v.length >= 8) s++;
+    if (v.length >= 12) s++;
+    if (/[a-z]/.test(v) && /[A-Z]/.test(v)) s++;
+    if (/\d/.test(v) && /[^\w\s]/.test(v)) s++;
+    if (v.length < 6) s = 0;
+    return Math.min(4, s);
+  }
+  const PW_WORDS = ["weak", "weak", "fair", "good", "strong"];
+  function renderPwMeter() {
+    if (!pwMeter) return;
+    if (authMode !== "register" || !authPass.value) { pwMeter.hidden = true; return; }
+    const s = pwScore(authPass.value);
+    pwMeter.hidden = false;
+    pwMeter.className = "pw-meter s" + s;
+    if (pwWord) pwWord.textContent = PW_WORDS[s];
+  }
+  authPass.addEventListener("input", renderPwMeter);
   function showGate() {
     intro.style.display = ""; intro.classList.remove("leaving");
     document.body.classList.remove("entered"); app.classList.remove("show");
@@ -2581,20 +3541,48 @@
   authForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const username = authUser.value.trim(), password = authPass.value;
-    if (!username || !password) { authErr.textContent = "Enter a username and password."; return; }
-    authSubmit.disabled = true;
+    clearFieldErrors();
+    // point at the field that's actually missing rather than blaming both
+    if (!username || !password) {
+      authErr.textContent = !username && !password ? "Enter a username and password."
+        : !username ? "Enter your username." : "Enter your password.";
+      if (!username && userBox) userBox.classList.add("bad");
+      if (!password && passBox) passBox.classList.add("bad");
+      (!username ? authUser : authPass).focus();
+      return;
+    }
+    authErr.textContent = "";
+    setAuthBusy(true);
+    setSubmitLabel(authMode === "login" ? "Signing in…" : "Creating account…");
     try {
       const r = authMode === "login" ? await window.api.authLogin(username, password) : await window.api.authRegister(username, password);
-      if (!r || !r.ok) { authErr.textContent = (r && r.error) || "Something went wrong."; authSubmit.disabled = false; return; }
-      currentUser = r.user; authForm.reset(); renderAccount(); loadAnnouncements();
+      if (!r || !r.ok) {
+        const err = (r && r.error) || "Something went wrong.";
+        authErr.textContent = err;
+        if (passBox && /password/i.test(err)) passBox.classList.add("bad");
+        else if (userBox && /user|name|taken|exist/i.test(err)) userBox.classList.add("bad");
+        else if (passBox && userBox) { userBox.classList.add("bad"); passBox.classList.add("bad"); }
+        setAuthBusy(false);
+        setSubmitLabel(authMode === "login" ? "Log in" : "Create account");
+        authPass.focus();
+        return;
+      }
+      currentUser = r.user; authForm.reset();
+      if (pwMeter) pwMeter.hidden = true;
+      if (capsWarn) capsWarn.hidden = true;
+      renderAccount(); loadAnnouncements();
       const welcome = authMode === "login" ? ("Welcome back, " + currentUser.username) : ("Account created — welcome, " + currentUser.username);
       playGreeting(currentUser.username, () => {
         enterApp();
         // a brand-new member gets the playbook before anything else
         if (!maybePlaybook()) toast(welcome);
       });
+      // the gate is on its way out; leaving the button busy stops a second
+      // submission landing behind the greeting
+      return;
     } catch (_) { authErr.textContent = "Connection error."; }
-    authSubmit.disabled = false;
+    setAuthBusy(false);
+    setSubmitLabel(authMode === "login" ? "Log in" : "Create account");
   });
   logoutBtn.addEventListener("click", async () => {
     if (!confirm("Log out of " + (currentUser ? currentUser.username : "") + "?")) return;
@@ -2628,17 +3616,62 @@
 
   /* ---------- nav ---------- */
   const navItems = document.querySelectorAll(".nav-item");
+  /* What each destination needs doing on arrival. This used to hang off the
+     sidebar's click handler, which meant it only ran when the sidebar was
+     actually clicked — so leaving GEOINT, or closing the Playbook, dropped you
+     on a page that never refreshed itself. It belongs to the destination, not
+     to the thing that pointed at it. */
+  function pageEnter(page, already) {
+    if (page === "home") loadAnnouncements();
+    else if (page === "profile") renderProfile();
+    else if (page === "bookmarks") loadBookmarks();
+    else if (page === "members") loadMembers();
+    else if (page === "codes") renderCodesPage();
+    else if (page === "admin") loadAdmin();
+    else if (page === "geoint") {
+      // The radar is the way INTO the mode. The Scan button also routes through
+      // here — it is already inside GEOINT — and replaying the boot sequence on
+      // top of a running scan is not an arrival.
+      if (!already) radarRun(() => { if (!geoResult) openGeoModal(); });
+    }
+  }
+
   function showPage(p) {
     // the rules aren't a page — they're a book that takes over the screen
     if (p === "rules") { openPlaybook(); return; }
+    const target = document.getElementById("page-" + p);
+    if (!target) return;
+    const already = target.classList.contains("show");
     navItems.forEach((n) => n.classList.toggle("active", n.dataset.page === p));
     document.querySelectorAll(".page").forEach((s) => s.classList.remove("show"));
-    document.getElementById("page-" + p).classList.add("show");
+    target.classList.add("show");
     // GEOINT is its own mode: sidebar slides away, the room goes dark
     document.body.classList.toggle("geoint-mode", p === "geoint");
+    pageEnter(p, already);
   }
-  navItems.forEach((n) => n.addEventListener("click", () => showPage(n.dataset.page)));
-  document.getElementById("goDatabase").addEventListener("click", () => showPage("database"));
+  navItems.forEach((n) => {
+    n.addEventListener("click", () => showPage(n.dataset.page));
+    /* These are divs, so they came with none of a button's behaviour: no tab
+       stop, no Enter/Space, and nothing announced to a screen reader. */
+    n.setAttribute("role", "button");
+    n.setAttribute("tabindex", "0");
+    n.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); n.click(); }
+    });
+  });
+  /* Home's quick tiles press the matching sidebar entry rather than routing
+     themselves, so the per-destination work that hangs off navigation happens
+     for a shortcut too. (The old separate "Open database client" button is one
+     of those tiles now.) */
+  const hmActions = document.getElementById("hmActions");
+  if (hmActions) {
+    hmActions.addEventListener("click", (e) => {
+      const tile = e.target.closest("[data-goto]");
+      if (!tile) return;
+      const nav = document.querySelector('.nav-item[data-page="' + tile.dataset.goto + '"]');
+      if (nav) nav.click();
+    });
+  }
   document.getElementById("goInvestigate").addEventListener("click", () => {
     showPage("investigate");
     document.getElementById("invQuery").focus();
@@ -2660,14 +3693,14 @@
 
   function renderProfile() {
     if (!currentUser) return;
-    phBanner.style.backgroundImage = currentUser.banner ? "url('" + currentUser.banner + "')" : "";
-    if (currentUser.avatar) phAva.innerHTML = '<img src="' + currentUser.avatar + '" alt="">';
-    else phAva.textContent = initials(currentUser.username);
+    setBanner(phBanner, currentUser.banner);
+    setAvatar(phAva, currentUser.avatar, initials(currentUser.username));
     phName.textContent = currentUser.username;
     phRole.textContent = currentUser.is_admin ? "admin" : (currentUser.role || "user");
     phRole.classList.toggle("admin", !!currentUser.is_admin);
     phTokens.textContent = currentUser.tokens;
     bioInput.value = currentUser.bio || "";
+    paintBioCount();
     renderConnections();
   }
 
@@ -2762,6 +3795,16 @@
     if (r && r.ok) { currentUser = r.user; renderProfile(); renderAccount(); toast(label + " reset."); }
     else toast("Couldn't reset.", "err");
   }
+  // the bio is capped at 300 by the server, so say how much of it is left
+  function paintBioCount() {
+    const el = document.getElementById("bioCount");
+    if (!el || !bioInput) return;
+    const n = bioInput.value.length;
+    el.textContent = n;
+    el.parentElement.classList.toggle("near", n > 260);
+  }
+  if (bioInput) bioInput.addEventListener("input", paintBioCount);
+
   document.getElementById("resetAva").addEventListener("click", () => resetImage("avatar", "Picture"));
   document.getElementById("resetBanner").addEventListener("click", () => resetImage("banner", "Banner"));
   document.getElementById("saveBio").addEventListener("click", async () => {
@@ -2790,6 +3833,21 @@
     if (typeof used === "number") tableUsed = used;
     if (typeof limit === "number") tableLimit = limit;
     renderSaveHint();
+    paintTableMeter();
+  }
+  // how full the table is, drawn on the Table page itself
+  function paintTableMeter() {
+    if (tableUsed == null || tableLimit == null) return;
+    if (bmUsed) bmUsed.textContent = tableUsed;
+    if (bmLimit) bmLimit.textContent = tableLimit;
+    const bar = document.getElementById("bmBar");
+    const free = document.getElementById("bmFree");
+    const pct = tableLimit > 0 ? Math.min(100, Math.round((tableUsed / tableLimit) * 100)) : 0;
+    if (bar) { bar.style.width = pct + "%"; bar.classList.toggle("full", tableUsed >= tableLimit); }
+    if (free) {
+      const left = tableLimit - tableUsed;
+      free.textContent = left > 0 ? left + " free" : "full";
+    }
   }
   function renderSaveHint(msg, isErr) {
     if (!saveHint) return;
@@ -2926,9 +3984,7 @@
     bookmarksList.innerHTML = '<div class="bm-empty">Loading…</div>';
     const r = await window.api.bookmarksList().catch(() => null);
     if (!r || !r.ok) { bookmarksList.innerHTML = '<div class="bm-empty">Couldn\'t load the table.</div>'; return; }
-    if (bmLimit) bmLimit.textContent = r.limit != null ? r.limit : 10;
-    if (bmUsed) bmUsed.textContent = r.bookmarks.length;
-    setTableCounts(r.bookmarks.length, r.limit);
+    setTableCounts(r.bookmarks.length, r.limit != null ? r.limit : 10);
     if (!r.bookmarks.length) { bookmarksList.innerHTML = '<div class="bm-empty">The table is empty — run a search and press “Save to Table”.</div>'; return; }
     bookmarksList.innerHTML = "";
     r.bookmarks.forEach((bm) => {
@@ -3037,9 +4093,9 @@
     for (const k in presenceCards) delete presenceCards[k];
     r.users.forEach((u) => {
       const card = document.createElement("div"); card.className = "member-card";
-      const ban = document.createElement("div"); ban.className = "mc-banner"; if (u.banner) ban.style.backgroundImage = "url('" + u.banner + "')";
+      const ban = document.createElement("div"); ban.className = "mc-banner"; setBanner(ban, u.banner);
       const ava = document.createElement("div"); ava.className = "mc-ava";
-      if (u.avatar) ava.innerHTML = '<img src="' + u.avatar + '" alt="">'; else ava.textContent = initials(u.username);
+      setAvatar(ava, u.avatar, initials(u.username));
       if (u.online) { const d = document.createElement("span"); d.className = "mc-online"; ava.appendChild(d); }
       const name = document.createElement("div"); name.className = "mc-name"; name.textContent = u.username;
       const role = document.createElement("div"); role.className = "mc-role" + (u.role === "admin" ? " admin" : ""); role.textContent = u.role === "admin" ? "admin" : "member";
@@ -3102,10 +4158,8 @@
 
   function openMemberModal(u) {
     if (!memberModal) return;
-    mpBanner.style.backgroundImage = u.banner ? "url('" + u.banner + "')" : "";
-    mpAva.innerHTML = "";
-    if (u.avatar) { const im = document.createElement("img"); im.src = u.avatar; im.alt = ""; mpAva.appendChild(im); }
-    else mpAva.textContent = initials(u.username);
+    setBanner(mpBanner, u.banner);
+    setAvatar(mpAva, u.avatar, initials(u.username));
     if (u.online) { const d = document.createElement("span"); d.className = "mp-online"; mpAva.appendChild(d); }
     mpName.textContent = u.username;
     mpRole.textContent = u.role === "admin" ? "admin" : "member";
@@ -3145,26 +4199,69 @@
   const adminLogs = document.getElementById("adminLogs");
   async function loadAdmin() {
     if (!currentUser || !currentUser.is_admin) return;
-    adminUsers.innerHTML = '<div class="bm-empty">Loading…</div>';
+    adminUsers.innerHTML = '<div class="skel" style="height:56px"></div><div class="skel" style="height:56px"></div>';
     const r = await window.api.adminUsers().catch(() => null);
-    if (!r || !r.ok) { adminUsers.innerHTML = '<div class="bm-empty">Couldn\'t load users.</div>'; return; }
-    adminUsers.innerHTML = "";
-    r.users.forEach((u) => adminUsers.appendChild(adminUserRow(u)));
+    // A failed member list used to return here, which also skipped the logs and
+    // the codes — one dead call blanked two panels that were fine.
+    if (!r || !r.ok) {
+      adminUsers.innerHTML = '<div class="ad-empty">Couldn\'t load members.</div>';
+      adUsers = [];
+    } else {
+      adUsers = r.users;
+      renderAdminUsers();
+    }
+    setAdStat("adStatUsers", adUsers.length);
+    setAdStat("adStatAdmins", adUsers.filter((u) => u.role === "admin").length);
+
     const lr = await window.api.adminLogs(200).catch(() => null);
-    adminLogs.innerHTML = "";
-    if (lr && lr.ok && lr.logs.length) {
-      lr.logs.forEach((l) => {
-        const row = document.createElement("div"); row.className = "log-row";
-        const user = document.createElement("span"); user.className = "log-user"; user.textContent = l.username || "—";
-        const kind = document.createElement("span"); kind.className = "log-kind " + (l.ultra ? "ultra" : "search"); kind.textContent = l.ultra ? "ultra" : "search";
-        const q = document.createElement("span"); q.className = "log-q"; q.textContent = (l.type ? l.type + ":" : "") + (l.query || "");
-        const time = document.createElement("span"); time.className = "log-time"; time.textContent = new Date(l.created_at).toLocaleString();
-        row.appendChild(user); row.appendChild(kind); row.appendChild(q); row.appendChild(time);
-        adminLogs.appendChild(row);
-      });
-    } else adminLogs.innerHTML = '<div class="bm-empty">No searches logged yet.</div>';
+    adLogs = (lr && lr.ok && lr.logs) ? lr.logs : [];
+    setAdStat("adStatSearches", adLogs.length);
+    renderAdminLogs();
     loadAdminCodes();
   }
+
+  /* the panels keep their data so filtering is a re-render, not a re-fetch */
+  let adUsers = [], adLogs = [];
+  function setAdStat(id, n) { const el = document.getElementById(id); if (el) el.textContent = n; }
+
+  function renderAdminUsers() {
+    const q = (document.getElementById("adUserFilter") || {}).value || "";
+    const needle = q.trim().toLowerCase();
+    const list = needle ? adUsers.filter((u) => (u.username || "").toLowerCase().includes(needle)) : adUsers;
+    adminUsers.innerHTML = "";
+    if (!list.length) {
+      adminUsers.innerHTML = '<div class="ad-empty">' + (needle ? "Nobody matches that." : "No members yet.") + "</div>";
+      return;
+    }
+    list.forEach((u) => adminUsers.appendChild(adminUserRow(u)));
+  }
+
+  function renderAdminLogs() {
+    const q = (document.getElementById("adLogFilter") || {}).value || "";
+    const needle = q.trim().toLowerCase();
+    const list = needle
+      ? adLogs.filter((l) => ((l.username || "") + " " + (l.type || "") + " " + (l.query || "")).toLowerCase().includes(needle))
+      : adLogs;
+    adminLogs.innerHTML = "";
+    if (!list.length) {
+      adminLogs.innerHTML = '<div class="ad-empty">' + (needle ? "Nothing matches that." : "No searches logged yet.") + "</div>";
+      return;
+    }
+    list.forEach((l) => {
+      const row = document.createElement("div"); row.className = "log-row";
+      const user = document.createElement("span"); user.className = "log-user"; user.textContent = l.username || "—";
+      const kind = document.createElement("span"); kind.className = "log-kind " + (l.ultra ? "ultra" : "search"); kind.textContent = l.ultra ? "ultra" : "search";
+      const qq = document.createElement("span"); qq.className = "log-q"; qq.textContent = (l.type ? l.type + ":" : "") + (l.query || "");
+      const time = document.createElement("span"); time.className = "log-time"; time.textContent = new Date(l.created_at).toLocaleString();
+      row.appendChild(user); row.appendChild(kind); row.appendChild(qq); row.appendChild(time);
+      adminLogs.appendChild(row);
+    });
+  }
+
+  ["adUserFilter", "adLogFilter"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("input", id === "adUserFilter" ? renderAdminUsers : renderAdminLogs);
+  });
 
   /* ---------- redeem codes: admin (create / list / delete) ---------- */
   const adminCodes = document.getElementById("adminCodes");
@@ -3219,11 +4316,13 @@
 
   async function loadAdminCodes() {
     if (!adminCodes || !currentUser || !currentUser.is_admin) return;
-    adminCodes.innerHTML = '<div class="bm-empty">Loading…</div>';
+    adminCodes.innerHTML = '<div class="skel" style="height:44px"></div>';
     const r = await window.api.adminCodesList().catch(() => null);
-    if (!r || !r.ok) { adminCodes.innerHTML = '<div class="bm-empty">Couldn\'t load codes.</div>'; return; }
+    if (!r || !r.ok) { adminCodes.innerHTML = '<div class="ad-empty">Couldn\'t load codes.</div>'; return; }
+    // "live" means a member could still redeem it right now
+    setAdStat("adStatCodes", r.codes.filter((c) => !codeStatus(c).spent).length);
     adminCodes.innerHTML = "";
-    if (!r.codes.length) { adminCodes.innerHTML = '<div class="bm-empty">No codes yet — create one above.</div>'; return; }
+    if (!r.codes.length) { adminCodes.innerHTML = '<div class="ad-empty">No codes yet — create one above.</div>'; return; }
     r.codes.forEach((c) => adminCodes.appendChild(adminCodeRow(c)));
   }
 
@@ -3286,11 +4385,17 @@
   }
 
   function adminUserRow(u) {
-    const row = document.createElement("div"); row.className = "admin-user";
+    const isYou = u.id === currentUser.id;
+    const row = document.createElement("div"); row.className = "admin-user" + (isYou ? " is-you" : "");
     const ava = document.createElement("div"); ava.className = "au-ava";
-    if (u.avatar) ava.innerHTML = '<img src="' + u.avatar + '" alt="">'; else ava.textContent = initials(u.username);
+    setAvatar(ava, u.avatar, initials(u.username));
     const name = document.createElement("div"); name.className = "au-name"; name.textContent = u.username;
-    if (u.id === currentUser.id) { const y = document.createElement("span"); y.className = "you"; y.textContent = " (you)"; name.appendChild(y); }
+    if (isYou) { const y = document.createElement("span"); y.className = "you"; y.textContent = " (you)"; name.appendChild(y); }
+    // the role is worth seeing without reading the select next to it
+    const roleTag = document.createElement("span");
+    roleTag.className = "au-role-tag" + (u.role === "admin" ? " admin" : "");
+    roleTag.textContent = u.role === "admin" ? "admin" : "member";
+    name.appendChild(roleTag);
     const spacer = document.createElement("div"); spacer.className = "au-spacer";
     const tok = document.createElement("span"); tok.className = "au-tok"; tok.textContent = u.tokens;
     const ctrl = document.createElement("div"); ctrl.className = "au-ctrl";
@@ -3536,6 +4641,9 @@
   }
   const geoNewBtn = document.getElementById("geoNew");
   if (geoNewBtn) geoNewBtn.addEventListener("click", openGeoModal);
+  // the briefing panel's own call to action, for anyone who skipped the radar
+  const geoBriefGo = document.getElementById("geoBriefGo");
+  if (geoBriefGo) geoBriefGo.addEventListener("click", openGeoModal);
   // the sidebar is gone in GEOINT mode, so this is the way back out
   const geoExitBtn = document.getElementById("geoExit");
   if (geoExitBtn) geoExitBtn.addEventListener("click", () => { radarStop(); closeGeoModal(); showPage("home"); });
@@ -3915,16 +5023,8 @@
   });
 
   // load each tab's data when it opens
-  navItems.forEach((n) => n.addEventListener("click", () => {
-    const p = n.dataset.page;
-    if (p === "profile") renderProfile();
-    else if (p === "bookmarks") loadBookmarks();
-    else if (p === "members") loadMembers();
-    else if (p === "codes") renderCodesPage();
-    else if (p === "geoint") radarRun(() => { if (!geoResult) openGeoModal(); });
-    else if (p === "admin") loadAdmin();
-    else if (p === "home") loadAnnouncements();
-  }));
+  // (the per-destination work moved into pageEnter(), which showPage() runs for
+  // every route — including the ones that never touch the sidebar)
 
   /* ---------- unified investigation (social scan + nicotine records) ---------- */
   const invForm = document.getElementById("invForm");
@@ -5052,7 +6152,7 @@
   termEl.addEventListener("keydown", (e) => { if (e.key === "Enter") runSearch(); });
 
   /* wire sounds */
-  document.querySelectorAll(".enter-btn, .nav-item, .btn, button.scan, .switch").forEach(attachSounds);
+  document.querySelectorAll(".enter-btn, .nav-item, .btn, button.scan, .switch, .cta, .hm-tile").forEach(attachSounds);
 
   /* ---------- self-update ---------- */
   const updateBanner = document.getElementById("updateBanner");
