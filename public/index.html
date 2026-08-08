@@ -2543,64 +2543,64 @@ you cant run by your own footprints.
      It was one long column of headings and raw rows. It is a console now:
      what the room looks like at a glance, then each job in its own panel.
      =================================================================== */
-  .ad-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
-  @media (max-width: 900px) { .ad-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  .ad-stat {
+  .cns-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
+  @media (max-width: 900px) { .cns-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .cns-stat {
     padding: 15px 16px; border-radius: 14px; border: 1px solid var(--border);
     background: color-mix(in srgb, var(--panel) 55%, transparent);
   }
-  .ad-stat b { display: block; font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--accent); font-variant-numeric: tabular-nums; }
-  .ad-stat span { display: block; margin-top: 3px; font-size: .67rem; letter-spacing: 1.3px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .cns-stat b { display: block; font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .cns-stat span { display: block; margin-top: 3px; font-size: .67rem; letter-spacing: 1.3px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
 
   /* --- one job per tab ---
      The four sections used to be stacked in a single column, so reaching the
      search log meant scrolling past every member. */
-  .ad-tabs {
+  .cns-tabs {
     display: flex; gap: 4px; padding: 4px; margin-bottom: 18px;
     border-radius: 999px; background: var(--panel2); border: 1px solid var(--border);
     width: fit-content; max-width: 100%;
     overflow-x: auto; scrollbar-width: none;
   }
-  .ad-tabs::-webkit-scrollbar { display: none; }
-  .ad-tab {
+  .cns-tabs::-webkit-scrollbar { display: none; }
+  .cns-tab {
     display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
     border: none; background: transparent; color: var(--muted); cursor: pointer;
     font-family: inherit; font-weight: 700; font-size: .84rem;
     padding: 9px 16px; border-radius: 999px; white-space: nowrap;
     transition: color .18s ease, background .18s ease;
   }
-  .ad-tab svg { width: 15px; height: 15px; }
-  .ad-tab:not(.active):hover { color: var(--text); background: rgba(255,255,255,.05); }
+  .cns-tab svg { width: 15px; height: 15px; }
+  .cns-tab:not(.active):hover { color: var(--text); background: rgba(255,255,255,.05); }
   /* the selected tab wears the same gel as every other primary surface */
-  .ad-tab.active {
+  .cns-tab.active {
     color: #000;
     background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 100%, #fff) 0%, var(--accent) 44%, color-mix(in srgb, var(--accent) 90%, #000) 100%);
     box-shadow: 0 3px 10px -3px rgb(var(--accent-rgb) / .45), inset 0 1.5px 0 rgba(255,255,255,.7), inset 0 -2px 5px -2px rgba(0,0,0,.26);
   }
-  .ad-tab-n {
+  .cns-tab-n {
     font-size: .66rem; font-weight: 800; padding: 1px 7px; border-radius: 999px;
     background: rgba(255,255,255,.09); font-variant-numeric: tabular-nums;
   }
-  .ad-tab.active .ad-tab-n { background: rgba(0,0,0,.17); }
-  .ad-view { animation: fadeIn .22s ease; }
+  .cns-tab.active .cns-tab-n { background: rgba(0,0,0,.17); }
+  .cns-view { animation: fadeIn .22s ease; }
 
-  .ad-panel {
+  .cns-panel {
     padding: 18px; border-radius: 16px; margin-bottom: 14px;
     border: 1px solid var(--border); background: color-mix(in srgb, var(--panel) 45%, transparent);
   }
-  .ad-panel .sec-head:not(:first-child) { margin-top: 26px; }
-  .ad-panel > .sec-head { margin-top: 0; }
-  .ad-panel-sub { color: var(--muted); font-size: .8rem; line-height: 1.55; margin: -6px 0 14px; }
+  .cns-panel .sec-head:not(:first-child) { margin-top: 26px; }
+  .cns-panel > .sec-head { margin-top: 0; }
+  .cns-panel-sub { color: var(--muted); font-size: .8rem; line-height: 1.55; margin: -6px 0 14px; }
 
   /* a filter box that sits in a section header without shouting */
-  .ad-filter {
+  .cns-filter {
     flex-shrink: 0; width: min(210px, 42vw); padding: 8px 12px; border-radius: 9px;
     border: 1px solid var(--border); background: var(--panel2); color: var(--text);
     font-family: inherit; font-size: .8rem; outline: none;
     transition: border-color .18s ease, box-shadow .25s ease;
   }
-  .ad-filter:focus { border-color: color-mix(in srgb, var(--accent) 50%, transparent); box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .1); }
-  .ad-filter::placeholder { color: #5c5c5c; }
+  .cns-filter:focus { border-color: color-mix(in srgb, var(--accent) 50%, transparent); box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .1); }
+  .cns-filter::placeholder { color: #5c5c5c; }
 
   /* member rows: the controls stop being a jumble of bare inputs */
   .admin-users { gap: 7px; }
@@ -2635,7 +2635,7 @@ you cant run by your own footprints.
   /* the compose forms read as forms, with room to breathe */
   .ann-compose, .code-compose { background: color-mix(in srgb, var(--panel2) 55%, transparent); border-radius: 12px; }
   .ann-compose { padding: 14px; border: 1px solid var(--border); }
-  .ad-empty { color: var(--muted); font-size: .85rem; padding: 22px; text-align: center; border: 1px dashed var(--border); border-radius: 12px; }
+  .cns-empty { color: var(--muted); font-size: .85rem; padding: 22px; text-align: center; border: 1px dashed var(--border); border-radius: 12px; }
 
   /* ===================================================================
      INVESTIGATE / DATABASE / TABLE / CODES / PROFILE
@@ -2937,7 +2937,7 @@ you cant run by your own footprints.
     .sec-head { flex-wrap: wrap; }
     .sec-head .rule { min-width: 20px; }
     /* the admin filters need a line of their own once the heading is beside them */
-    .ad-filter { width: 100%; }
+    .cns-filter { width: 100%; }
   }
 
   /* Landscape phones are short, not narrow: give the vertical things room. */
@@ -3700,68 +3700,68 @@ you cant run by your own footprints.
 
       <div id="storageStatus" class="storage-status" style="display:none"></div>
 
-      <div class="ad-stats">
-        <div class="ad-stat"><b id="adStatUsers">—</b><span>Members</span></div>
-        <div class="ad-stat"><b id="adStatAdmins">—</b><span>Admins</span></div>
-        <div class="ad-stat"><b id="adStatCodes">—</b><span>Live codes</span></div>
-        <div class="ad-stat"><b id="adStatSearches">—</b><span>Searches logged</span></div>
+      <div class="cns-stats">
+        <div class="cns-stat"><b id="cnsStatUsers">—</b><span>Members</span></div>
+        <div class="cns-stat"><b id="cnsStatAdmins">—</b><span>Admins</span></div>
+        <div class="cns-stat"><b id="cnsStatCodes">—</b><span>Live codes</span></div>
+        <div class="cns-stat"><b id="cnsStatSearches">—</b><span>Searches logged</span></div>
       </div>
 
       <!-- One job per tab. The four sections used to be stacked in one column,
            which meant scrolling past a members list to reach the search log. -->
-      <div class="ad-tabs" id="adTabs" role="tablist" aria-label="Admin sections">
-        <button class="ad-tab active" type="button" role="tab" aria-selected="true" data-tab="members" aria-controls="adView-members">
+      <div class="cns-tabs" id="cnsTabs" role="tablist" aria-label="Admin sections">
+        <button class="cns-tab active" type="button" role="tab" aria-selected="true" data-tab="members" aria-controls="cnsView-members">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.6"/><path d="M2.5 20c0-3.3 2.9-5.8 6.5-5.8s6.5 2.5 6.5 5.8"/><path d="M17 11.2a3 3 0 1 0-2-5.3M18 19.6c0-2.2-.9-4-2.3-5.2"/></svg>
-          Members <span class="ad-tab-n" id="adTabNUsers">—</span>
+          Members <span class="cns-tab-n" id="cnsTabNUsers">—</span>
         </button>
-        <button class="ad-tab" type="button" role="tab" aria-selected="false" data-tab="codes" aria-controls="adView-codes">
+        <button class="cns-tab" type="button" role="tab" aria-selected="false" data-tab="codes" aria-controls="cnsView-codes">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7a4 4 0 1 1-2.8 6.8L9 17l-2 2H4v-3l6.2-6.2A4 4 0 0 1 15 7z"/><circle cx="16.5" cy="7.5" r=".8" fill="currentColor"/></svg>
-          Codes <span class="ad-tab-n" id="adTabNCodes">—</span>
+          Codes <span class="cns-tab-n" id="cnsTabNCodes">—</span>
         </button>
-        <button class="ad-tab" type="button" role="tab" aria-selected="false" data-tab="board" aria-controls="adView-board">
+        <button class="cns-tab" type="button" role="tab" aria-selected="false" data-tab="board" aria-controls="cnsView-board">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>
           Noticeboard
         </button>
-        <button class="ad-tab" type="button" role="tab" aria-selected="false" data-tab="activity" aria-controls="adView-activity">
+        <button class="cns-tab" type="button" role="tab" aria-selected="false" data-tab="activity" aria-controls="cnsView-activity">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2.5-7 5 14L17 12h4"/></svg>
-          Activity <span class="ad-tab-n" id="adTabNLogs">—</span>
+          Activity <span class="cns-tab-n" id="cnsTabNLogs">—</span>
         </button>
       </div>
 
       <!-- MEMBERS -->
-      <div class="ad-view" id="adView-members" role="tabpanel">
-        <div class="ad-panel">
+      <div class="cns-view" id="cnsView-members" role="tabpanel">
+        <div class="cns-panel">
           <div class="sec-head">
             <h2>Members</h2>
             <span class="rule"></span>
-            <input class="ad-filter" id="adUserFilter" type="search" placeholder="Filter members…" autocomplete="off" aria-label="Filter members">
+            <input class="cns-filter" id="cnsUserFilter" type="search" placeholder="Filter members…" autocomplete="off" aria-label="Filter members">
           </div>
-          <p class="ad-panel-sub">Change a role, grant tokens, rename or remove. You can't demote, rename or delete your own account from here.</p>
+          <p class="cns-panel-sub">Change a role, grant tokens, rename or remove. You can't demote, rename or delete your own account from here.</p>
           <div id="adminUsers" class="admin-users"></div>
         </div>
       </div>
 
       <!-- ACTIVITY -->
-      <div class="ad-view hidden" id="adView-activity" role="tabpanel">
-        <div class="ad-panel">
+      <div class="cns-view hidden" id="cnsView-activity" role="tabpanel">
+        <div class="cns-panel">
           <div class="sec-head">
             <h2>Search log</h2>
             <span class="rule"></span>
-            <input class="ad-filter" id="adLogFilter" type="search" placeholder="Filter by user or query…" autocomplete="off" aria-label="Filter search log">
+            <input class="cns-filter" id="cnsLogFilter" type="search" placeholder="Filter by user or query…" autocomplete="off" aria-label="Filter search log">
           </div>
-          <p class="ad-panel-sub">The last 200 searches, newest first.</p>
+          <p class="cns-panel-sub">The last 200 searches, newest first.</p>
           <div id="adminLogs" class="admin-logs"></div>
         </div>
       </div>
 
       <!-- NOTICEBOARD -->
-      <div class="ad-view hidden" id="adView-board" role="tabpanel">
-        <div class="ad-panel">
+      <div class="cns-view hidden" id="cnsView-board" role="tabpanel">
+        <div class="cns-panel">
           <div class="sec-head">
             <h2>Post an announcement</h2>
             <span class="rule"></span>
           </div>
-          <p class="ad-panel-sub">Anything you publish here shows on every member's home page.</p>
+          <p class="cns-panel-sub">Anything you publish here shows on every member's home page.</p>
           <div class="ann-compose">
             <input type="text" id="annTitle" maxlength="120" placeholder="Title">
             <textarea id="annBody" maxlength="2000" rows="3" placeholder="What does everyone need to know?"></textarea>
@@ -3774,13 +3774,13 @@ you cant run by your own footprints.
       </div>
 
       <!-- CODES -->
-      <div class="ad-view hidden" id="adView-codes" role="tabpanel">
-        <div class="ad-panel">
+      <div class="cns-view hidden" id="cnsView-codes" role="tabpanel">
+        <div class="cns-panel">
         <div class="sec-head">
           <h2>Create a code</h2>
           <span class="rule"></span>
         </div>
-        <p class="ad-panel-sub">Leave the code blank and one gets generated for you.</p>
+        <p class="cns-panel-sub">Leave the code blank and one gets generated for you.</p>
         <div class="code-compose">
           <div class="code-fields">
             <div class="code-field">
@@ -6148,49 +6148,49 @@ you cant run by your own footprints.
     // A failed member list used to return here, which also skipped the logs and
     // the codes — one dead endpoint blanked two panels that were fine.
     if (!r || !r.ok) {
-      adminUsers.innerHTML = '<div class="ad-empty">Couldn\'t load members.</div>';
-      adUsers = [];
+      adminUsers.innerHTML = '<div class="cns-empty">Couldn\'t load members.</div>';
+      cnsUsers = [];
     } else {
-      adUsers = r.users;
+      cnsUsers = r.users;
       renderAdminUsers();
     }
-    setAdStat("adStatUsers", adUsers.length);
-    setAdStat("adTabNUsers", adUsers.length);
-    setAdStat("adStatAdmins", adUsers.filter((u) => u.role === "admin").length);
+    setAdStat("cnsStatUsers", cnsUsers.length);
+    setAdStat("cnsTabNUsers", cnsUsers.length);
+    setAdStat("cnsStatAdmins", cnsUsers.filter((u) => u.role === "admin").length);
 
     const lr = await fetch("/api/admin/logs?limit=200").then((r) => r.json()).catch(() => null);
-    adLogs = (lr && lr.ok && lr.logs) ? lr.logs : [];
-    setAdStat("adStatSearches", adLogs.length);
-    setAdStat("adTabNLogs", adLogs.length);
+    cnsLogs = (lr && lr.ok && lr.logs) ? lr.logs : [];
+    setAdStat("cnsStatSearches", cnsLogs.length);
+    setAdStat("cnsTabNLogs", cnsLogs.length);
     renderAdminLogs();
     loadAdminCodes();
   }
 
   /* the panels keep their data so filtering is a re-render, not a re-fetch */
-  let adUsers = [], adLogs = [];
+  let cnsUsers = [], cnsLogs = [];
   function setAdStat(id, n) { const el = document.getElementById(id); if (el) el.textContent = n; }
 
   function renderAdminUsers() {
-    const q = (document.getElementById("adUserFilter") || {}).value || "";
+    const q = (document.getElementById("cnsUserFilter") || {}).value || "";
     const needle = q.trim().toLowerCase();
-    const list = needle ? adUsers.filter((u) => (u.username || "").toLowerCase().includes(needle)) : adUsers;
+    const list = needle ? cnsUsers.filter((u) => (u.username || "").toLowerCase().includes(needle)) : cnsUsers;
     adminUsers.innerHTML = "";
     if (!list.length) {
-      adminUsers.innerHTML = '<div class="ad-empty">' + (needle ? "Nobody matches that." : "No members yet.") + "</div>";
+      adminUsers.innerHTML = '<div class="cns-empty">' + (needle ? "Nobody matches that." : "No members yet.") + "</div>";
       return;
     }
     list.forEach((u) => adminUsers.appendChild(adminUserRow(u)));
   }
 
   function renderAdminLogs() {
-    const q = (document.getElementById("adLogFilter") || {}).value || "";
+    const q = (document.getElementById("cnsLogFilter") || {}).value || "";
     const needle = q.trim().toLowerCase();
     const list = needle
-      ? adLogs.filter((l) => ((l.username || "") + " " + (l.type || "") + " " + (l.query || "")).toLowerCase().includes(needle))
-      : adLogs;
+      ? cnsLogs.filter((l) => ((l.username || "") + " " + (l.type || "") + " " + (l.query || "")).toLowerCase().includes(needle))
+      : cnsLogs;
     adminLogs.innerHTML = "";
     if (!list.length) {
-      adminLogs.innerHTML = '<div class="ad-empty">' + (needle ? "Nothing matches that." : "No searches logged yet.") + "</div>";
+      adminLogs.innerHTML = '<div class="cns-empty">' + (needle ? "Nothing matches that." : "No searches logged yet.") + "</div>";
       return;
     }
     list.forEach((l) => {
@@ -6204,29 +6204,29 @@ you cant run by your own footprints.
     });
   }
 
-  ["adUserFilter", "adLogFilter"].forEach((id) => {
+  ["cnsUserFilter", "cnsLogFilter"].forEach((id) => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener("input", id === "adUserFilter" ? renderAdminUsers : renderAdminLogs);
+    if (el) el.addEventListener("input", id === "cnsUserFilter" ? renderAdminUsers : renderAdminLogs);
   });
 
   /* ---- the admin's tabs ----
      Each section is its own view and only one is mounted at a time. The choice
      is remembered, because an admin working through a member list does not
      want to be dropped back on Members every time they reopen the console. */
-  const adTabs = document.getElementById("adTabs");
+  const cnsTabs = document.getElementById("cnsTabs");
   function showAdminTab(name) {
-    if (!adTabs) return;
-    const views = document.querySelectorAll("#page-admin .ad-view");
+    if (!cnsTabs) return;
+    const views = document.querySelectorAll("#page-admin .cns-view");
     if (!views.length) return;
     let matched = false;
-    adTabs.querySelectorAll(".ad-tab").forEach((t) => {
+    cnsTabs.querySelectorAll(".cns-tab").forEach((t) => {
       const on = t.dataset.tab === name;
       if (on) matched = true;
       t.classList.toggle("active", on);
       t.setAttribute("aria-selected", on ? "true" : "false");
     });
     if (!matched && name !== "members") return showAdminTab("members");
-    views.forEach((v) => v.classList.toggle("hidden", v.id !== "adView-" + name));
+    views.forEach((v) => v.classList.toggle("hidden", v.id !== "cnsView-" + name));
 
     /* Hiding every section is the one outcome this must never produce — a
        console with no console in it, and no way to tell why. If the requested
@@ -6242,15 +6242,15 @@ you cant run by your own footprints.
     settings.adminTab = name;
     saveSettings();
   }
-  if (adTabs) {
-    adTabs.addEventListener("click", (e) => {
-      const t = e.target.closest(".ad-tab");
+  if (cnsTabs) {
+    cnsTabs.addEventListener("click", (e) => {
+      const t = e.target.closest(".cns-tab");
       if (t) showAdminTab(t.dataset.tab);
     });
     // left/right arrows walk the tab strip, the way a real tablist does
-    adTabs.addEventListener("keydown", (e) => {
+    cnsTabs.addEventListener("keydown", (e) => {
       if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-      const list = [...adTabs.querySelectorAll(".ad-tab")];
+      const list = [...cnsTabs.querySelectorAll(".cns-tab")];
       const i = list.findIndex((t) => t.classList.contains("active"));
       const next = list[(i + (e.key === "ArrowRight" ? 1 : list.length - 1)) % list.length];
       e.preventDefault();
@@ -6314,12 +6314,12 @@ you cant run by your own footprints.
     if (!adminCodes || !currentUser || !currentUser.is_admin) return;
     adminCodes.innerHTML = '<div class="skel" style="height:44px"></div>';
     const r = await fetch("/api/admin/codes").then((r) => r.json()).catch(() => null);
-    if (!r || !r.ok) { adminCodes.innerHTML = '<div class="ad-empty">Couldn\'t load codes.</div>'; return; }
+    if (!r || !r.ok) { adminCodes.innerHTML = '<div class="cns-empty">Couldn\'t load codes.</div>'; return; }
     // "live" means a member could still redeem it right now
-    setAdStat("adStatCodes", r.codes.filter((c) => !codeStatus(c).spent).length);
-    setAdStat("adTabNCodes", r.codes.length);
+    setAdStat("cnsStatCodes", r.codes.filter((c) => !codeStatus(c).spent).length);
+    setAdStat("cnsTabNCodes", r.codes.length);
     adminCodes.innerHTML = "";
-    if (!r.codes.length) { adminCodes.innerHTML = '<div class="ad-empty">No codes yet — create one above.</div>'; return; }
+    if (!r.codes.length) { adminCodes.innerHTML = '<div class="cns-empty">No codes yet — create one above.</div>'; return; }
     r.codes.forEach((c) => adminCodes.appendChild(adminCodeRow(c)));
   }
 
@@ -6410,7 +6410,7 @@ you cant run by your own footprints.
         u.role = role.value;
         roleTag.textContent = role.value === "admin" ? "admin" : "member";
         roleTag.classList.toggle("admin", role.value === "admin");
-        setAdStat("adStatAdmins", adUsers.filter((x) => x.role === "admin").length);
+        setAdStat("cnsStatAdmins", cnsUsers.filter((x) => x.role === "admin").length);
         toast(u.username + " is now " + role.value + ".");
       } else {
         role.value = u.role;                     // the change didn't take
