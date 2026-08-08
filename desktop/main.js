@@ -182,6 +182,22 @@ ipcMain.handle("osint:lookup", async (_e, { query, type }) => {
   }
 });
 
+/* ---------- nüfus kayıtları ---------- */
+ipcMain.handle("person:search", async (_e, { filters, page }) => {
+  try {
+    return await nicotine.personSearch(filters, page);
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+ipcMain.handle("person:live", async (_e, { tc, dob, type }) => {
+  try {
+    return await nicotine.personLive(tc, dob, type);
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
 /* ---------- account auth (via the hosted server) ---------- */
 ipcMain.handle("auth:me", async () => {
   if (!sessionToken) return { ok: true, user: null };

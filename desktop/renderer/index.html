@@ -2249,6 +2249,64 @@
   }
   .graph-stage:has(.g-node)::before, .graph-stage:has(.g-center:not(.hidden))::before { opacity: 0; }
 
+  /* --- lookup: the registry console ---
+     Investigate asks one question through one box. This asks several at once,
+     so the form is a card of labelled fields instead of a single row, and the
+     two searches are separated because they read different fields and are two
+     different questions: who matches this, versus tell me about this one. */
+  /* `form` is a flex row sheet-wide (the investigate bar wants that); this one
+     is a stack of grids, so it has to opt out — including out of the phone
+     rule that turns every form into a column. */
+  .lk-console, form.lk-console {
+    display: block;
+    max-width: 780px; margin: 0 auto 8px; padding: 18px 18px 16px;
+    border: 1px solid var(--border); border-radius: 18px;
+    background: color-mix(in srgb, var(--panel) 55%, transparent);
+  }
+  .lk-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .lk-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lk-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .lk-field label {
+    font-size: .66rem; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--muted); font-weight: 800;
+  }
+  .lk-field label span { text-transform: none; letter-spacing: 0; opacity: .7; font-weight: 600; }
+  .lk-field input {
+    width: 100%; box-sizing: border-box; padding: 11px 13px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--panel2); color: var(--text);
+    font-family: inherit; font-size: .92rem; outline: none;
+    transition: border-color .18s ease, box-shadow .25s ease;
+  }
+  .lk-field input:focus { border-color: color-mix(in srgb, var(--accent) 50%, transparent); box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .1); }
+  .lk-field input::placeholder { color: #5c5c5c; }
+  .lk-field input.mono { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; letter-spacing: 1px; }
+  .lk-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+  /* sits in the grid beside the date field, so it lines up with the input and not the label */
+  .lk-actions.end { margin-top: 0; align-items: flex-end; }
+  .lk-hint { color: var(--muted); font-size: .76rem; line-height: 1.5; margin: 0; }
+  /* the second search, set apart so nobody spends a token on the wrong one */
+  .lk-sep {
+    display: flex; align-items: center; gap: 12px; margin: 20px 0 14px;
+    color: var(--muted); font-size: .64rem; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800;
+  }
+  .lk-sep::before, .lk-sep::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); }
+  .lk-meta { max-width: 780px; margin: 0 auto 18px; color: var(--muted); font-size: .78rem; text-align: center; letter-spacing: .3px; }
+  .lk-meta b { color: var(--accent); font-weight: 800; }
+  .lk-results { max-width: 780px; margin: 0 auto; }
+  .lk-error { max-width: 780px; margin: 0 auto 14px; color: #ff9a8a; font-size: .86rem; text-align: center; }
+  .lk-empty { color: var(--muted); font-size: .86rem; padding: 26px; text-align: center; border: 1px dashed var(--border); border-radius: 14px; }
+  .lk-more { display: block; margin: 14px auto 0; }
+  /* a live record came from the source just now, so it is marked as such */
+  .lk-live-card { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+  .lk-tag {
+    font-size: .6rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 800;
+    padding: 3px 9px; border-radius: 999px; background: var(--accent); color: #000;
+  }
+  @media (max-width: 720px) {
+    .lk-grid, .lk-grid.two { grid-template-columns: minmax(0, 1fr); }
+    .lk-actions .scan { width: 100%; }
+  }
+
   /* --- database --- */
   #page-database .card { display: flex; flex-direction: column; }
   #page-database .lp-ico { width: 38px; height: 38px; margin-bottom: 13px; }
@@ -2419,6 +2477,10 @@
     <div class="nav-item" data-page="investigate">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
       Investigate
+    </div>
+    <div class="nav-item" data-page="lookup">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><circle cx="9" cy="11" r="2.2"/><path d="M5.5 16.2c.5-1.6 1.9-2.4 3.5-2.4s3 .8 3.5 2.4M15 10h4M15 13.5h4"/></svg>
+      Lookup
     </div>
     <div class="nav-item nav-geoint" data-page="geoint">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9S14.5 18.3 12 21c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>
@@ -2603,6 +2665,50 @@
           <div id="socialSummary" class="cat-note"></div>
         </div>
       </div>
+    </section>
+
+    <!-- LOOKUP -->
+    <section class="page" id="page-lookup">
+      <p class="pg-kicker inv-kicker">Registry</p>
+      <h1>Who are we looking for?</h1>
+      <p class="sub">An identity number, a name, or both together. Each question costs a token and goes in the log.</p>
+
+      <form class="lk-console" id="lkForm">
+        <div class="lk-grid">
+          <div class="lk-field">
+            <label for="lkTc">TC <span>11 digits</span></label>
+            <input type="text" id="lkTc" class="mono" inputmode="numeric" maxlength="11" autocomplete="off" spellcheck="false" placeholder="12345678901">
+          </div>
+          <div class="lk-field">
+            <label for="lkAdi">Ad</label>
+            <input type="text" id="lkAdi" maxlength="60" autocomplete="off" spellcheck="false" placeholder="first name">
+          </div>
+          <div class="lk-field">
+            <label for="lkSoyadi">Soyad</label>
+            <input type="text" id="lkSoyadi" maxlength="60" autocomplete="off" spellcheck="false" placeholder="surname">
+          </div>
+        </div>
+        <div class="lk-actions">
+          <button type="submit" class="scan" id="lkSearchBtn" data-cost="1 token">Search records</button>
+          <p class="lk-hint">One field is enough — fill in more to narrow it down.</p>
+        </div>
+
+        <div class="lk-sep">or ask the registry directly</div>
+        <div class="lk-grid two">
+          <div class="lk-field">
+            <label for="lkDob">Doğum tarihi <span>YYYY-MM-DD</span></label>
+            <input type="date" id="lkDob">
+          </div>
+          <div class="lk-actions end">
+            <button type="button" class="scan" id="lkLiveBtn" data-cost="1 token">Live detail</button>
+          </div>
+        </div>
+        <p class="lk-hint" id="lkLiveHint">A live query reads the current record rather than the dump, and needs the identity number above together with this date.</p>
+      </form>
+
+      <div class="lk-error" id="lkError"></div>
+      <div class="lk-meta" id="lkCount"></div>
+      <div class="lk-results" id="lkResults"></div>
     </section>
 
     <!-- DATABASE -->
@@ -6105,6 +6211,230 @@
 
   invForm.addEventListener("submit", (e) => { e.preventDefault(); startSearch(false); });
   invUltraBtn.addEventListener("click", () => startSearch(true));
+
+  /* ================= LOOKUP — the registry console =================
+     The same bones as the search above: the server charges the token up
+     front, then the client asks the registry itself over IPC — the key lives
+     in the main process (secret.js / NICOTINE_SEARCH_KEY), never in here. Two questions live on this page and
+     each is its own token — who matches these fields (paged, out of the
+     dump), and tell me about this one identity number (live, at the source).
+
+     Nothing here hard-codes the record's shape. Upstream returns whatever
+     columns it has, so every field renders, and the map below only decides
+     what a key is CALLED — an unknown key still shows up, under its own name,
+     rather than being silently dropped.
+     ================================================================= */
+  const lkForm = document.getElementById("lkForm");
+  if (lkForm) {
+    const lkTc = document.getElementById("lkTc");
+    const lkAdi = document.getElementById("lkAdi");
+    const lkSoyadi = document.getElementById("lkSoyadi");
+    const lkDob = document.getElementById("lkDob");
+    const lkSearchBtn = document.getElementById("lkSearchBtn");
+    const lkLiveBtn = document.getElementById("lkLiveBtn");
+    const lkError = document.getElementById("lkError");
+    const lkCount = document.getElementById("lkCount");
+    const lkResults = document.getElementById("lkResults");
+
+    const TC_RE = /^[1-9][0-9]{10}$/;
+    const DOB_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+    const PERSON_LABELS = {
+      tc: "TC", ad: "Ad", adi: "Ad", soyad: "Soyad", soyadi: "Soyad",
+      ana_adi: "Anne adı", anneadi: "Anne adı", annetc: "Anne TC",
+      baba_adi: "Baba adı", babaadi: "Baba adı", babatc: "Baba TC",
+      dogum_yeri: "Doğum yeri", dogumyeri: "Doğum yeri",
+      dogum_tarihi: "Doğum tarihi", dogumtarihi: "Doğum tarihi",
+      olum_tarihi: "Ölüm tarihi", cinsiyet: "Cinsiyet", medeni_hal: "Medeni hal",
+      durum: "Durum", seri_no: "Seri no", veren_makam: "Veren makam",
+      nufusil: "Nüfus il", nufusilce: "Nüfus ilçe", uyruk: "Uyruk",
+      il: "İl", ilce: "İlçe", mahalle: "Mahalle", acik_adres: "Adres",
+    };
+    const PERSON_MONO = new Set(["tc", "annetc", "babatc", "seri_no", "adres_no"]);
+
+    let lkFilters = null;    // what the current session was bought to ask
+    let lkBusy = false;
+
+    function lkFail(msg) {
+      lkError.textContent = msg || "";
+      if (msg) toast(msg, "err");
+    }
+    function lkSetBusy(on, btn, label) {
+      lkBusy = on;
+      lkSearchBtn.disabled = on;
+      lkLiveBtn.disabled = on;
+      if (btn) btn.textContent = on ? label : btn.dataset.idle;
+    }
+
+    function lkCard(rec, title, live) {
+      const card = document.createElement("div");
+      card.className = "nic-card" + (live ? " lk-live-card" : "");
+
+      const head = document.createElement("div");
+      head.className = "nic-card-head";
+      const left = document.createElement("div");
+      left.className = "nic-card-idx";
+      left.textContent = title;
+      if (live) {
+        const tag = document.createElement("span");
+        tag.className = "lk-tag";
+        tag.textContent = "live";
+        left.appendChild(document.createTextNode(" "));
+        left.appendChild(tag);
+      }
+      const copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.className = "nic-copy";
+      copyBtn.textContent = "Copy";
+      copyBtn.addEventListener("click", () => copyText(recordToText(rec), copyBtn));
+      head.appendChild(left); head.appendChild(copyBtn);
+      card.appendChild(head);
+
+      let fields = 0;
+      for (const [k, v] of Object.entries(rec)) {
+        if (v == null || String(v).trim() === "") continue;
+        const key = String(k).toLowerCase();
+        card.appendChild(nicFieldRow(PERSON_LABELS[key] || k, String(v), { mono: PERSON_MONO.has(key) }));
+        fields++;
+      }
+      /* Upstream answers a miss with a full set of empty strings rather than
+         an error, so without this the card would be a header over nothing. */
+      if (!fields) {
+        const note = document.createElement("div");
+        note.className = "lk-empty";
+        note.textContent = "The record came back empty — nothing is filed under that identity number and date.";
+        card.appendChild(note);
+      }
+      return card;
+    }
+
+    // charge first: no token spent, no request made
+    async function lkCharge(type, query) {
+      let charge;
+      try { charge = await window.api.searchStart(false, type, query); }
+      catch (_) { lkFail("Connection error."); return null; }
+      if (!charge || !charge.ok) {
+        if (charge && charge.need != null) lkFail("Not enough tokens — need " + charge.need + ", you have " + charge.have + ".");
+        else lkFail((charge && charge.error) || "Couldn't start the lookup.");
+        return null;
+      }
+      setTokens(charge.tokens);
+      return charge.searchToken;
+    }
+
+    function lkGate() {
+      if (currentUser) return true;
+      applyAuthGate();
+      toast("Log in to search.");
+      return false;
+    }
+
+    /* Busy is the caller's to own, not this function's: the token is charged
+       before the first page is asked for, and leaving the buttons live across
+       that round trip means a second click buys a second token. */
+    async function lkFetchPage(page, append) {
+      let res;
+      try { res = await window.api.personSearch(lkFilters, page); }
+      catch (_) { res = { ok: false, error: "Connection error." }; }
+
+      if (!res || !res.ok) { lkFail((res && res.error) || "The lookup failed."); return; }
+
+      const payload = res.data || {};
+      const rows = Array.isArray(payload.data) ? payload.data : [];
+      const pg = payload.pagination || {};
+      const total = Number(pg.total || rows.length) || 0;
+
+      const oldMore = lkResults.querySelector(".lk-more");
+      if (oldMore) oldMore.remove();
+      if (!append) lkResults.innerHTML = "";
+
+      if (!rows.length && !append) {
+        const empty = document.createElement("div");
+        empty.className = "lk-empty";
+        empty.textContent = "No records matched.";
+        lkResults.appendChild(empty);
+        lkCount.textContent = "";
+        return;
+      }
+
+      const from = lkResults.querySelectorAll(".nic-card:not(.lk-live-card)").length;
+      rows.forEach((rec, i) => lkResults.appendChild(lkCard(rec, "Record " + (from + i + 1))));
+
+      const shown = lkResults.querySelectorAll(".nic-card:not(.lk-live-card)").length;
+      lkCount.innerHTML = "showing <b>" + shown + "</b> of <b>" + total + "</b>";
+
+      if (pg.hasMore) {
+        const more = document.createElement("button");
+        more.type = "button";
+        more.className = "btn-mini lk-more";
+        more.textContent = "Load more";
+        // the session is already paid for, so paging through it is free
+        more.addEventListener("click", async () => {
+          if (lkBusy) return;
+          lkSetBusy(true, lkSearchBtn, "Loading…");
+          try { await lkFetchPage(page + 1, true); }
+          finally { lkSetBusy(false, lkSearchBtn); }
+        });
+        lkResults.appendChild(more);
+      }
+    }
+
+    async function lkSearch() {
+      if (lkBusy || !lkGate()) return;
+      const filters = {};
+      const tc = lkTc.value.trim(), adi = lkAdi.value.trim(), soyadi = lkSoyadi.value.trim();
+      if (tc) filters.tc = tc;
+      if (adi) filters.adi = adi;
+      if (soyadi) filters.soyadi = soyadi;
+      if (!Object.keys(filters).length) return lkFail("Fill in at least one field.");
+      if (tc && !TC_RE.test(tc)) return lkFail("An identity number is 11 digits.");
+
+      lkFail("");
+      const summary = Object.entries(filters).map(([k, v]) => k + "=" + v).join(" ");
+      lkSetBusy(true, lkSearchBtn, "Searching…");
+      try {
+        const token = await lkCharge("person", summary);
+        if (!token) return;
+        lkFilters = filters;
+        lkResults.innerHTML = ""; lkCount.textContent = "";
+        await lkFetchPage(1, false);
+      } finally { lkSetBusy(false, lkSearchBtn); }
+    }
+
+    async function lkLive() {
+      if (lkBusy || !lkGate()) return;
+      const tc = lkTc.value.trim(), dob = lkDob.value.trim();
+      if (!TC_RE.test(tc)) return lkFail("A live query needs the 11-digit identity number above.");
+      if (!DOB_RE.test(dob)) return lkFail("A live query needs a date of birth.");
+
+      lkFail("");
+      lkSetBusy(true, lkLiveBtn, "Asking…");
+      try {
+        const token = await lkCharge("person:live", tc + " " + dob);
+        if (!token) return;
+
+        let res;
+        try { res = await window.api.personLive(tc, dob, "detailed"); }
+        catch (_) { res = { ok: false, error: "Connection error." }; }
+
+        if (!res || !res.ok) { lkFail((res && res.error) || "The live query failed."); return; }
+        const rec = res.data && res.data.data ? res.data.data : null;
+        if (!rec || typeof rec !== "object") { lkFail("The registry returned nothing for that pair."); return; }
+
+        // the live answer goes on top, above whatever the dump had to say
+        const old = lkResults.querySelector(".lk-live-card");
+        if (old) old.remove();
+        lkResults.insertBefore(lkCard(rec, "Live record", true), lkResults.firstChild);
+      } finally { lkSetBusy(false, lkLiveBtn); }
+    }
+
+    lkSearchBtn.dataset.idle = lkSearchBtn.textContent;
+    lkLiveBtn.dataset.idle = lkLiveBtn.textContent;
+    lkForm.addEventListener("submit", (e) => { e.preventDefault(); lkSearch(); });
+    lkLiveBtn.addEventListener("click", lkLive);
+    // digits only, so a pasted number with spaces or dots still works
+    lkTc.addEventListener("input", () => { lkTc.value = lkTc.value.replace(/\D/g, "").slice(0, 11); });
+  }
 
   /* ---------- database ---------- */
   const $ = (id) => document.getElementById(id);

@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld("api", {
   checkHandle: (handle) => ipcRenderer.invoke("osint:check", handle),
   onOsintResult: (cb) => ipcRenderer.on("osint:result", (_e, data) => cb(data)),
   osintLookup: (query, type) => ipcRenderer.invoke("osint:lookup", { query, type }),
+  personSearch: (filters, page) => ipcRenderer.invoke("person:search", { filters, page }),
+  personLive: (tc, dob, type) => ipcRenderer.invoke("person:live", { tc, dob, type }),
   appVersion: () => ipcRenderer.invoke("app:version"),
   authMe: () => ipcRenderer.invoke("auth:me"),
   authRegister: (username, password) => ipcRenderer.invoke("auth:register", { username, password }),

@@ -590,6 +590,110 @@ app.get("/api/osint", requireAuth, requireSearch, async (req, res) => {
   }
 });
 
+/* ============================= person lookup proxy =============================
+ * The same upstream as the OSINT proxy above, but its /search endpoint over the
+ * civil-registry dataset: a name, a surname or a national ID number, and the
+ * record that goes with it.
+ *
+ * Everything that matters here is the same as /api/osint on purpose — the key
+ * stays on the server, the caller has to hold a paid search session, and the
+ * query lands in the search log and on the webhook. What is different is the
+ * shape of the request: this endpoint takes any combination of filters rather
+ * than one q= term, so the whitelist below is what stops a caller inventing
+ * parameters and having us forward them upstream verbatim.
+ * ============================================================================ */
+const PERSON_FILTERS = new Set([
+  "tc", "adi", "soyadi", "dogumtarihi", "nufusil", "nufusilce",
+  "anneadi", "annetc", "babaadi", "babatc", "uyruk",
+]);
+const PERSON_DB = "prd";
+
+app.get("/api/lookup", requireAuth, requireSearch, async (req, res) => {
+  const filters = {};
+  for (const name of PERSON_FILTERS) {
+    const v = String(req.query[name] == null ? "" : req.query[name]).trim();
+    if (v) filters[name] = v.slice(0, 100);
+  }
+  if (!Object.keys(filters).length) {
+    return res.status(400).json({ ok: false, error: "En az bir filtre gerekli (TC, ad veya soyad)." });
+  }
+
+  // the search-only key when one is configured, otherwise the shared account key
+  const key = process.env.NICOTINE_SEARCH_KEY || process.env.NICOTINE_API_KEY;
+  if (!key) return res.status(503).json({ ok: false, error: "Sunucuda API anahtarı ayarlı değil (NICOTINE_SEARCH_KEY)." });
+
+  const page = Math.min(Math.max(parseInt(req.query.page, 10) || 1, 1), 200);
+  const qs = new URLSearchParams({ database: PERSON_DB, page: String(page) });
+  for (const [k, v] of Object.entries(filters)) qs.set(k, v);
+
+  // Only the first page is a new search; paging through it is the same one.
+  if (page === 1) {
+    const summary = Object.entries(filters).map(([k, v]) => `${k}=${v}`).join(" ");
+    notifyDiscord(req, "person", summary, req.user && req.user.username);
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+  try {
+    const r = await fetch(`https://nicotine.ws/api/v1/search?${qs}`, {
+      headers: { Authorization: `Bearer ${key}`, Accept: "application/json" },
+      signal: controller.signal,
+    });
+    const raw = await r.text();
+    let data;
+    try { data = raw ? JSON.parse(raw) : null; } catch { data = raw; }
+    if (!r.ok) return res.json({ ok: false, status: r.status, error: `HTTP ${r.status}`, data });
+    res.json({ ok: true, status: r.status, filters, page, data });
+  } catch (err) {
+    res.json({ ok: false, error: err.name === "AbortError" ? "Zaman aşımı (30 sn)." : err.message });
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
+/* Live detail: one person, queried at the source rather than read out of the
+ * dump. Needs the ID number AND the date of birth together — upstream rejects
+ * either on its own, so both are checked here before we spend the round trip.
+ * (Upstream also serves address / gib-* under this endpoint; add them to
+ * LIVE_TYPES when there is a UI asking for them.) */
+const LIVE_TYPES = new Set(["detailed"]);
+const TC_RE = /^[1-9][0-9]{10}$/;
+const DOB_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+app.get("/api/lookup/live", requireAuth, requireSearch, async (req, res) => {
+  const type = String(req.query.type || "detailed").toLowerCase();
+  const tc = String(req.query.tc || "").trim();
+  const dob = String(req.query.dob || "").trim();
+
+  if (!LIVE_TYPES.has(type)) return res.status(400).json({ ok: false, error: `Geçersiz tür: "${type}".` });
+  if (!TC_RE.test(tc)) return res.status(400).json({ ok: false, error: "TC kimlik no 11 haneli olmalı." });
+  if (!DOB_RE.test(dob)) return res.status(400).json({ ok: false, error: "Doğum tarihi YYYY-AA-GG olmalı." });
+
+  const key = process.env.NICOTINE_SEARCH_KEY || process.env.NICOTINE_API_KEY;
+  if (!key) return res.status(503).json({ ok: false, error: "Sunucuda API anahtarı ayarlı değil (NICOTINE_SEARCH_KEY)." });
+
+  notifyDiscord(req, "person:live", `${tc} ${dob}`, req.user && req.user.username);
+
+  const qs = new URLSearchParams({ type, tc, dob });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+  try {
+    const r = await fetch(`https://nicotine.ws/api/v1/live?${qs}`, {
+      headers: { Authorization: `Bearer ${key}`, Accept: "application/json" },
+      signal: controller.signal,
+    });
+    const raw = await r.text();
+    let data;
+    try { data = raw ? JSON.parse(raw) : null; } catch { data = raw; }
+    if (!r.ok) return res.json({ ok: false, status: r.status, error: `HTTP ${r.status}`, data });
+    res.json({ ok: true, status: r.status, type, tc, dob, data });
+  } catch (err) {
+    res.json({ ok: false, error: err.name === "AbortError" ? "Zaman aşımı (30 sn)." : err.message });
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
 /* ============================= GEOINT =============================
  * Work out where a photograph was taken. Two routes, in order of how much
  * they can be trusted:
