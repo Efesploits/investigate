@@ -4380,6 +4380,8 @@
   const adTabs = document.getElementById("adTabs");
   function showAdminTab(name) {
     if (!adTabs) return;
+    const views = document.querySelectorAll("#page-admin .ad-view");
+    if (!views.length) return;
     let matched = false;
     adTabs.querySelectorAll(".ad-tab").forEach((t) => {
       const on = t.dataset.tab === name;
@@ -4387,10 +4389,20 @@
       t.classList.toggle("active", on);
       t.setAttribute("aria-selected", on ? "true" : "false");
     });
-    if (!matched) return showAdminTab("members");
-    document.querySelectorAll("#page-admin .ad-view").forEach((v) => {
-      v.classList.toggle("hidden", v.id !== "adView-" + name);
-    });
+    if (!matched && name !== "members") return showAdminTab("members");
+    views.forEach((v) => v.classList.toggle("hidden", v.id !== "adView-" + name));
+
+    /* Hiding every section is the one outcome this must never produce — a
+       console with no console in it, and no way to tell why. If the requested
+       view isn't among them, fall back to showing all of them: stacked and
+       ugly beats blank and unusable. */
+    const anyVisible = [...views].some((v) => !v.classList.contains("hidden"));
+    if (!anyVisible) {
+      views.forEach((v) => v.classList.remove("hidden"));
+      console.warn("[admin] no view matched \"" + name + "\" — showing all of them. " +
+        "Views present: " + [...views].map((v) => v.id).join(", "));
+      return;
+    }
     settings.adminTab = name;
     saveSettings();
   }
