@@ -2144,6 +2144,38 @@
   .ad-stat b { display: block; font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--accent); font-variant-numeric: tabular-nums; }
   .ad-stat span { display: block; margin-top: 3px; font-size: .67rem; letter-spacing: 1.3px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
 
+  /* --- one job per tab ---
+     The four sections used to be stacked in a single column, so reaching the
+     search log meant scrolling past every member. */
+  .ad-tabs {
+    display: flex; gap: 4px; padding: 4px; margin-bottom: 18px;
+    border-radius: 999px; background: var(--panel2); border: 1px solid var(--border);
+    width: fit-content; max-width: 100%;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .ad-tabs::-webkit-scrollbar { display: none; }
+  .ad-tab {
+    display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
+    border: none; background: transparent; color: var(--muted); cursor: pointer;
+    font-family: inherit; font-weight: 700; font-size: .84rem;
+    padding: 9px 16px; border-radius: 999px; white-space: nowrap;
+    transition: color .18s ease, background .18s ease;
+  }
+  .ad-tab svg { width: 15px; height: 15px; }
+  .ad-tab:not(.active):hover { color: var(--text); background: rgba(255,255,255,.05); }
+  /* the selected tab wears the same gel as every other primary surface */
+  .ad-tab.active {
+    color: #000;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 100%, #fff) 0%, var(--accent) 44%, color-mix(in srgb, var(--accent) 90%, #000) 100%);
+    box-shadow: 0 3px 10px -3px rgb(var(--accent-rgb) / .45), inset 0 1.5px 0 rgba(255,255,255,.7), inset 0 -2px 5px -2px rgba(0,0,0,.26);
+  }
+  .ad-tab-n {
+    font-size: .66rem; font-weight: 800; padding: 1px 7px; border-radius: 999px;
+    background: rgba(255,255,255,.09); font-variant-numeric: tabular-nums;
+  }
+  .ad-tab.active .ad-tab-n { background: rgba(0,0,0,.17); }
+  .ad-view { animation: fadeIn .22s ease; }
+
   .ad-panel {
     padding: 18px; border-radius: 16px; margin-bottom: 14px;
     border: 1px solid var(--border); background: color-mix(in srgb, var(--panel) 45%, transparent);
@@ -2829,75 +2861,115 @@
         <div class="ad-stat"><b id="adStatSearches">—</b><span>Searches logged</span></div>
       </div>
 
-      <div class="ad-panel">
-        <div class="sec-head">
-          <h2>Noticeboard</h2>
-          <span class="rule"></span>
-        </div>
-        <p class="ad-panel-sub">Anything you publish here shows on every member's home page.</p>
-        <div class="ann-compose">
-          <input type="text" id="annTitle" maxlength="120" placeholder="Title">
-          <textarea id="annBody" maxlength="2000" rows="3" placeholder="What does everyone need to know?"></textarea>
-          <button class="btn-mini" id="annPost" type="button">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>
-            Publish
-          </button>
+      <!-- One job per tab. The four sections used to be stacked in one column,
+           which meant scrolling past a members list to reach the search log. -->
+      <div class="ad-tabs" id="adTabs" role="tablist" aria-label="Admin sections">
+        <button class="ad-tab active" type="button" role="tab" aria-selected="true" data-tab="members" aria-controls="adView-members">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.6"/><path d="M2.5 20c0-3.3 2.9-5.8 6.5-5.8s6.5 2.5 6.5 5.8"/><path d="M17 11.2a3 3 0 1 0-2-5.3M18 19.6c0-2.2-.9-4-2.3-5.2"/></svg>
+          Members <span class="ad-tab-n" id="adTabNUsers">—</span>
+        </button>
+        <button class="ad-tab" type="button" role="tab" aria-selected="false" data-tab="codes" aria-controls="adView-codes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7a4 4 0 1 1-2.8 6.8L9 17l-2 2H4v-3l6.2-6.2A4 4 0 0 1 15 7z"/><circle cx="16.5" cy="7.5" r=".8" fill="currentColor"/></svg>
+          Codes <span class="ad-tab-n" id="adTabNCodes">—</span>
+        </button>
+        <button class="ad-tab" type="button" role="tab" aria-selected="false" data-tab="board" aria-controls="adView-board">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>
+          Noticeboard
+        </button>
+        <button class="ad-tab" type="button" role="tab" aria-selected="false" data-tab="activity" aria-controls="adView-activity">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2.5-7 5 14L17 12h4"/></svg>
+          Activity <span class="ad-tab-n" id="adTabNLogs">—</span>
+        </button>
+      </div>
+
+      <!-- MEMBERS -->
+      <div class="ad-view" id="adView-members" role="tabpanel">
+        <div class="ad-panel">
+          <div class="sec-head">
+            <h2>Members</h2>
+            <span class="rule"></span>
+            <input class="ad-filter" id="adUserFilter" type="search" placeholder="Filter members…" autocomplete="off" aria-label="Filter members">
+          </div>
+          <p class="ad-panel-sub">Change a role, grant tokens, rename or remove. You can't demote, rename or delete your own account from here.</p>
+          <div id="adminUsers" class="admin-users"></div>
         </div>
       </div>
 
-      <div class="ad-panel">
+      <!-- ACTIVITY -->
+      <div class="ad-view hidden" id="adView-activity" role="tabpanel">
+        <div class="ad-panel">
+          <div class="sec-head">
+            <h2>Search log</h2>
+            <span class="rule"></span>
+            <input class="ad-filter" id="adLogFilter" type="search" placeholder="Filter by user or query…" autocomplete="off" aria-label="Filter search log">
+          </div>
+          <p class="ad-panel-sub">The last 200 searches, newest first.</p>
+          <div id="adminLogs" class="admin-logs"></div>
+        </div>
+      </div>
+
+      <!-- NOTICEBOARD -->
+      <div class="ad-view hidden" id="adView-board" role="tabpanel">
+        <div class="ad-panel">
+          <div class="sec-head">
+            <h2>Post an announcement</h2>
+            <span class="rule"></span>
+          </div>
+          <p class="ad-panel-sub">Anything you publish here shows on every member's home page.</p>
+          <div class="ann-compose">
+            <input type="text" id="annTitle" maxlength="120" placeholder="Title">
+            <textarea id="annBody" maxlength="2000" rows="3" placeholder="What does everyone need to know?"></textarea>
+            <button class="btn-mini" id="annPost" type="button">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>
+              Publish
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CODES -->
+      <div class="ad-view hidden" id="adView-codes" role="tabpanel">
+        <div class="ad-panel">
         <div class="sec-head">
-          <h2>Redeem codes</h2>
+          <h2>Create a code</h2>
           <span class="rule"></span>
         </div>
         <p class="ad-panel-sub">Leave the code blank and one gets generated for you.</p>
         <div class="code-compose">
-        <div class="code-fields">
-          <div class="code-field">
-            <label for="codeCode">Code <span>optional</span></label>
-            <input type="text" id="codeCode" maxlength="32" autocomplete="off" spellcheck="false" placeholder="Leave blank to generate">
+          <div class="code-fields">
+            <div class="code-field">
+              <label for="codeCode">Code <span>optional</span></label>
+              <input type="text" id="codeCode" maxlength="32" autocomplete="off" spellcheck="false" placeholder="Leave blank to generate">
+            </div>
+            <div class="code-field narrow">
+              <label for="codeTokens">Tokens</label>
+              <input type="number" id="codeTokens" min="1" max="100000" value="5">
+            </div>
+            <div class="code-field narrow">
+              <label for="codeMaxUses">Max uses <span>0 = ∞</span></label>
+              <input type="number" id="codeMaxUses" min="0" max="1000000" value="1">
+            </div>
+            <div class="code-field">
+              <label for="codeExpires">Expires <span>optional</span></label>
+              <input type="date" id="codeExpires">
+            </div>
+            <div class="code-field">
+              <label for="codeNote">Note <span>optional</span></label>
+              <input type="text" id="codeNote" maxlength="120" placeholder="What's it for?">
+            </div>
           </div>
-          <div class="code-field narrow">
-            <label for="codeTokens">Tokens</label>
-            <input type="number" id="codeTokens" min="1" max="100000" value="5">
-          </div>
-          <div class="code-field narrow">
-            <label for="codeMaxUses">Max uses <span>0 = ∞</span></label>
-            <input type="number" id="codeMaxUses" min="0" max="1000000" value="1">
-          </div>
-          <div class="code-field">
-            <label for="codeExpires">Expires <span>optional</span></label>
-            <input type="date" id="codeExpires">
-          </div>
-          <div class="code-field">
-            <label for="codeNote">Note <span>optional</span></label>
-            <input type="text" id="codeNote" maxlength="120" placeholder="What's it for?">
-          </div>
-        </div>
           <button class="btn-mini" id="codeCreate" type="button">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
             Create code
           </button>
         </div>
+        </div>
+
+        <div class="sec-head">
+          <h2>Live codes</h2>
+          <span class="rule"></span>
+        </div>
         <div id="adminCodes" class="admin-codes"></div>
-      </div>
-
-      <div class="ad-panel">
-        <div class="sec-head">
-          <h2>Members</h2>
-          <span class="rule"></span>
-          <input class="ad-filter" id="adUserFilter" type="search" placeholder="Filter members…" autocomplete="off" aria-label="Filter members">
-        </div>
-        <div id="adminUsers" class="admin-users"></div>
-      </div>
-
-      <div class="ad-panel">
-        <div class="sec-head">
-          <h2>Search log</h2>
-          <span class="rule"></span>
-          <input class="ad-filter" id="adLogFilter" type="search" placeholder="Filter by user or query…" autocomplete="off" aria-label="Filter search log">
-        </div>
-        <div id="adminLogs" class="admin-logs"></div>
       </div>
     </section>
 
@@ -4247,11 +4319,13 @@
       renderAdminUsers();
     }
     setAdStat("adStatUsers", adUsers.length);
+    setAdStat("adTabNUsers", adUsers.length);
     setAdStat("adStatAdmins", adUsers.filter((u) => u.role === "admin").length);
 
     const lr = await window.api.adminLogs(200).catch(() => null);
     adLogs = (lr && lr.ok && lr.logs) ? lr.logs : [];
     setAdStat("adStatSearches", adLogs.length);
+    setAdStat("adTabNLogs", adLogs.length);
     renderAdminLogs();
     loadAdminCodes();
   }
@@ -4299,6 +4373,44 @@
     if (el) el.addEventListener("input", id === "adUserFilter" ? renderAdminUsers : renderAdminLogs);
   });
 
+  /* ---- the admin's tabs ----
+     Each section is its own view and only one is mounted at a time. The choice
+     is remembered, because an admin working through a member list does not
+     want to be dropped back on Members every time they reopen the console. */
+  const adTabs = document.getElementById("adTabs");
+  function showAdminTab(name) {
+    if (!adTabs) return;
+    let matched = false;
+    adTabs.querySelectorAll(".ad-tab").forEach((t) => {
+      const on = t.dataset.tab === name;
+      if (on) matched = true;
+      t.classList.toggle("active", on);
+      t.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    if (!matched) return showAdminTab("members");
+    document.querySelectorAll("#page-admin .ad-view").forEach((v) => {
+      v.classList.toggle("hidden", v.id !== "adView-" + name);
+    });
+    settings.adminTab = name;
+    saveSettings();
+  }
+  if (adTabs) {
+    adTabs.addEventListener("click", (e) => {
+      const t = e.target.closest(".ad-tab");
+      if (t) showAdminTab(t.dataset.tab);
+    });
+    // left/right arrows walk the tab strip, the way a real tablist does
+    adTabs.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      const list = [...adTabs.querySelectorAll(".ad-tab")];
+      const i = list.findIndex((t) => t.classList.contains("active"));
+      const next = list[(i + (e.key === "ArrowRight" ? 1 : list.length - 1)) % list.length];
+      e.preventDefault();
+      showAdminTab(next.dataset.tab);
+      next.focus();
+    });
+    showAdminTab(settings.adminTab || "members");
+  }
   /* ---------- redeem codes: admin (create / list / delete) ---------- */
   const adminCodes = document.getElementById("adminCodes");
   const codeCreateBtn = document.getElementById("codeCreate");
@@ -4357,6 +4469,7 @@
     if (!r || !r.ok) { adminCodes.innerHTML = '<div class="ad-empty">Couldn\'t load codes.</div>'; return; }
     // "live" means a member could still redeem it right now
     setAdStat("adStatCodes", r.codes.filter((c) => !codeStatus(c).spent).length);
+    setAdStat("adTabNCodes", r.codes.length);
     adminCodes.innerHTML = "";
     if (!r.codes.length) { adminCodes.innerHTML = '<div class="ad-empty">No codes yet — create one above.</div>'; return; }
     r.codes.forEach((c) => adminCodes.appendChild(adminCodeRow(c)));
