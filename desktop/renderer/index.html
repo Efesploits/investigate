@@ -69,18 +69,28 @@
        tall) so it never rises into the tagline above it */
     width: min(300px, 60vw, 42vh);
     filter: drop-shadow(0 0 34px rgb(var(--accent-rgb) / .10));
-    animation: glassIn 1s cubic-bezier(.2,.8,.2,1) both, float 6s ease-in-out 1s infinite;
+    /* The gate introduces itself in order rather than appearing at once: the
+       glass swings up and grows into place, the eye opens, the name arrives,
+       then the tagline, and only then the form. float takes over once the
+       entrance lands, so its delay must clear glassEnter's duration. */
+    animation: glassEnter 1.05s cubic-bezier(.22,.9,.25,1) both, float 6s ease-in-out 1.5s infinite;
   }
   .glass { width: 100%; height: auto; display: block; }
-  @keyframes glassIn { 0% { opacity: 0; transform: scale(.55) rotate(-12deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+  /* small and low, then up past its mark and settling back onto it */
+  @keyframes glassEnter {
+    0%   { opacity: 0; transform: translateY(58px) scale(.34) rotate(-16deg); }
+    45%  { opacity: 1; }
+    72%  { transform: translateY(-10px) scale(1.07) rotate(3deg); }
+    100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+  }
   @keyframes float { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-12px) rotate(1.5deg); } }
   .eye-inner {
     transform-box: fill-box; transform-origin: center; transform: scaleY(0); opacity: 0;
-    animation: eyeOpen .5s cubic-bezier(.3,1.15,.35,1) .25s forwards, blink 4s cubic-bezier(.6,0,.4,1) 2.2s infinite;
+    animation: eyeOpen .45s cubic-bezier(.3,1.15,.35,1) .78s forwards, blink 4s cubic-bezier(.6,0,.4,1) 3.2s infinite;
   }
   @keyframes eyeOpen { 0% { transform: scaleY(0); opacity: 0; } 1% { transform: scaleY(0); opacity: 1; } 60% { transform: scaleY(1.18); opacity: 1; } 100% { transform: scaleY(1); opacity: 1; } }
   @keyframes blink { 0%,88%,100% { transform: scaleY(1); } 92% { transform: scaleY(.08); } 95% { transform: scaleY(1); } }
-  .iris { transform-box: fill-box; transform-origin: center; animation: look 2s cubic-bezier(.45,.05,.35,1) .55s both; }
+  .iris { transform-box: fill-box; transform-origin: center; animation: look 1.8s cubic-bezier(.45,.05,.35,1) 1.1s both; }
   .iris.track { transition: transform .45s cubic-bezier(.22,.61,.36,1); }
   @keyframes look {
     0%,8% { transform: translate(0,0); }
@@ -89,16 +99,16 @@
     70%,80% { transform: translate(-14px,8px); }
     92%,100% { transform: translate(0,0); }
   }
-  .intro-title { font-size: clamp(1.4rem,4.5vw,2.2rem); font-weight: 800; margin: 0; text-align: center; color: var(--text); opacity: 0; animation: fadeUp .7s ease .75s forwards; }
-  .intro-sub { color: var(--muted); font-size: .8rem; letter-spacing: 3px; text-transform: uppercase; opacity: 0; margin: -14px 0 0; animation: fadeUp .7s ease .92s forwards; }
+  .intro-title { font-size: clamp(1.4rem,4.5vw,2.2rem); font-weight: 800; margin: 0; text-align: center; color: var(--text); opacity: 0; animation: fadeUp .7s ease 1.25s forwards; }
+  .intro-sub { color: var(--muted); font-size: .8rem; letter-spacing: 3px; text-transform: uppercase; opacity: 0; margin: -14px 0 0; animation: fadeUp .7s ease 1.4s forwards; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-  .print-tag { position: absolute; top: clamp(8px,3.5vh,50px); margin: 0; z-index: 3; color: var(--muted); font-size: clamp(.85rem,2.2vw,1.05rem); font-style: italic; letter-spacing: 2px; opacity: 0; animation: fadeUp .8s ease .2s forwards; }
+  .print-tag { position: absolute; top: clamp(8px,3.5vh,50px); margin: 0; z-index: 3; color: var(--muted); font-size: clamp(.85rem,2.2vw,1.05rem); font-style: italic; letter-spacing: 2px; opacity: 0; animation: fadeUp .7s ease 1.62s forwards; }
   .enter-btn {
     margin-top: 6px; padding: 12px 40px; border-radius: 999px;
     border: 1px solid rgb(var(--accent-rgb) / .55); background: transparent; color: var(--text);
     font-size: 1rem; font-weight: 700; letter-spacing: 4px; cursor: pointer; opacity: 0;
     position: relative;
-    animation: fadeUp .7s ease 1.2s forwards;
+    animation: fadeUp .7s ease 2.2s forwards;
     transition: transform .15s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
   }
   .enter-btn:hover { transform: translateY(-2px); background: var(--accent); color: #000; box-shadow: 0 0 26px rgb(var(--accent-rgb) / .25); }
@@ -109,10 +119,10 @@
   .enter-btn::after {
     content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
     box-shadow: 0 0 22px 1px rgb(var(--accent-rgb) / .18);
-    opacity: 0; animation: softGlow 2.4s ease-in-out 2s infinite;
+    opacity: 0; animation: softGlow 2.4s ease-in-out 3s infinite;
   }
   @keyframes softGlow { 0%,100% { opacity: 0 } 50% { opacity: 1 } }
-  .intro-credit { position: absolute; bottom: clamp(20px, 6vh, 48px); margin: 0; color: var(--muted); font-size: .72rem; letter-spacing: 1px; opacity: 0; animation: fadeUp .7s ease 1.15s forwards; }
+  .intro-credit { position: absolute; bottom: clamp(20px, 6vh, 48px); margin: 0; color: var(--muted); font-size: .72rem; letter-spacing: 1px; opacity: 0; animation: fadeUp .6s ease 2.1s forwards; }
 
   /* ambient dust drifting across the whole intro screen */
   .ambient-dust { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
@@ -754,7 +764,11 @@
      fields, a reveal for the password, a Caps Lock warning, a strength read
      while registering, and a button that shows it is working. */
   .intro-auth { width: 100%; max-width: 348px; margin: 4px auto 0; position: relative; z-index: 1; }
+  /* last in, once the screen has said what it is. The animation sits on the
+     card rather than on .intro-auth, because that wrapper's opacity/transform
+     are already spoken for by the greeting transition on the way out. */
   .auth-card {
+    animation: fadeUp .6s cubic-bezier(.2,.85,.3,1) 1.82s both;
     padding: 20px 20px 18px; border-radius: 18px; text-align: left;
     border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
     background: color-mix(in srgb, var(--panel) 58%, transparent);
@@ -832,7 +846,20 @@
   .intro-auth .m-err:empty { display: none; margin-top: 0; min-height: 0; }
   .intro-auth .m-err::before { content: "!"; flex-shrink: 0; width: 15px; height: 15px; border-radius: 50%;
     background: #ff6b6b; color: #000; font-size: .68rem; font-weight: 900; line-height: 15px; text-align: center; margin-top: 1px; }
-  .intro-hint { color: var(--muted); font-size: .76rem; margin-top: 14px; text-align: center; position: relative; z-index: 1; line-height: 1.5; }
+  .intro-hint { color: var(--muted); font-size: .76rem; margin-top: 14px; text-align: center; position: relative; z-index: 1; line-height: 1.5;
+    animation: fadeUp .5s ease 1.98s both; }
+
+  /* the choreography is a nicety; someone who has asked for less motion gets
+     the same screen without the wait */
+  @media (prefers-reduced-motion: reduce) {
+    .glass-wrap { animation: glassEnter .01s both, float 6s ease-in-out 1s infinite; }
+    .eye-inner { animation: eyeOpen .01s both, blink 4s cubic-bezier(.6,0,.4,1) 2s infinite; }
+    /* kept, not removed: its animationend is what hands the iris over to the
+       cursor, so cancelling it would stop the eye following the mouse */
+    .iris { animation-delay: 0s; animation-duration: .01s; }
+    .intro-title, .intro-sub, .print-tag, .auth-card, .intro-hint,
+    .intro-credit, .enter-btn { animation-delay: 0s; animation-duration: .2s; }
+  }
 
   .auth-tabs { position: relative; display: flex; gap: 4px; padding: 4px; background: var(--panel2);
     border: 1px solid var(--border); border-radius: 999px; margin-bottom: 14px; }

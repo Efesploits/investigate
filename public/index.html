@@ -134,19 +134,35 @@ you cant run by your own footprints.
     .glass-wrap { width: min(300px, 60vw, 26vh) !important; }
   }
 
+  /* ---------- the gate's entrance ----------
+     Arriving here is a deliberate act — you pressed Log in — so the screen
+     introduces itself in order rather than appearing all at once: the glass
+     swings up and grows into its place, the eye opens, the name arrives, then
+     the tagline, and only then the form you came to fill in.
+
+     Every step is one transform/opacity keyframe on its own element, and the
+     whole run is over in about two seconds. Because #intro is display:none
+     while the landing page is up, the sequence restarts every time the gate is
+     shown — coming in from the front door, or on the way back out of a logout.
+     ---------------------------------------------------------------- */
   .glass-wrap {
     /* the 46vh cap shrinks the glass on short windows so it never rises into
        the tagline above it */
     width: min(320px, 72vw, 46vh);
     filter: drop-shadow(0 0 34px rgb(var(--accent-rgb) / 0.10));
-    animation: glassIn 1s cubic-bezier(.2,.8,.2,1) both,
-               float 6s ease-in-out 1s infinite;
+    /* float takes over from the entrance once it has landed, so its delay has
+       to clear glassEnter's duration or the two fight over transform */
+    animation: glassEnter 1.05s cubic-bezier(.22,.9,.25,1) both,
+               float 6s ease-in-out 1.5s infinite;
   }
   .glass { width: 100%; height: auto; display: block; }
 
-  @keyframes glassIn {
-    0%   { opacity: 0; transform: scale(.55) rotate(-12deg); }
-    100% { opacity: 1; transform: scale(1) rotate(0); }
+  /* small and low, then up past its mark and settling back onto it */
+  @keyframes glassEnter {
+    0%   { opacity: 0; transform: translateY(58px) scale(.34) rotate(-16deg); }
+    45%  { opacity: 1; }
+    72%  { transform: translateY(-10px) scale(1.07) rotate(3deg); }
+    100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
   }
   @keyframes float {
     0%,100% { transform: translateY(0) rotate(0); }
@@ -164,8 +180,8 @@ you cant run by your own footprints.
     transform-origin: center;
     transform: scaleY(0);
     opacity: 0;
-    animation: eyeOpen .5s cubic-bezier(.3,1.15,.35,1) .25s forwards,
-               blink 4s cubic-bezier(.6,0,.4,1) 2.2s infinite;
+    animation: eyeOpen .45s cubic-bezier(.3,1.15,.35,1) .78s forwards,
+               blink 4s cubic-bezier(.6,0,.4,1) 3.2s infinite;
   }
   @keyframes eyeOpen {
     0%   { transform: scaleY(0);    opacity: 0; }
@@ -182,7 +198,7 @@ you cant run by your own footprints.
   .iris {
     transform-box: fill-box;
     transform-origin: center;
-    animation: look 2s cubic-bezier(.45,.05,.35,1) .55s both;
+    animation: look 1.8s cubic-bezier(.45,.05,.35,1) 1.1s both;
   }
   /* once handed off to mouse tracking, glide smoothly toward the cursor */
   .iris.track { transition: transform .45s cubic-bezier(.22,.61,.36,1); }
@@ -202,7 +218,7 @@ you cant run by your own footprints.
     text-align: center;
     color: var(--text);
     opacity: 0;
-    animation: fadeUp .7s ease .75s forwards;
+    animation: fadeUp .7s ease 1.25s forwards;
   }
   .intro-sub {
     color: var(--muted);
@@ -211,7 +227,7 @@ you cant run by your own footprints.
     text-transform: uppercase;
     opacity: 0;
     margin: -14px 0 0;
-    animation: fadeUp .7s ease .92s forwards;
+    animation: fadeUp .7s ease 1.4s forwards;
   }
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(16px); }
@@ -229,7 +245,7 @@ you cant run by your own footprints.
     font-style: italic;
     letter-spacing: 2px;
     opacity: 0;
-    animation: fadeUp .8s ease .2s forwards;
+    animation: fadeUp .7s ease 1.62s forwards;
   }
 
   .enter-btn {
@@ -245,7 +261,7 @@ you cant run by your own footprints.
     cursor: pointer;
     opacity: 0;
     position: relative;
-    animation: fadeUp .7s ease 1.2s forwards;
+    animation: fadeUp .7s ease 2.2s forwards;
     transition: transform .15s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
   }
   /* The glow breathes by fading a layer that already has the shadow painted on
@@ -255,7 +271,7 @@ you cant run by your own footprints.
   .enter-btn::after {
     content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
     box-shadow: 0 0 22px 1px rgb(var(--accent-rgb) / .18);
-    opacity: 0; animation: softGlow 2.4s ease-in-out 2s infinite;
+    opacity: 0; animation: softGlow 2.4s ease-in-out 3s infinite;
   }
   @keyframes softGlow { 0%,100% { opacity: 0 } 50% { opacity: 1 } }
   .enter-btn:hover {
@@ -303,7 +319,7 @@ you cant run by your own footprints.
     font-size: .74rem;
     letter-spacing: 1px;
     opacity: 0;
-    animation: fadeUp .7s ease 1.15s forwards;
+    animation: fadeUp .6s ease 2.1s forwards;
   }
 
   /* ---------- APP ---------- */
@@ -990,7 +1006,11 @@ you cant run by your own footprints.
      fields, a reveal for the password, a Caps Lock warning, a strength read
      while registering, and a button that shows it is working. */
   .intro-auth { width: 100%; max-width: 348px; margin: 4px auto 0; position: relative; z-index: 1; }
+  /* last in, once the screen has said what it is. The animation sits on the
+     card rather than on .intro-auth, because that wrapper's opacity/transform
+     are already spoken for by the greeting transition on the way out. */
   .auth-card {
+    animation: fadeUp .6s cubic-bezier(.2,.85,.3,1) 1.82s both;
     padding: 20px 20px 18px; border-radius: 18px; text-align: left;
     border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
     background: color-mix(in srgb, var(--panel) 58%, transparent);
@@ -1067,7 +1087,22 @@ you cant run by your own footprints.
   .intro-auth .m-err:empty { display: none; margin-top: 0; min-height: 0; }
   .intro-auth .m-err::before { content: "!"; flex-shrink: 0; width: 15px; height: 15px; border-radius: 50%;
     background: #ff6b6b; color: #000; font-size: .68rem; font-weight: 900; line-height: 15px; text-align: center; margin-top: 1px; }
-  .intro-hint { color: var(--muted); font-size: .76rem; margin-top: 14px; text-align: center; position: relative; z-index: 1; line-height: 1.5; }
+  .intro-hint { color: var(--muted); font-size: .76rem; margin-top: 14px; text-align: center; position: relative; z-index: 1; line-height: 1.5;
+    animation: fadeUp .5s ease 1.98s both; }
+  /* the way back is offered once the screen has finished introducing itself */
+  .gate-back { animation: fadeUp .5s ease 2.15s both; }
+
+  /* the choreography is a nicety; someone who has asked for less motion gets
+     the same screen without the wait */
+  @media (prefers-reduced-motion: reduce) {
+    .glass-wrap { animation: glassEnter .01s both, float 6s ease-in-out 1s infinite; }
+    .eye-inner { animation: eyeOpen .01s both, blink 4s cubic-bezier(.6,0,.4,1) 2s infinite; }
+    /* kept, not removed: its animationend is what hands the iris over to the
+       cursor, so cancelling it would stop the eye following the mouse */
+    .iris { animation-delay: 0s; animation-duration: .01s; }
+    .intro-title, .intro-sub, .print-tag, .auth-card, .intro-hint,
+    .intro-credit, .gate-back, .enter-btn { animation-delay: 0s; animation-duration: .2s; }
+  }
 
   /* the way back out to the landing page (absent in the desktop client) */
   .gate-back {
@@ -1081,7 +1116,9 @@ you cant run by your own footprints.
   body.has-landing .gate-back { display: inline-flex; }
   .gate-back:hover { color: var(--text); border-color: #666; transform: translateX(-2px); }
   .gate-back svg { width: 14px; height: 14px; }
-  #intro.greeting .gate-back { opacity: 0; pointer-events: none; transition: opacity .4s ease; }
+  /* animation:none first — the entrance's `both` fill would otherwise pin
+     opacity at 1 and this fade-out would never take */
+  #intro.greeting .gate-back { animation: none; opacity: 0; pointer-events: none; transition: opacity .4s ease; }
 
   /* welcome beat: the form drops away, the eye recenters, the title becomes "Hello <user>" */
   .intro-auth, .intro-credit { transition: opacity .5s ease, transform .5s cubic-bezier(.5,0,.75,0); }
@@ -2087,6 +2124,9 @@ you cant run by your own footprints.
   body.landing-open #landing { display: block; }
   body.landing-open { overflow: auto; scroll-behavior: smooth; }
   body.landing-open #intro { display: none; }
+  /* the dashboard is put away while the front door is open — it used to keep
+     its .show and sit in the flow below the landing page's footer */
+  body.landing-open #app { display: none; }
   /* the header is sticky, so an anchored section has to stop clear of it */
   #landing section[id] { scroll-margin-top: 84px; }
   @media (prefers-reduced-motion: reduce) { body.landing-open { scroll-behavior: auto; } }
@@ -4210,6 +4250,11 @@ you cant run by your own footprints.
     if (!landingEl) return;
     document.body.classList.add("landing-open");
     document.body.classList.remove("entered");
+    // The dashboard has to be put away, not just scrolled past. Without this
+    // #app keeps its .show and stays laid out underneath the landing page, so
+    // logging out left the sidebar and whatever page you were on sitting below
+    // the footer. (The stylesheet enforces this too — belt and braces.)
+    app.classList.remove("show");
     landingEl.classList.remove("leaving");
     window.scrollTo(0, 0);
   }
